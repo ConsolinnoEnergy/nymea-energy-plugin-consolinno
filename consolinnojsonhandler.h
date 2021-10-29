@@ -35,20 +35,20 @@
 #include <QObject>
 #include "jsonrpc/jsonhandler.h"
 
-class EnergyManager;
+class EnergyEngine;
 
 class ConsolinnoJsonHandler : public JsonHandler
 {
     Q_OBJECT
 public:
-    explicit ConsolinnoJsonHandler(EnergyManager *energyManager, QObject *parent = nullptr);
+    explicit ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent = nullptr);
 
     QString name() const override;
 
 signals:
 
 private:
-    EnergyManager *m_energyManager = nullptr;
+    EnergyEngine *m_energyEngine = nullptr;
 
 };
 

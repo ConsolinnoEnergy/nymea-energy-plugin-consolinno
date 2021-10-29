@@ -29,13 +29,13 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "consolinnojsonhandler.h"
-#include "energymanager.h"
+#include "energyengine.h"
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoExperience)
 
-ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyManager *energyManager, QObject *parent) :
+ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent) :
     JsonHandler(parent),
-    m_energyManager(energyManager)
+    m_energyEngine(energyEngine)
 {
 
 }

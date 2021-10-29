@@ -28,15 +28,17 @@
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef ENERGYMANAGER_H
-#define ENERGYMANAGER_H
+#ifndef ENERGYENGINE_H
+#define ENERGYENGINE_H
 
 #include <QHash>
 #include <QTimer>
 
 #include "integrations/thingmanager.h"
 
-class EnergyManager : public QObject
+class HemsOptimizerEngine;
+
+class EnergyEngine : public QObject
 {
     Q_OBJECT
 public:
@@ -47,11 +49,24 @@ public:
     };
     Q_ENUM(HemsError)
 
-    explicit EnergyManager(ThingManager *thingManager, QObject *parent = nullptr);
+    explicit EnergyEngine(ThingManager *thingManager, QObject *parent = nullptr);
 
 private:
     ThingManager *m_thingManager = nullptr;
+    Thing *m_rootMeter = nullptr;
+    HemsOptimizerEngine *m_optimizer = nullptr;
 
+    QHash<ThingId, Thing *> m_heatPumps;
+
+    void monitorHeatPump(Thing *thing);
+
+private slots:
+    void onThingAdded(Thing *thing);
+    void onThingRemoved(const ThingId &thingId);
+
+    void evaluate();
+
+    void evaluateHeatPumps();
 };
 
-#endif // ENERGYMANAGER_H
+#endif // ENERGYENGINE_H

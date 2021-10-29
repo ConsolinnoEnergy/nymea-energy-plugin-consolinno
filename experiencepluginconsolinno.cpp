@@ -29,7 +29,7 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "experiencepluginconsolinno.h"
-#include "energymanager.h"
+#include "energyengine.h"
 #include "consolinnojsonhandler.h"
 
 #include <jsonrpc/jsonrpcserver.h>
@@ -45,6 +45,6 @@ ExperiencePluginConsolinno::ExperiencePluginConsolinno()
 void ExperiencePluginConsolinno::init()
 {
     qCDebug(dcConsolinnoExperience()) << "Initializing experience";
-    EnergyManager *energyManager = new EnergyManager(thingManager(), this);
-    jsonRpcServer()->registerExperienceHandler(new ConsolinnoJsonHandler(energyManager, this), 0, 1);
+    EnergyEngine *energyEngine = new EnergyEngine(thingManager(), this);
+    jsonRpcServer()->registerExperienceHandler(new ConsolinnoJsonHandler(energyEngine, this), 0, 1);
 }

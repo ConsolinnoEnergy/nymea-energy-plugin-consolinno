@@ -15,11 +15,15 @@ gcc {
 
 HEADERS += experiencepluginconsolinno.h \
     consolinnojsonhandler.h \
-    energymanager.h
+    energyengine.h \
+    hemsconfiguration.h \
+    hemsoptimizerengine.h
 
 SOURCES += experiencepluginconsolinno.cpp \
     consolinnojsonhandler.cpp \
-    energymanager.cpp
+    energyengine.cpp \
+    hemsconfiguration.cpp \
+    hemsoptimizerengine.cpp
 
 target.path = $$[QT_INSTALL_LIBS]/nymea/experiences/
 INSTALLS += target
