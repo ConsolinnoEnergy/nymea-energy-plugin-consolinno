@@ -28,40 +28,40 @@
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef CONSOLINNOJSONHANDLER_H
-#define CONSOLINNOJSONHANDLER_H
+#ifndef HEATINGCONFIGURATION_H
+#define HEATINGCONFIGURATION_H
 
 #include <QObject>
-#include "jsonrpc/jsonhandler.h"
 
-class EnergyEngine;
+#include <typeutils.h>
 
-class ConsolinnoJsonHandler : public JsonHandler
+class HeatingConfiguration
 {
-    Q_OBJECT
+    Q_GADGET
+    Q_PROPERTY(ThingId heatPumpThingId READ heatPumpThingId WRITE setHeatPumpThingId)
+    Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
+    Q_PROPERTY(ThingId heatMeterThingId READ heatMeterThingId WRITE setHeatMeterThingId USER true)
+
 public:
-    explicit ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent = nullptr);
+    HeatingConfiguration();
 
-    QString name() const override;
+    ThingId heatPumpThingId() const;
+    void setHeatPumpThingId(const ThingId &heatPumpThingId);
 
-    Q_INVOKABLE JsonReply* GetAvailableUseCases(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* GetChargingConfigurations(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
+    bool optimizationEnabled() const;
+    void setOptimizationEnabled(bool optimizationEnabled);
 
-signals:
-    void AvailableUseCasesChanged(const QVariantMap &params);
-    void HeatingConfigurationAdded(const QVariantMap &params);
-    void HeatingConfigurationRemoved(const QVariantMap &params);
-    void HeatingConfigurationChanged(const QVariantMap &params);
-    void ChargingConfigurationAdded(const QVariantMap &params);
-    void ChargingConfigurationRemoved(const QVariantMap &params);
-    void ChargingConfigurationChanged(const QVariantMap &params);
+    ThingId heatMeterThingId() const;
+    void setHeatMeterThingId(const ThingId &heatMeterThingId);
+
+    bool operator==(const HeatingConfiguration &other) const;
+    bool operator!=(const HeatingConfiguration &other) const;
 
 private:
-    EnergyEngine *m_energyEngine = nullptr;
+    ThingId m_heatPumpThingId;
+    bool m_optimizationEnabled = false;
+    ThingId m_heatMeterThingId;
 
 };
 
-#endif // CONSOLINNOJSONHANDLER_H
+#endif // HEATINGCONFIGURATION_H

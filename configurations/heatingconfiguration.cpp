@@ -28,40 +28,51 @@
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef CONSOLINNOJSONHANDLER_H
-#define CONSOLINNOJSONHANDLER_H
+#include "heatingconfiguration.h"
 
-#include <QObject>
-#include "jsonrpc/jsonhandler.h"
-
-class EnergyEngine;
-
-class ConsolinnoJsonHandler : public JsonHandler
+HeatingConfiguration::HeatingConfiguration()
 {
-    Q_OBJECT
-public:
-    explicit ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent = nullptr);
 
-    QString name() const override;
+}
 
-    Q_INVOKABLE JsonReply* GetAvailableUseCases(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* GetChargingConfigurations(const QVariantMap &params);
-    Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
+ThingId HeatingConfiguration::heatPumpThingId() const
+{
+    return m_heatPumpThingId;
+}
 
-signals:
-    void AvailableUseCasesChanged(const QVariantMap &params);
-    void HeatingConfigurationAdded(const QVariantMap &params);
-    void HeatingConfigurationRemoved(const QVariantMap &params);
-    void HeatingConfigurationChanged(const QVariantMap &params);
-    void ChargingConfigurationAdded(const QVariantMap &params);
-    void ChargingConfigurationRemoved(const QVariantMap &params);
-    void ChargingConfigurationChanged(const QVariantMap &params);
+void HeatingConfiguration::setHeatPumpThingId(const ThingId &heatPumpThingId)
+{
+    m_heatPumpThingId = heatPumpThingId;
+}
 
-private:
-    EnergyEngine *m_energyEngine = nullptr;
+bool HeatingConfiguration::optimizationEnabled() const
+{
+    return m_optimizationEnabled;
+}
 
-};
+void HeatingConfiguration::setOptimizationEnabled(bool optimizationEnabled)
+{
+    m_optimizationEnabled = optimizationEnabled;
+}
 
-#endif // CONSOLINNOJSONHANDLER_H
+ThingId HeatingConfiguration::heatMeterThingId() const
+{
+    return m_heatMeterThingId;
+}
+
+void HeatingConfiguration::setHeatMeterThingId(const ThingId &heatMeterThingId)
+{
+    m_heatMeterThingId = heatMeterThingId;
+}
+
+bool HeatingConfiguration::operator==(const HeatingConfiguration &other) const
+{
+    return m_heatMeterThingId == other.heatPumpThingId() &&
+            m_optimizationEnabled == other.optimizationEnabled() &&
+            m_heatMeterThingId == other.heatMeterThingId();
+}
+
+bool HeatingConfiguration::operator!=(const HeatingConfiguration &other) const
+{
+    return !(*this == other);
+}

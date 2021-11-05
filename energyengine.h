@@ -34,7 +34,10 @@
 #include <QHash>
 #include <QTimer>
 
-#include "integrations/thingmanager.h"
+#include <integrations/thingmanager.h>
+
+#include "configurations/chargingconfiguration.h"
+#include "configurations/heatingconfiguration.h"
 
 class HemsOptimizerEngine;
 
@@ -49,16 +52,54 @@ public:
     };
     Q_ENUM(HemsError)
 
+    enum HemsUseCase {
+        HemsUseCaseBlackoutProtection = 0x00,
+        HemsUseCaseHeating = 0x01,
+        HemsUseCaseCharging = 0x02
+    };
+    Q_ENUM(HemsUseCase)
+    Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
+    Q_FLAG(HemsUseCases)
+
     explicit EnergyEngine(ThingManager *thingManager, QObject *parent = nullptr);
+
+    EnergyEngine::HemsUseCases availableUseCases() const;
+
+    // Heating configurations
+    QList<HeatingConfiguration> heatingConfigurations() const;
+    EnergyEngine::HemsError setHeatingConfiguration(const HeatingConfiguration &heatingConfiguration);
+
+    // Charging configurations
+    QList<ChargingConfiguration> chargingConfigurations() const;
+    EnergyEngine::HemsError setChargingConfiguration(const ChargingConfiguration &chargingConfiguration);
+
+signals:
+    void availableUseCasesChanged(EnergyEngine::HemsUseCases availableUseCases);
+    void heatingConfigurationAdded(const HeatingConfiguration &heatingConfiguration);
+    void heatingConfigurationChanged(const HeatingConfiguration &heatingConfiguration);
+    void heatingConfigurationRemoved(const ThingId &heatPumpThingId);
+    void chargingConfigurationAdded(const ChargingConfiguration &chargingConfiguration);
+    void chargingConfigurationChanged(const ChargingConfiguration &chargingConfiguration);
+    void chargingConfigurationRemoved(const ThingId &evChargerThingId);
 
 private:
     ThingManager *m_thingManager = nullptr;
+
+    HemsUseCases m_availableUseCases;
+    QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
+    QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
+
+
     Thing *m_rootMeter = nullptr;
+    Thing *m_inverter = nullptr;
+    Thing *m_heatPump = nullptr;
     HemsOptimizerEngine *m_optimizer = nullptr;
 
     QHash<ThingId, Thing *> m_heatPumps;
+    QHash<ThingId, Thing *> m_inverters;
 
     void monitorHeatPump(Thing *thing);
+    void monitorInverter(Thing *thing);
 
 private slots:
     void onThingAdded(Thing *thing);
@@ -67,6 +108,17 @@ private slots:
     void evaluate();
 
     void evaluateHeatPumps();
+    void evaluateInverters();
+
+    void updateSchedules();
+
+    QList<QDateTime> generateTimeStamps(uint resolutionMinutes, uint durationHours);
+    QVariantList getPvForecast(const QList<QDateTime> &timestamps, Thing *inverter);
+    QVariantList getConsumptionForecast(const QList<QDateTime> &timestamps);
+    QVariantList getThermalDemandForecast(const QList<QDateTime> &timestamps, Thing *heatPump);
+
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(EnergyEngine::HemsUseCases)
 
 #endif // ENERGYENGINE_H
