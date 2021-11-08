@@ -32,15 +32,16 @@
 #define HEATINGCONFIGURATION_H
 
 #include <QObject>
+#include <QDebug>
 
 #include <typeutils.h>
 
 class HeatingConfiguration
 {
     Q_GADGET
-    Q_PROPERTY(ThingId heatPumpThingId READ heatPumpThingId WRITE setHeatPumpThingId)
+    Q_PROPERTY(QUuid heatPumpThingId READ heatPumpThingId WRITE setHeatPumpThingId)
     Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
-    Q_PROPERTY(ThingId heatMeterThingId READ heatMeterThingId WRITE setHeatMeterThingId USER true)
+    Q_PROPERTY(QUuid heatMeterThingId READ heatMeterThingId WRITE setHeatMeterThingId USER true)
 
 public:
     HeatingConfiguration();
@@ -63,5 +64,7 @@ private:
     ThingId m_heatMeterThingId;
 
 };
+
+QDebug operator<<(QDebug debug, const HeatingConfiguration &heatingConfig);
 
 #endif // HEATINGCONFIGURATION_H

@@ -76,3 +76,14 @@ bool HeatingConfiguration::operator!=(const HeatingConfiguration &other) const
 {
     return !(*this == other);
 }
+
+QDebug operator<<(QDebug debug, const HeatingConfiguration &heatingConfig)
+{
+    debug.nospace() << "HeatingConfiguration(" << heatingConfig.heatPumpThingId().toString();
+    debug.nospace() << ", " << (heatingConfig.optimizationEnabled() ? "enabled" : "disabled");
+    if (!heatingConfig.heatMeterThingId().isNull()) {
+        debug.nospace() << ", heat meter: " << heatingConfig.heatMeterThingId().toString();
+    }
+    debug.nospace() << ")";
+    return debug.maybeSpace();
+}

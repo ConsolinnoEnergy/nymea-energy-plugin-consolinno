@@ -37,21 +37,23 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     JsonHandler(parent),
     m_energyEngine(energyEngine)
 {
-    // Enums / Flags
+    // Enums
     registerEnum<EnergyEngine::HemsError>();
-    registerEnum<EnergyEngine::HemsUseCase, EnergyEngine::HemsUseCases>();
+
+    // Flags
+    registerFlag<EnergyEngine::HemsUseCase, EnergyEngine::HemsUseCases>();
 
     // Types
     registerObject<HeatingConfiguration>();
     registerObject<ChargingConfiguration>();
 
-    // Methods
     QVariantMap params, returns;
     QString description;
 
+    // Methods
     params.clear(); returns.clear();
     description = "Get the current available optimization UseCases based on the thing setup available in the system.";
-    returns.insert("availableUseCases", enumRef<EnergyEngine::HemsUseCases>());
+    returns.insert("availableUseCases", flagRef<EnergyEngine::HemsUseCases>());
     registerMethod("GetAvailableUseCases", description, params, returns);
 
     params.clear(); returns.clear();
@@ -80,7 +82,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     // Notifications
     params.clear();
     description = "Emitted whenever the available energy uses cases in the energy engine have changed depending on the thing constelation.";
-    params.insert("availableUseCases", enumRef<EnergyEngine::HemsUseCases>());
+    params.insert("availableUseCases", flagRef<EnergyEngine::HemsUseCases>());
     registerNotification("AvailableUseCasesChanged", description, params);
 
     params.clear();
@@ -116,7 +118,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     // Connections for the notification
     connect(m_energyEngine, &EnergyEngine::availableUseCasesChanged, this, [=](EnergyEngine::HemsUseCases availableUseCases){
         QVariantMap params;
-        params.insert("availableUseCases", enumValueName(availableUseCases));
+        params.insert("availableUseCases", flagValueNames(availableUseCases));
         emit AvailableUseCasesChanged(params);
     });
 
@@ -167,7 +169,7 @@ JsonReply *ConsolinnoJsonHandler::GetAvailableUseCases(const QVariantMap &params
     Q_UNUSED(params)
 
     QVariantMap returns;
-    returns.insert("availableUseCases", enumValueName(m_energyEngine->availableUseCases()));
+    returns.insert("availableUseCases", flagValueNames(m_energyEngine->availableUseCases()));
     return createReply(returns);
 }
 
@@ -180,7 +182,7 @@ JsonReply *ConsolinnoJsonHandler::GetHeatingConfigurations(const QVariantMap &pa
     foreach (const HeatingConfiguration &heatingConfig, m_energyEngine->heatingConfigurations()) {
         configurations << pack(heatingConfig);
     }
-
+    returns.insert("heatingConfigurations", configurations);
     return createReply(returns);
 }
 
@@ -201,6 +203,7 @@ JsonReply *ConsolinnoJsonHandler::GetChargingConfigurations(const QVariantMap &p
     foreach (const ChargingConfiguration &chargingConfig, m_energyEngine->chargingConfigurations()) {
         configurations << pack(chargingConfig);
     }
+    returns.insert("chargingConfigurations", configurations);
 
     return createReply(returns);
 }

@@ -31,17 +31,18 @@
 #ifndef CHARGINGCONFIGURATION_H
 #define CHARGINGCONFIGURATION_H
 
-#include <QObject>
 #include <QTime>
+#include <QObject>
+#include <QDebug>
 
 #include <typeutils.h>
 
 class ChargingConfiguration
 {
     Q_GADGET
-    Q_PROPERTY(ThingId evChargerThingId READ evChargerThingId WRITE setEvChargerThingId)
+    Q_PROPERTY(QUuid evChargerThingId READ evChargerThingId WRITE setEvChargerThingId)
     Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
-    Q_PROPERTY(ThingId carThingId READ carThingId WRITE setCarThingId USER true)
+    Q_PROPERTY(QUuid carThingId READ carThingId WRITE setCarThingId USER true)
     Q_PROPERTY(QTime endTime READ endTime WRITE setEndTime USER true)
     Q_PROPERTY(uint targetPercentage READ targetPercentage WRITE setTargetPercentage USER true)
     Q_PROPERTY(bool zeroReturnPolicyEnabled READ zeroReturnPolicyEnabled WRITE setZeroReturnPolicyEnabled USER true)
@@ -77,6 +78,10 @@ private:
     QTime m_endTime;
     uint m_targetPercentage = 100;
     bool m_zeroReturnPolicyEnabled = false;
+
 };
+
+QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig);
+
 
 #endif // CHARGINGCONFIGURATION_H

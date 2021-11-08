@@ -47,15 +47,15 @@ class EnergyEngine : public QObject
 public:
     enum HemsError {
         HemsErrorNoError,
-        HemsErrorMissingParameter,
-        HemsErrorInvalidParameter
+        HemsErrorInvalidParameter,
+        HemsErrorInvalidThing
     };
     Q_ENUM(HemsError)
 
     enum HemsUseCase {
-        HemsUseCaseBlackoutProtection = 0x00,
-        HemsUseCaseHeating = 0x01,
-        HemsUseCaseCharging = 0x02
+        HemsUseCaseBlackoutProtection = 0x01,
+        HemsUseCaseHeating = 0x02,
+        HemsUseCaseCharging = 0x04
     };
     Q_ENUM(HemsUseCase)
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
@@ -84,22 +84,21 @@ signals:
 
 private:
     ThingManager *m_thingManager = nullptr;
+    Thing *m_rootMeter = nullptr;
+    HemsOptimizerEngine *m_optimizer = nullptr;
 
     HemsUseCases m_availableUseCases;
+
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
 
-
-    Thing *m_rootMeter = nullptr;
-    Thing *m_inverter = nullptr;
-    Thing *m_heatPump = nullptr;
-    HemsOptimizerEngine *m_optimizer = nullptr;
-
-    QHash<ThingId, Thing *> m_heatPumps;
     QHash<ThingId, Thing *> m_inverters;
+    QHash<ThingId, Thing *> m_heatPumps;
+    QHash<ThingId, Thing *> m_evChargers;
 
     void monitorHeatPump(Thing *thing);
     void monitorInverter(Thing *thing);
+    void monitorEvCharger(Thing *thing);
 
 private slots:
     void onThingAdded(Thing *thing);
@@ -109,13 +108,22 @@ private slots:
 
     void evaluateHeatPumps();
     void evaluateInverters();
+    void evaluateEvChargers();
 
     void updateSchedules();
+
+    void evaluateAvailableUseCases();
 
     QList<QDateTime> generateTimeStamps(uint resolutionMinutes, uint durationHours);
     QVariantList getPvForecast(const QList<QDateTime> &timestamps, Thing *inverter);
     QVariantList getConsumptionForecast(const QList<QDateTime> &timestamps);
     QVariantList getThermalDemandForecast(const QList<QDateTime> &timestamps, Thing *heatPump);
+
+    void saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration);
+    void removeHeatingConfigurationFromSettings(const ThingId &heatPumpThingId);
+
+    void saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration);
+    void removeChargingConfigurationFromSettings(const ThingId &evChargerThingId);
 
 };
 
