@@ -1,0 +1,23 @@
+Source: nymea-energy-plugin-consolinno
+Section: utils
+Priority: optional
+Maintainer: nymea GmbH <developer@nymea.io>
+Standards-Version: 3.9.7
+Homepage: https://nymea.io
+Build-Depends: debhelper (>= 9.0.0),
+               dpkg-dev (>= 1.16.1~),
+               libnymea-dev (>= 0.17),
+               libnymea-energy-dev,
+               nymea-dev-tools:native,
+               qt5-qmake,
+               qtbase5-dev,
+
+Package: nymea-energy-plugin-consolinno
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+Description: consolinno energy plugin for the nymea energy experience
+ This consolinno energy plugin adds the HEMS optimization functionality to the 
+ nymea energy experience.
