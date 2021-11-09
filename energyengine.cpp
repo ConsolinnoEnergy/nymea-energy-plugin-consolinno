@@ -1,4 +1,4 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
 * Copyright 2013 - 2021, nymea GmbH
 * Contact: contact@nymea.io
@@ -37,11 +37,18 @@
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
-EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
+EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyManager, QObject *parent):
     QObject(parent),
-    m_thingManager(thingManager)
+    m_thingManager(thingManager),
+    m_energyManager(energyManager)
 {
-    qCDebug(dcConsolinnoEnergy()) << "==> Initializing consolinno energy engine...";
+    qCDebug(dcConsolinnoEnergy()) << "======> Initializing consolinno energy engine...";
+
+    // Energy engine
+    connect(m_energyManager, &EnergyManager::rootMeterChanged, this, &EnergyEngine::onRootMeterChanged);
+    onRootMeterChanged();
+
+    // Thing manager
     foreach (Thing *thing, m_thingManager->configuredThings()) {
         onThingAdded(thing);
     }
@@ -51,6 +58,13 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
 
     // Load configurations
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+
+    settings.beginGroup("BlackoutProtection");
+    m_housholdPhaseLimit = settings.value("housholdPhaseLimit", 25).toUInt();
+    settings.endGroup();
+
+    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A]";
+
     settings.beginGroup("HeatingConfigurations");
     foreach (const QString &heatPumpUuidString, settings.childGroups()) {
         settings.beginGroup(heatPumpUuidString);
@@ -86,27 +100,41 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
     }
     settings.endGroup();
 
-    // FIXME: get the root meter from the overall energy experience, not just pick the first one
-    if (m_rootMeter) {
-        connect(m_rootMeter, &Thing::stateValueChanged, this, [=](const StateTypeId &stateTypeId, const QVariant &/*value*/){
-            StateType stateType = m_rootMeter->thingClass().getStateType(stateTypeId);
-            if (stateType.name() == "currentPower") {
-                evaluate();
-            }
-        });
-    } else {
-        qCWarning(dcConsolinnoEnergy()) << "No root meter specified yet.";
-    }
-
     // Engine for interacting with the online Hems optimizer
     m_optimizer = new HemsOptimizerEngine(this);
 
-    qCDebug(dcConsolinnoEnergy()) << "==> Consolinno energy engine initialized" << m_availableUseCases;
+    qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
 {
     return m_availableUseCases;
+}
+
+uint EnergyEngine::housholdPhaseLimit() const
+{
+    return m_housholdPhaseLimit;
+}
+
+EnergyEngine::HemsError EnergyEngine::setHousholdPhaseLimit(uint housholdPhaseLimit)
+{
+    if (m_housholdPhaseLimit == housholdPhaseLimit)
+        return HemsErrorNoError;
+
+    if (housholdPhaseLimit == 0)
+        return HemsErrorInvalidPhaseLimit;
+
+
+    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit changed to" << housholdPhaseLimit << "[A]";
+    m_housholdPhaseLimit = housholdPhaseLimit;
+    emit housholdPhaseLimitChanged(m_housholdPhaseLimit);
+
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("BlackoutProtection");
+    settings.setValue("housholdPhaseLimit", m_housholdPhaseLimit);
+    settings.endGroup();
+
+    return HemsErrorNoError;
 }
 
 QList<HeatingConfiguration> EnergyEngine::heatingConfigurations() const
@@ -239,16 +267,6 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
 
 void EnergyEngine::onThingAdded(Thing *thing)
 {
-    if (thing->thingClass().interfaces().contains("smartmeter")) {
-        // FIXME: get the root meter from the overall energy experience
-        if (!m_rootMeter) {
-            m_rootMeter = thing;
-            qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_rootMeter;
-        }
-
-        evaluateAvailableUseCases();
-    }
-
     if (thing->thingClass().interfaces().contains("solarinverter")) {
         monitorInverter(thing);
     }
@@ -264,12 +282,6 @@ void EnergyEngine::onThingAdded(Thing *thing)
 
 void EnergyEngine::onThingRemoved(const ThingId &thingId)
 {
-    // Meter
-    if (m_rootMeter->id() == thingId) {
-        m_rootMeter = nullptr;
-        qCWarning(dcConsolinnoEnergy()) << "The root meter has been removed. The energy manager will not work any more.";
-    }
-
     // Inverter
     if (m_inverters.contains(thingId)) {
         m_inverters.remove(thingId);
@@ -307,15 +319,70 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
     evaluateAvailableUseCases();
 }
 
+void EnergyEngine::onRootMeterChanged()
+{
+    if (m_energyManager->rootMeter()) {
+        qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
+        connect(m_energyManager->rootMeter(), &Thing::stateValueChanged, this, [=](const StateTypeId &stateTypeId, const QVariant &value){
+            Q_UNUSED(value)
+            StateType stateType = m_energyManager->rootMeter()->thingClass().getStateType(stateTypeId);
+            if (stateType.name() == "currentPower") {
+                evaluate();
+            }
+        });
+    } else {
+        qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
+    }
+
+    evaluateAvailableUseCases();
+}
+
 void EnergyEngine::evaluate()
 {
     // We need a root meter, otherwise no optimization can be done.
-    if (!m_rootMeter)
+    if (!m_energyManager->rootMeter())
         return;
+
+    qCDebug(dcConsolinnoEnergy()) << "Root meter consumption changed" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble();
 
     evaluateInverters();
     evaluateHeatPumps();
     evaluateEvChargers();
+
+    qCDebug(dcConsolinnoEnergy()) << "============> Evaluating blackout protection";
+    QHash<QString, double> currentPhaseConsumption = {
+        {"A", m_energyManager->rootMeter()->stateValue("currentPowerPhaseA").toDouble()},
+        {"B", m_energyManager->rootMeter()->stateValue("currentPowerPhaseB").toDouble()},
+        {"C", m_energyManager->rootMeter()->stateValue("currentPowerPhaseC").toDouble()},
+    };
+    bool limitExceeded = false;
+    double phasePowerLimit = 230 * m_housholdPhaseLimit;
+    double overshotPower = 0;
+    qCDebug(dcConsolinnoEnergy()) << "= Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
+    foreach (const QString &phase, currentPhaseConsumption.keys()) {
+        if (currentPhaseConsumption.value(phase) > phasePowerLimit) {
+            qCInfo(dcConsolinnoEnergy()) << "Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
+            limitExceeded = true;
+            double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
+            if (phaseOvershotPower > overshotPower) {
+                overshotPower = phaseOvershotPower;
+            }
+        }
+    }
+
+    // TODO: limit the consuption depending on a hirarchy and check calculate the amout of energy we can actually adjust down * 1.2 or something
+
+    if (limitExceeded) {
+        qCInfo(dcConsolinnoEnergy()) << "Using at least" << overshotPower  << "W to much. Start adjusting the evChargers...";
+        // Note: iterate all chargers, not just the one we are optimizing
+        foreach (Thing *thing, m_evChargers) {
+            State maxChargingCurrentState = thing->state("maxChargingCurrent");
+            Action action(maxChargingCurrentState.stateTypeId(), thing->id(), Action::TriggeredByRule);
+            action.setParams(ParamList() << Param(maxChargingCurrentState.stateTypeId(), maxChargingCurrentState.minValue()));
+            qCInfo(dcConsolinnoEnergy()) << "Adjusting charging on" << thing->name() << "to minimum of" << maxChargingCurrentState.minValue() << "A";
+            m_thingManager->executeAction(action);
+        }
+    }
 }
 
 void EnergyEngine::evaluateHeatPumps()
@@ -397,18 +464,26 @@ void EnergyEngine::updateSchedules()
 void EnergyEngine::evaluateAvailableUseCases()
 {
     HemsUseCases availableUseCases;
-    if (m_rootMeter) {
+    if (m_energyManager->rootMeter()) {
         // We need a root meter for the blackout protection
         // TODO: probably we need also a heat pump and or a charger for beeing able to protect, let's keep this condition for now.
         availableUseCases = availableUseCases.setFlag(HemsUseCaseBlackoutProtection);
+    } else {
+        // None of the optimizations is available, we always need a configured root meter.
+        if (m_availableUseCases != availableUseCases) {
+            qCDebug(dcConsolinnoEnergy()) << "No usecases available because there is no root meter defined.";
+            m_availableUseCases = availableUseCases;
+            emit availableUseCasesChanged(m_availableUseCases);
+        }
+        return;
     }
 
-    if (m_rootMeter && !m_inverters.isEmpty() && !m_heatPumps.isEmpty()) {
+    if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_heatPumps.isEmpty()) {
         // We need a root meter, an inverter and and ev charging for having the charging usecase
         availableUseCases = availableUseCases.setFlag(HemsUseCaseHeating);
     }
 
-    if (m_rootMeter && !m_inverters.isEmpty() && !m_evChargers.isEmpty()) {
+    if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_evChargers.isEmpty()) {
         // We need a root meter, an inverter and and ev charging for having the charging usecase
         availableUseCases = availableUseCases.setFlag(HemsUseCaseCharging);
     }

@@ -56,16 +56,30 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     returns.insert("availableUseCases", flagRef<EnergyEngine::HemsUseCases>());
     registerMethod("GetAvailableUseCases", description, params, returns);
 
+
+    params.clear(); returns.clear();
+    description = "Get the houshold phase limit in amperes. This value is gonna be used by the blackout protection use case for limiting the phase current.";
+    returns.insert("housholdPhaseLimit", enumValueName(Uint));
+    registerMethod("GetHousholdPhaseLimit", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Set the houshold phase limit in amperes. This value is gonna be used by the blackout protection use case for limiting the phase current.";
+    params.insert("housholdPhaseLimit", enumValueName(Uint));
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetHousholdPhaseLimit", description, params, returns);
+
+
     params.clear(); returns.clear();
     description = "Get the list of available heating configurations from the energy engine.";
     returns.insert("heatingConfigurations", QVariantList() << objectRef<HeatingConfiguration>());
     registerMethod("GetHeatingConfigurations", description, params, returns);
 
     params.clear(); returns.clear();
-    description = "Reconfigure a heating configuration to the given heating configuration. The heat pump thing ID will be used as an identifier.";
+    description = "Update a heating configuration to the given heating configuration. The heat pump thing ID will be used as an identifier.";
     params.insert("heatingConfiguration", objectRef<HeatingConfiguration>());
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetHeatingConfiguration", description, params, returns);
+
 
     params.clear(); returns.clear();
     description = "Get the list of available charging configurations from the energy engine.";
@@ -73,7 +87,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     registerMethod("GetChargingConfigurations", description, params, returns);
 
     params.clear(); returns.clear();
-    description = "Reconfigure a charging configuration to the given charging configuration. The ev charger thing ID will be used as an identifier.";
+    description = "Update a charging configuration to the given charging configuration. The ev charger thing ID will be used as an identifier.";
     params.insert("chargingConfiguration", objectRef<ChargingConfiguration>());
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetChargingConfiguration", description, params, returns);
@@ -84,6 +98,13 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     description = "Emitted whenever the available energy uses cases in the energy engine have changed depending on the thing constelation.";
     params.insert("availableUseCases", flagRef<EnergyEngine::HemsUseCases>());
     registerNotification("AvailableUseCasesChanged", description, params);
+
+
+    params.clear();
+    description = "Emitted whenever the houshold phase limit in amperes has changed.";
+    params.insert("housholdPhaseLimit", enumValueName(Uint));
+    registerNotification("HousholdPhaseLimitChanged", description, params);
+
 
     params.clear();
     description = "Emitted whenever a new heating configuration has been added to the energy engine.";
@@ -99,6 +120,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     description = "Emitted whenever a heating configuration has changed in the energy engine.";
     params.insert("heatingConfiguration", objectRef<HeatingConfiguration>());
     registerNotification("HeatingConfigurationChanged", description, params);
+
 
     params.clear();
     description = "Emitted whenever a new charging configuration has been added to the energy engine.";
@@ -120,6 +142,12 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         QVariantMap params;
         params.insert("availableUseCases", flagValueNames(availableUseCases));
         emit AvailableUseCasesChanged(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::housholdPhaseLimitChanged, this, [=](uint housholdPhaseLimit){
+        QVariantMap params;
+        params.insert("housholdPhaseLimit", housholdPhaseLimit);
+        emit HousholdPhaseLimitChanged(params);
     });
 
     connect(m_energyEngine, &EnergyEngine::heatingConfigurationAdded, this, [=](const HeatingConfiguration &heatingConfiguration){
@@ -170,6 +198,24 @@ JsonReply *ConsolinnoJsonHandler::GetAvailableUseCases(const QVariantMap &params
 
     QVariantMap returns;
     returns.insert("availableUseCases", flagValueNames(m_energyEngine->availableUseCases()));
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::GetHousholdPhaseLimit(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+
+    QVariantMap returns;
+    returns.insert("housholdPhaseLimit", m_energyEngine->housholdPhaseLimit());
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetHousholdPhaseLimit(const QVariantMap &params)
+{
+    uint phaseLimit = params.value("housholdPhaseLimit").toUInt();
+
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(m_energyEngine->setHousholdPhaseLimit(phaseLimit)));
     return createReply(returns);
 }
 

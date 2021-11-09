@@ -35,6 +35,7 @@
 #include <QTimer>
 
 #include <integrations/thingmanager.h>
+#include <energymanager.h>
 
 #include "configurations/chargingconfiguration.h"
 #include "configurations/heatingconfiguration.h"
@@ -49,7 +50,8 @@ public:
         HemsErrorNoError,
         HemsErrorInvalidParameter,
         HemsErrorInvalidThing,
-        HemsErrorThingNotFound
+        HemsErrorThingNotFound,
+        HemsErrorInvalidPhaseLimit
     };
     Q_ENUM(HemsError)
 
@@ -62,9 +64,12 @@ public:
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
     Q_FLAG(HemsUseCases)
 
-    explicit EnergyEngine(ThingManager *thingManager, QObject *parent = nullptr);
+    explicit EnergyEngine(ThingManager *thingManager, EnergyManager *energyManager, QObject *parent = nullptr);
 
     EnergyEngine::HemsUseCases availableUseCases() const;
+
+    uint housholdPhaseLimit() const;
+    EnergyEngine::HemsError setHousholdPhaseLimit(uint housholdPhaseLimit);
 
     // Heating configurations
     QList<HeatingConfiguration> heatingConfigurations() const;
@@ -76,6 +81,7 @@ public:
 
 signals:
     void availableUseCasesChanged(EnergyEngine::HemsUseCases availableUseCases);
+    void housholdPhaseLimitChanged(uint housholdPhaseLimit);
     void heatingConfigurationAdded(const HeatingConfiguration &heatingConfiguration);
     void heatingConfigurationChanged(const HeatingConfiguration &heatingConfiguration);
     void heatingConfigurationRemoved(const ThingId &heatPumpThingId);
@@ -85,10 +91,11 @@ signals:
 
 private:
     ThingManager *m_thingManager = nullptr;
-    Thing *m_rootMeter = nullptr;
+    EnergyManager *m_energyManager = nullptr;
     HemsOptimizerEngine *m_optimizer = nullptr;
 
     HemsUseCases m_availableUseCases;
+    uint m_housholdPhaseLimit = 25;
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
@@ -104,6 +111,8 @@ private:
 private slots:
     void onThingAdded(Thing *thing);
     void onThingRemoved(const ThingId &thingId);
+
+    void onRootMeterChanged();
 
     void evaluate();
 

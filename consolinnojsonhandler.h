@@ -45,16 +45,25 @@ public:
     QString name() const override;
 
     Q_INVOKABLE JsonReply* GetAvailableUseCases(const QVariantMap &params);
+
+    Q_INVOKABLE JsonReply* GetHousholdPhaseLimit(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetHousholdPhaseLimit(const QVariantMap &params);
+
     Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
+
     Q_INVOKABLE JsonReply* GetChargingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
 
 signals:
     void AvailableUseCasesChanged(const QVariantMap &params);
+
+    void HousholdPhaseLimitChanged(const QVariantMap &params);
+
     void HeatingConfigurationAdded(const QVariantMap &params);
     void HeatingConfigurationRemoved(const QVariantMap &params);
     void HeatingConfigurationChanged(const QVariantMap &params);
+
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);
     void ChargingConfigurationChanged(const QVariantMap &params);

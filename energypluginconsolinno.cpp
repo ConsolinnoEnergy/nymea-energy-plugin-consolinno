@@ -45,6 +45,6 @@ EnergyPluginConsolinno::EnergyPluginConsolinno()
 void EnergyPluginConsolinno::init()
 {
     qCDebug(dcConsolinnoEnergy()) << "Initializing energy plugin...";
-    EnergyEngine *energyEngine = new EnergyEngine(thingManager(), this);
+    EnergyEngine *energyEngine = new EnergyEngine(thingManager(), energyManager(), this);
     jsonRpcServer()->registerExperienceHandler(new ConsolinnoJsonHandler(energyEngine, this), 0, 1);
 }
