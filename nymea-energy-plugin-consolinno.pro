@@ -1,11 +1,11 @@
 QT -= gui
 QT += network
 
-TARGET = $$qtLibraryTarget(nymea_experiencepluginconsolinno)
+TARGET = $$qtLibraryTarget(nymea_energypluginconsolinno)
 TEMPLATE = lib
 
 CONFIG += plugin link_pkgconfig c++11
-PKGCONFIG += nymea
+PKGCONFIG += nymea nymea-energy
 
 gcc {
     COMPILER_VERSION = $$system($$QMAKE_CXX " -dumpversion")
@@ -13,21 +13,23 @@ gcc {
     greaterThan(COMPILER_MAJOR_VERSION, 7): QMAKE_CXXFLAGS += -Wno-deprecated-copy
 }
 
-HEADERS += experiencepluginconsolinno.h \
+HEADERS += \
     configurations/chargingconfiguration.h \
     configurations/heatingconfiguration.h \
     consolinnojsonhandler.h \
     energyengine.h \
+    energypluginconsolinno.h \
     hemsoptimizerengine.h
 
-SOURCES += experiencepluginconsolinno.cpp \
+SOURCES += \
     configurations/chargingconfiguration.cpp \
     configurations/heatingconfiguration.cpp \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
+    energypluginconsolinno.cpp \
     hemsoptimizerengine.cpp
 
-target.path = $$[QT_INSTALL_LIBS]/nymea/experiences/
+target.path = $$[QT_INSTALL_LIBS]/nymea/energy/
 INSTALLS += target
 
 # Install translation files

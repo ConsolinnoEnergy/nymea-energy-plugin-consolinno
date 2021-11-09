@@ -35,7 +35,7 @@
 #include <QJsonParseError>
 
 #include "loggingcategories.h"
-Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoExperience)
+Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
 HemsOptimizerEngine::HemsOptimizerEngine(QObject *parent) :
     QObject(parent),
@@ -52,7 +52,7 @@ HemsOptimizerEngine::HemsOptimizerEngine(QObject *parent) :
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
     connect(reply, &QNetworkReply::finished, this, [reply](){
         if (reply->error() != QNetworkReply::NoError) {
-            qCWarning(dcConsolinnoExperience()) << "HemsOptimizer: Failed to get heathz status. The reply returned with error" << reply->errorString();
+            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get heathz status. The reply returned with error" << reply->errorString();
             return;
         }
 
@@ -60,11 +60,11 @@ HemsOptimizerEngine::HemsOptimizerEngine(QObject *parent) :
         QJsonParseError error;
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
         if (error.error != QJsonParseError::NoError) {
-            qCWarning(dcConsolinnoExperience()) << "HemsOptimizer: Failed to parse healthz status data" << data << ":" << error.errorString();
+            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse healthz status data" << data << ":" << error.errorString();
             return;
         }
 
-        qCDebug(dcConsolinnoExperience()) << "HemsOptimizer: Get healthz status finished successfully:" << jsonDoc.toJson(QJsonDocument::Compact);
+        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Get healthz status finished successfully:" << jsonDoc.toJson(QJsonDocument::Compact);
     });
 }
 
@@ -164,8 +164,8 @@ QNetworkReply *HemsOptimizerEngine::pvOptimization(const QVariantMap &ntpInfos, 
         requestMap.insert("chargepoint", evChargerInfo);
 
     QByteArray requestData = QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Compact);
-    qCDebug(dcConsolinnoExperience()) << "HemsOptimizer: Request pv optimization...";
-    qCDebug(dcConsolinnoExperience()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
+    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization...";
+    qCDebug(dcConsolinnoEnergy()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
     return m_networkManager->post(buildRequest("/api/hems-pv/v1/pv-optimized/"), requestData);
 }
 

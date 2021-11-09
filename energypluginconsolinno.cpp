@@ -28,26 +28,23 @@
 *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef EXPERIENCEPLUGINCONSOLINNO_H
-#define EXPERIENCEPLUGINCONSOLINNO_H
+#include "energypluginconsolinno.h"
+#include "energyengine.h"
+#include "consolinnojsonhandler.h"
 
-#include <QLoggingCategory>
+#include <jsonrpc/jsonrpcserver.h>
+#include <loggingcategories.h>
 
-#include <experiences/experienceplugin.h>
+NYMEA_LOGGING_CATEGORY(dcConsolinnoEnergy, "ConsolinnoEnergy")
 
-Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoExperience)
-
-class ExperiencePluginConsolinno: public ExperiencePlugin
+EnergyPluginConsolinno::EnergyPluginConsolinno()
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "io.nymea.ExperiencePlugin")
-    Q_INTERFACES(ExperiencePlugin)
+    qCDebug(dcConsolinnoEnergy()) << "Loading consolinno energy plugin";
+}
 
-public:
-    ExperiencePluginConsolinno();
-
-    void init() override;
-
-};
-
-#endif // EXPERIENCEPLUGINCONSOLINNO_H
+void EnergyPluginConsolinno::init()
+{
+    qCDebug(dcConsolinnoEnergy()) << "Initializing energy plugin...";
+    EnergyEngine *energyEngine = new EnergyEngine(thingManager(), this);
+    jsonRpcServer()->registerExperienceHandler(new ConsolinnoJsonHandler(energyEngine, this), 0, 1);
+}

@@ -35,13 +35,13 @@
 #include <QJsonDocument>
 #include <QNetworkReply>
 
-Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoExperience)
+Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
 EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
     QObject(parent),
     m_thingManager(thingManager)
 {
-    qCDebug(dcConsolinnoExperience()) << "==> Initializing consolinno energy engine...";
+    qCDebug(dcConsolinnoEnergy()) << "==> Initializing consolinno energy engine...";
     foreach (Thing *thing, m_thingManager->configuredThings()) {
         onThingAdded(thing);
     }
@@ -63,7 +63,7 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
         settings.endGroup();
 
         m_heatingConfigurations.insert(heatPumpThingId, configuration);
-        qCDebug(dcConsolinnoExperience()) << "Loaded" << configuration;
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     }
     settings.endGroup();
 
@@ -82,7 +82,7 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
         settings.endGroup();
 
         m_chargingConfigurations.insert(evChargerThingId, configuration);
-        qCDebug(dcConsolinnoExperience()) << "Loaded" << configuration;
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     }
     settings.endGroup();
 
@@ -95,13 +95,13 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
             }
         });
     } else {
-        qCWarning(dcConsolinnoExperience()) << "No root meter specified yet.";
+        qCWarning(dcConsolinnoEnergy()) << "No root meter specified yet.";
     }
 
     // Engine for interacting with the online Hems optimizer
     m_optimizer = new HemsOptimizerEngine(this);
 
-    qCDebug(dcConsolinnoExperience()) << "==> Consolinno energy engine initialized" << m_availableUseCases;
+    qCDebug(dcConsolinnoEnergy()) << "==> Consolinno energy engine initialized" << m_availableUseCases;
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
@@ -116,28 +116,28 @@ QList<HeatingConfiguration> EnergyEngine::heatingConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfiguration &heatingConfiguration)
 {
-    qCDebug(dcConsolinnoExperience()) << "Set heating configuration called" << heatingConfiguration;
+    qCDebug(dcConsolinnoEnergy()) << "Set heating configuration called" << heatingConfiguration;
     if (!m_heatingConfigurations.contains(heatingConfiguration.heatPumpThingId())) {
-        qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given heat pump thing id does not exist." << heatingConfiguration;
+        qCWarning(dcConsolinnoEnergy()) << "Could not set heating configuration. The given heat pump thing id does not exist." << heatingConfiguration;
         return HemsErrorInvalidThing;
     }
 
     if (!heatingConfiguration.heatMeterThingId().isNull()) {
         Thing *heatMeterThing = m_thingManager->findConfiguredThing(heatingConfiguration.heatMeterThingId());
         if (!heatMeterThing) {
-            qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given heat meter thing does not exist." << heatingConfiguration;
+            qCWarning(dcConsolinnoEnergy()) << "Could not set heating configuration. The given heat meter thing does not exist." << heatingConfiguration;
             return HemsErrorThingNotFound;
         }
 
         if (!heatMeterThing->thingClass().interfaces().contains("heatmeter")) {
-            qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given heat meter thing does not implement the heatmeter interface." << heatMeterThing;
+            qCWarning(dcConsolinnoEnergy()) << "Could not set heating configuration. The given heat meter thing does not implement the heatmeter interface." << heatMeterThing;
             return HemsErrorInvalidParameter;
         }
     }
 
     if (m_heatingConfigurations.value(heatingConfiguration.heatPumpThingId()) != heatingConfiguration) {
         m_heatingConfigurations[heatingConfiguration.heatPumpThingId()] = heatingConfiguration;
-        qCDebug(dcConsolinnoExperience()) << "Heating configuration changed" << heatingConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Heating configuration changed" << heatingConfiguration;
         saveHeatingConfigurationToSettings(heatingConfiguration);
         emit heatingConfigurationChanged(heatingConfiguration);
         evaluate();
@@ -153,9 +153,9 @@ QList<ChargingConfiguration> EnergyEngine::chargingConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingConfiguration &chargingConfiguration)
 {
-    qCDebug(dcConsolinnoExperience()) << "Set charging configuration called" << chargingConfiguration;
+    qCDebug(dcConsolinnoEnergy()) << "Set charging configuration called" << chargingConfiguration;
     if (!m_chargingConfigurations.contains(chargingConfiguration.evChargerThingId())) {
-        qCWarning(dcConsolinnoExperience()) << "Could not set charging configuration. The given ev charger thing id does not exist." << chargingConfiguration;
+        qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The given ev charger thing id does not exist." << chargingConfiguration;
         return HemsErrorInvalidThing;
     }
 
@@ -163,19 +163,19 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
     if (chargingConfiguration.optimizationEnabled()) {
         // Make sure we have an assigned car, otherwise we cannot enable the optimization
         if (chargingConfiguration.carThingId().isNull()) {
-            qCWarning(dcConsolinnoExperience()) << "Could not set charging configuration. The configuration is enabled but there is no assigned car." << chargingConfiguration;
+            qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The configuration is enabled but there is no assigned car." << chargingConfiguration;
             return HemsErrorInvalidThing;
         } else {
             // Verify the car thing exists
             Thing *carThing = m_thingManager->findConfiguredThing(chargingConfiguration.carThingId());
             if (!carThing) {
-                qCWarning(dcConsolinnoExperience()) << "Could not set charging configuration. The configuration is enabled but the given car thing does not exist in the system." << chargingConfiguration;
+                qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The configuration is enabled but the given car thing does not exist in the system." << chargingConfiguration;
                 return HemsErrorThingNotFound;
             }
 
             // Verify the cas implements the correct interface
             if (!carThing->thingClass().interfaces().contains("electricvehicle")) {
-                qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given car thing does not implement the electricvehicle interface." << carThing;
+                qCWarning(dcConsolinnoEnergy()) << "Could not set heating configuration. The given car thing does not implement the electricvehicle interface." << carThing;
                 return HemsErrorInvalidThing;
             }
         }
@@ -184,7 +184,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
     // Update the configuraton
     if (m_chargingConfigurations.value(chargingConfiguration.evChargerThingId()) != chargingConfiguration) {
         m_chargingConfigurations[chargingConfiguration.evChargerThingId()] = chargingConfiguration;
-        qCDebug(dcConsolinnoExperience()) << "Charging configuration changed" << chargingConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Charging configuration changed" << chargingConfiguration;
         saveChargingConfigurationToSettings(chargingConfiguration);
         emit chargingConfigurationChanged(chargingConfiguration);
         evaluate();
@@ -195,7 +195,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
 
 void EnergyEngine::monitorHeatPump(Thing *thing)
 {
-    qCDebug(dcConsolinnoExperience()) << "Start monitoring heatpump" << thing;
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring heatpump" << thing;
     m_heatPumps.insert(thing->id(), thing);
 
     evaluateAvailableUseCases();
@@ -206,14 +206,14 @@ void EnergyEngine::monitorHeatPump(Thing *thing)
         configuration.setHeatPumpThingId(thing->id());
         m_heatingConfigurations.insert(thing->id(), configuration);
         emit heatingConfigurationAdded(configuration);
-        qCDebug(dcConsolinnoExperience()) << "Added new" << configuration;
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
         saveHeatingConfigurationToSettings(configuration);
     }
 }
 
 void EnergyEngine::monitorInverter(Thing *thing)
 {
-    qCDebug(dcConsolinnoExperience()) << "Start monitoring inverter" << thing;
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring inverter" << thing;
     m_inverters.insert(thing->id(), thing);
 
     evaluateAvailableUseCases();
@@ -221,7 +221,7 @@ void EnergyEngine::monitorInverter(Thing *thing)
 
 void EnergyEngine::monitorEvCharger(Thing *thing)
 {
-    qCDebug(dcConsolinnoExperience()) << "Start monitoring ev charger" << thing;
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring ev charger" << thing;
     m_evChargers.insert(thing->id(), thing);
 
     evaluateAvailableUseCases();
@@ -232,7 +232,7 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
         configuration.setEvChargerThingId(thing->id());
         m_chargingConfigurations.insert(thing->id(), configuration);
         emit chargingConfigurationAdded(configuration);
-        qCDebug(dcConsolinnoExperience()) << "Added new" << configuration;
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
         saveChargingConfigurationToSettings(configuration);
     }
 }
@@ -243,7 +243,7 @@ void EnergyEngine::onThingAdded(Thing *thing)
         // FIXME: get the root meter from the overall energy experience
         if (!m_rootMeter) {
             m_rootMeter = thing;
-            qCDebug(dcConsolinnoExperience()) << "Using root meter" << m_rootMeter;
+            qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_rootMeter;
         }
 
         evaluateAvailableUseCases();
@@ -267,38 +267,38 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
     // Meter
     if (m_rootMeter->id() == thingId) {
         m_rootMeter = nullptr;
-        qCWarning(dcConsolinnoExperience()) << "The root meter has been removed. The energy manager will not work any more.";
+        qCWarning(dcConsolinnoEnergy()) << "The root meter has been removed. The energy manager will not work any more.";
     }
 
     // Inverter
     if (m_inverters.contains(thingId)) {
         m_inverters.remove(thingId);
-        qCDebug(dcConsolinnoExperience()) << "Removed inverter from energy manager"  << thingId.toString();
+        qCDebug(dcConsolinnoEnergy()) << "Removed inverter from energy manager"  << thingId.toString();
     }
 
     // Heat pump
     if (m_heatPumps.contains(thingId)) {
         m_heatPumps.remove(thingId);
-        qCDebug(dcConsolinnoExperience()) << "Removed heat pump from energy manager" << thingId.toString();
+        qCDebug(dcConsolinnoEnergy()) << "Removed heat pump from energy manager" << thingId.toString();
 
         if (m_heatingConfigurations.contains(thingId)) {
             HeatingConfiguration heatingConfig = m_heatingConfigurations.take(thingId);
             removeHeatingConfigurationFromSettings(thingId);
             emit heatingConfigurationRemoved(thingId);
-            qCDebug(dcConsolinnoExperience()) << "Removed heating configuration" << heatingConfig;
+            qCDebug(dcConsolinnoEnergy()) << "Removed heating configuration" << heatingConfig;
         }
     }
 
     // Ev charger
     if (m_evChargers.contains(thingId)) {
         m_evChargers.remove(thingId);
-        qCDebug(dcConsolinnoExperience()) << "Removed ev charger from energy manager" << thingId.toString();
+        qCDebug(dcConsolinnoEnergy()) << "Removed ev charger from energy manager" << thingId.toString();
 
         if (m_chargingConfigurations.contains(thingId)) {
             ChargingConfiguration chargingConfig = m_chargingConfigurations.take(thingId);
             removeChargingConfigurationFromSettings(thingId);
             emit chargingConfigurationRemoved(thingId);
-            qCDebug(dcConsolinnoExperience()) << "Removed charging configuration" << chargingConfig;
+            qCDebug(dcConsolinnoEnergy()) << "Removed charging configuration" << chargingConfig;
         }
     }
 
@@ -338,11 +338,11 @@ void EnergyEngine::updateSchedules()
     /*
     // Make sure we have a setup for this testcase
     if (!m_rootMeter || !m_inverter || !m_heatPump) {
-        qCWarning(dcConsolinnoExperience()) << "Cannot update schedule because we don't have the required things.";
+        qCWarning(dcConsolinnoEnergy()) << "Cannot update schedule because we don't have the required things.";
         return;
     }
 
-    qCDebug(dcConsolinnoExperience()) << "Update schedules for the next 12 hours on 10 minutes resolution...";
+    qCDebug(dcConsolinnoEnergy()) << "Update schedules for the next 12 hours on 10 minutes resolution...";
     // Create timestamps for the next 12 hours in 10 min slots
     QList<QDateTime> timestamps = generateTimeStamps(15, 12);
 
@@ -374,9 +374,9 @@ void EnergyEngine::updateSchedules()
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
     connect(reply, &QNetworkReply::finished, reply, [=](){
         if (reply->error() != QNetworkReply::NoError) {
-            qCWarning(dcConsolinnoExperience()) << "HemsOptimizer: Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
+            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
             QByteArray responsedata = reply->readAll();
-            qCWarning(dcConsolinnoExperience()) << qUtf8Printable(responsedata);
+            qCWarning(dcConsolinnoEnergy()) << qUtf8Printable(responsedata);
             return;
         }
 
@@ -384,12 +384,12 @@ void EnergyEngine::updateSchedules()
         QJsonParseError error;
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
         if (error.error != QJsonParseError::NoError) {
-            qCWarning(dcConsolinnoExperience()) << "HemsOptimizer: Failed to parse pv optimization data" << data << ":" << error.errorString();
+            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse pv optimization data" << data << ":" << error.errorString();
             return;
         }
 
-        qCDebug(dcConsolinnoExperience()) << "HemsOptimizer: Request pv optimization finished successfully";
-        qCDebug(dcConsolinnoExperience()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
+        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization finished successfully";
+        qCDebug(dcConsolinnoEnergy()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
     });
     */
 }
@@ -414,7 +414,7 @@ void EnergyEngine::evaluateAvailableUseCases()
     }
 
     if (m_availableUseCases != availableUseCases) {
-        qCDebug(dcConsolinnoExperience()) << "Available usecases changed from" << m_availableUseCases << "to" << availableUseCases;
+        qCDebug(dcConsolinnoEnergy()) << "Available usecases changed from" << m_availableUseCases << "to" << availableUseCases;
         m_availableUseCases = availableUseCases;
         emit availableUseCasesChanged(m_availableUseCases);
     }

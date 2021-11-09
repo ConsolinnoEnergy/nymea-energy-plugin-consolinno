@@ -31,7 +31,7 @@
 #include "consolinnojsonhandler.h"
 #include "energyengine.h"
 
-Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoExperience)
+Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
 ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent) :
     JsonHandler(parent),
