@@ -102,7 +102,6 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, QObject *parent):
     m_optimizer = new HemsOptimizerEngine(this);
 
     qCDebug(dcConsolinnoExperience()) << "==> Consolinno energy engine initialized" << m_availableUseCases;
-    //updateSchedules();
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
@@ -117,6 +116,7 @@ QList<HeatingConfiguration> EnergyEngine::heatingConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfiguration &heatingConfiguration)
 {
+    qCDebug(dcConsolinnoExperience()) << "Set heating configuration called" << heatingConfiguration;
     if (!m_heatingConfigurations.contains(heatingConfiguration.heatPumpThingId())) {
         qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given heat pump thing id does not exist." << heatingConfiguration;
         return HemsErrorInvalidThing;
@@ -126,10 +126,10 @@ EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfi
         Thing *heatMeterThing = m_thingManager->findConfiguredThing(heatingConfiguration.heatMeterThingId());
         if (!heatMeterThing) {
             qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given heat meter thing does not exist." << heatingConfiguration;
-            return HemsErrorInvalidParameter;
+            return HemsErrorThingNotFound;
         }
 
-        if (!heatMeterThing->thingClass().interfaces().contains("heatMeter")) {
+        if (!heatMeterThing->thingClass().interfaces().contains("heatmeter")) {
             qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given heat meter thing does not implement the heatmeter interface." << heatMeterThing;
             return HemsErrorInvalidParameter;
         }
@@ -139,6 +139,7 @@ EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfi
         m_heatingConfigurations[heatingConfiguration.heatPumpThingId()] = heatingConfiguration;
         qCDebug(dcConsolinnoExperience()) << "Heating configuration changed" << heatingConfiguration;
         saveHeatingConfigurationToSettings(heatingConfiguration);
+        emit heatingConfigurationChanged(heatingConfiguration);
         evaluate();
     }
 
@@ -152,8 +153,43 @@ QList<ChargingConfiguration> EnergyEngine::chargingConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingConfiguration &chargingConfiguration)
 {
-    // TODO
-    Q_UNUSED(chargingConfiguration)
+    qCDebug(dcConsolinnoExperience()) << "Set charging configuration called" << chargingConfiguration;
+    if (!m_chargingConfigurations.contains(chargingConfiguration.evChargerThingId())) {
+        qCWarning(dcConsolinnoExperience()) << "Could not set charging configuration. The given ev charger thing id does not exist." << chargingConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+    // Make sure the configuration is valid if enabled
+    if (chargingConfiguration.optimizationEnabled()) {
+        // Make sure we have an assigned car, otherwise we cannot enable the optimization
+        if (chargingConfiguration.carThingId().isNull()) {
+            qCWarning(dcConsolinnoExperience()) << "Could not set charging configuration. The configuration is enabled but there is no assigned car." << chargingConfiguration;
+            return HemsErrorInvalidThing;
+        } else {
+            // Verify the car thing exists
+            Thing *carThing = m_thingManager->findConfiguredThing(chargingConfiguration.carThingId());
+            if (!carThing) {
+                qCWarning(dcConsolinnoExperience()) << "Could not set charging configuration. The configuration is enabled but the given car thing does not exist in the system." << chargingConfiguration;
+                return HemsErrorThingNotFound;
+            }
+
+            // Verify the cas implements the correct interface
+            if (!carThing->thingClass().interfaces().contains("electricvehicle")) {
+                qCWarning(dcConsolinnoExperience()) << "Could not set heating configuration. The given car thing does not implement the electricvehicle interface." << carThing;
+                return HemsErrorInvalidThing;
+            }
+        }
+    }
+
+    // Update the configuraton
+    if (m_chargingConfigurations.value(chargingConfiguration.evChargerThingId()) != chargingConfiguration) {
+        m_chargingConfigurations[chargingConfiguration.evChargerThingId()] = chargingConfiguration;
+        qCDebug(dcConsolinnoExperience()) << "Charging configuration changed" << chargingConfiguration;
+        saveChargingConfigurationToSettings(chargingConfiguration);
+        emit chargingConfigurationChanged(chargingConfiguration);
+        evaluate();
+    }
+
     return HemsErrorNoError;
 }
 
@@ -265,6 +301,8 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
             qCDebug(dcConsolinnoExperience()) << "Removed charging configuration" << chargingConfig;
         }
     }
+
+    // FIXME: update configuration if associated car thing or heat meter thing has been removed
 
     evaluateAvailableUseCases();
 }

@@ -48,7 +48,8 @@ public:
     enum HemsError {
         HemsErrorNoError,
         HemsErrorInvalidParameter,
-        HemsErrorInvalidThing
+        HemsErrorInvalidThing,
+        HemsErrorThingNotFound
     };
     Q_ENUM(HemsError)
 
