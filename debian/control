@@ -18,6 +18,7 @@ Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
+         nymea-experience-plugin-energy,
 Description: consolinno energy plugin for the nymea energy experience
  This consolinno energy plugin adds the HEMS optimization functionality to the 
  nymea energy experience.
