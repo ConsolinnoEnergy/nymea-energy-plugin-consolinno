@@ -1,4 +1,4 @@
-﻿/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *
 * Copyright 2013 - 2021, nymea GmbH
 * Contact: contact@nymea.io
@@ -63,7 +63,8 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     m_housholdPhaseLimit = settings.value("housholdPhaseLimit", 25).toUInt();
     settings.endGroup();
 
-    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A]";
+    m_housholdPowerLimit = m_housholdPhaseLimit * m_housholdPhaseCount * 230;
+    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] using" << m_housholdPhaseCount << "phases: max power" << m_housholdPowerLimit << "[W]";
 
     settings.beginGroup("HeatingConfigurations");
     foreach (const QString &heatPumpUuidString, settings.childGroups()) {
@@ -101,9 +102,11 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     settings.endGroup();
 
     // Engine for interacting with the online Hems optimizer
-    m_optimizer = new HemsOptimizerEngine(this);
-
+    m_optimizerEngine = new HemsOptimizerEngine(m_energyManager, this);
+    m_optimizerEngine->setHousholdPowerLimit(m_housholdPowerLimit);
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
+
+    updateSchedules();
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
@@ -125,9 +128,12 @@ EnergyEngine::HemsError EnergyEngine::setHousholdPhaseLimit(uint housholdPhaseLi
         return HemsErrorInvalidPhaseLimit;
 
 
-    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit changed to" << housholdPhaseLimit << "[A]";
     m_housholdPhaseLimit = housholdPhaseLimit;
     emit housholdPhaseLimitChanged(m_housholdPhaseLimit);
+
+    m_housholdPowerLimit = m_housholdPhaseLimit * m_housholdPhaseCount * 230;
+    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit changed to" << m_housholdPhaseLimit << "[A] using" << m_housholdPhaseCount << "phases: max power" << m_housholdPowerLimit << "[W]";
+    m_optimizerEngine->setHousholdPowerLimit(m_housholdPowerLimit);
 
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("BlackoutProtection");
@@ -345,10 +351,14 @@ void EnergyEngine::evaluate()
 
     qCDebug(dcConsolinnoEnergy()) << "Root meter consumption changed" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble();
 
+    // Evaluate individual device types
     evaluateInverters();
     evaluateHeatPumps();
     evaluateEvChargers();
 
+    //updateSchedules();
+
+    // Blackout protection just incase something is still over the limit
     qCDebug(dcConsolinnoEnergy()) << "============> Evaluating blackout protection";
     QHash<QString, double> currentPhaseConsumption = {
         {"A", m_energyManager->rootMeter()->stateValue("currentPowerPhaseA").toDouble()},
@@ -361,12 +371,14 @@ void EnergyEngine::evaluate()
     qCDebug(dcConsolinnoEnergy()) << "= Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
     foreach (const QString &phase, currentPhaseConsumption.keys()) {
         if (currentPhaseConsumption.value(phase) > phasePowerLimit) {
-            qCInfo(dcConsolinnoEnergy()) << "Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
+            qCInfo(dcConsolinnoEnergy()) << " = Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
             if (phaseOvershotPower > overshotPower) {
                 overshotPower = phaseOvershotPower;
             }
+        } else {
+            qCInfo(dcConsolinnoEnergy()) << "= Phase" << phase << "at" << currentPhaseConsumption.value(phase) << "W from maximal" << phasePowerLimit << "W ->" << currentPhaseConsumption.value(phase) * 100.0 / phasePowerLimit << "%";
         }
     }
 
@@ -401,64 +413,76 @@ void EnergyEngine::evaluateEvChargers()
 }
 
 void EnergyEngine::updateSchedules()
-{
-    /*
-    // Make sure we have a setup for this testcase
-    if (!m_rootMeter || !m_inverter || !m_heatPump) {
-        qCWarning(dcConsolinnoEnergy()) << "Cannot update schedule because we don't have the required things.";
-        return;
-    }
+{   
+    //qCDebug(dcConsolinnoEnergy()) << "--> Update schedules for the next" << m_scheduleWindowHours << "hours on 15 minutes resolution...";
+    //QDateTime currentDateTime = QDateTime::currentDateTime();
+//    // Create timestamps for the next 12 hours in 10 min slots
+//    QVector<QDateTime> timestamps = generateScheduleTimeStamps(15, m_scheduleWindowHours);
+//    qCDebug(dcConsolinnoEnergy()) << "Created" << timestamps.count() <<  "schedule time slots from" << timestamps.first().toString("dd.MM.yyyy HH:mm:ss") << "until" << timestamps.last().toString("dd.MM.yyyy HH:mm:ss");
 
-    qCDebug(dcConsolinnoEnergy()) << "Update schedules for the next 12 hours on 10 minutes resolution...";
-    // Create timestamps for the next 12 hours in 10 min slots
-    QList<QDateTime> timestamps = generateTimeStamps(15, 12);
+//    // Get the consumption from the yesterday for this time window
+//    PowerBalanceLogEntries powerBalanceHistory = m_energyManager->logs()->powerBalanceLogs(EnergyLogs::SampleRate15Mins, timestamps.first().addDays(-1), timestamps.last().addDays(-1));
+//    if (powerBalanceHistory.count() < timestamps.count()) {
+//        qCWarning(dcConsolinnoEnergy()) << "Not enought historical data for optimization. Having" << powerBalanceHistory.count() << "historical samples but require at least" << timestamps.count() << "sampels for doing optimization.";
+//        return;
+//    }
 
-    // Root meter
-    QVariantMap ntpMap = m_optimizer->buildRootMeterInformation(timestamps, m_rootMeter, 0.3);
+//    qCDebug(dcConsolinnoEnergy()) << "Logs form the past yesterday based on 15 min sample rate in this period";
+//    foreach (const PowerBalanceLogEntry &log, powerBalanceHistory) {
+//        qCDebug(dcConsolinnoEnergy()) << log.timestamp().toString("dd.MM.yyyy HH:mm:ss") << "Consumption" << log.consumption() << "W";
+//    }
 
-    // Inverter
-    QVariantList pvForecast = getPvForecast(timestamps, m_inverter);
-    QVariantMap pvMap = m_optimizer->buildPhotovoltaicInformation(timestamps, m_inverter, pvForecast);
+//    // Root meter
+//    QVariantMap ntpMap = m_optimizer->buildRootMeterInformation(timestamps, m_energyManager->rootMeter(), m_housholdPowerLimit, 0.3);
 
-    // Electrical demand
-    QVariantMap electricalDemandMap = m_optimizer->buildElectricDemandInformation(timestamps, QUuid::createUuid(), getConsumptionForecast(timestamps));
+//    // Inverter
+//    QVariantList productionForecast = getPvForecast(powerBalanceHistory);
+//    QVariantMap pvMap = m_optimizer->buildPhotovoltaicInformation(timestamps, productionForecast);
 
-    // Heat pump
-    QVariantList thermalDemandForcast = getThermalDemandForecast(timestamps, m_heatPump);
-    QVariantList copForecast;
-    for (int i = 0; i < timestamps.count(); i++) {
-        // Default to 3 for now
-        copForecast << 3;
-    }
-    // Heatpump has a maximum of 9 kW
-    double maxElectricalPower = 9;
-    // We assume a maximal themral energy of 4kWh
-    double maxThermalEnergy = 4;
+//    // Electrical demand
+//    QVariantList consumptionForecast = getConsumptionForecast(powerBalanceHistory);
+//    QVariantMap electricalDemandMap = m_optimizer->buildElectricDemandInformation(timestamps, QUuid::createUuid(), consumptionForecast);
 
-    QVariantMap heatPumpMap = m_optimizer->buildHeatpumpInformation(timestamps, m_heatPump, maxThermalEnergy, -1, maxElectricalPower, thermalDemandForcast, copForecast, 0.1);
 
-    QNetworkReply *reply = m_optimizer->pvOptimization(ntpMap, pvMap, electricalDemandMap, heatPumpMap);
-    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-    connect(reply, &QNetworkReply::finished, reply, [=](){
-        if (reply->error() != QNetworkReply::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
-            QByteArray responsedata = reply->readAll();
-            qCWarning(dcConsolinnoEnergy()) << qUtf8Printable(responsedata);
-            return;
-        }
 
-        QByteArray data = reply->readAll();
-        QJsonParseError error;
-        QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
-        if (error.error != QJsonParseError::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse pv optimization data" << data << ":" << error.errorString();
-            return;
-        }
 
-        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization finished successfully";
-        qCDebug(dcConsolinnoEnergy()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
-    });
-    */
+
+
+    //    // Heat pump
+    //    QVariantList thermalDemandForcast = getThermalDemandForecast(timestamps, m_heatPump);
+    //    QVariantList copForecast;
+    //    for (int i = 0; i < timestamps.count(); i++) {
+    //        // Default to 3 for now
+    //        copForecast << 3;
+    //    }
+    //    // Heatpump has a maximum of 9 kW
+    //    double maxElectricalPower = 9;
+    //    // We assume a maximal themral energy of 4kWh
+    //    double maxThermalEnergy = 4;
+
+    //    QVariantMap heatPumpMap = m_optimizer->buildHeatpumpInformation(timestamps, m_heatPump, maxThermalEnergy, -1, maxElectricalPower, thermalDemandForcast, copForecast, 0.1);
+
+    //    QNetworkReply *reply = m_optimizer->pvOptimization(ntpMap, pvMap, electricalDemandMap, heatPumpMap);
+    //    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
+    //    connect(reply, &QNetworkReply::finished, reply, [=](){
+    //        if (reply->error() != QNetworkReply::NoError) {
+    //            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
+    //            QByteArray responsedata = reply->readAll();
+    //            qCWarning(dcConsolinnoEnergy()) << qUtf8Printable(responsedata);
+    //            return;
+    //        }
+
+    //        QByteArray data = reply->readAll();
+    //        QJsonParseError error;
+    //        QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
+    //        if (error.error != QJsonParseError::NoError) {
+    //            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse pv optimization data" << data << ":" << error.errorString();
+    //            return;
+    //        }
+
+    //        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization finished successfully";
+    //        qCDebug(dcConsolinnoEnergy()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
+    //    });
 }
 
 void EnergyEngine::evaluateAvailableUseCases()
@@ -471,7 +495,7 @@ void EnergyEngine::evaluateAvailableUseCases()
     } else {
         // None of the optimizations is available, we always need a configured root meter.
         if (m_availableUseCases != availableUseCases) {
-            qCDebug(dcConsolinnoEnergy()) << "No usecases available because there is no root meter defined.";
+            qCDebug(dcConsolinnoEnergy()) << "No use cases available because there is no root meter defined.";
             m_availableUseCases = availableUseCases;
             emit availableUseCasesChanged(m_availableUseCases);
         }
@@ -489,66 +513,10 @@ void EnergyEngine::evaluateAvailableUseCases()
     }
 
     if (m_availableUseCases != availableUseCases) {
-        qCDebug(dcConsolinnoEnergy()) << "Available usecases changed from" << m_availableUseCases << "to" << availableUseCases;
+        qCDebug(dcConsolinnoEnergy()) << "Available use cases changed from" << availableUseCases;
         m_availableUseCases = availableUseCases;
         emit availableUseCasesChanged(m_availableUseCases);
     }
-}
-
-QList<QDateTime> EnergyEngine::generateTimeStamps(uint resolutionMinutes, uint durationHours)
-{
-    QList<QDateTime> timestamps;
-    // Example: resolution of 10 minutes for the next 12 hours = 72 timestamps
-    uint timestampsCount = (durationHours * 60) / resolutionMinutes;
-    QDateTime currentDateTime = QDateTime::currentDateTimeUtc();
-    for (uint i = 0; i < timestampsCount; i++) {
-        timestamps << currentDateTime.addSecs(i * 60 * resolutionMinutes);
-    }
-    return timestamps;
-}
-
-QVariantList EnergyEngine::getPvForecast(const QList<QDateTime> &timestamps, Thing *inverter)
-{
-    Q_UNUSED(inverter)
-    // FIXME: get actual inverter data
-
-    QVariantList forecast;
-    double currentValue = 0;
-    for (int i = 0; i < timestamps.count(); i++) {
-        if (i < timestamps.count() / 2) {
-            currentValue += (qrand() % 2) / 10.0;
-        } else {
-            currentValue -= (qrand() % 2) / 10.0;
-            if (currentValue < 0)
-                currentValue = 0;
-        }
-
-        forecast << currentValue;
-    }
-
-    return forecast;
-}
-
-QVariantList EnergyEngine::getConsumptionForecast(const QList<QDateTime> &timestamps)
-{
-    // FIXME: get household consumption
-    QVariantList forecast;
-    for (int i = 0; i < timestamps.count(); i++) {
-        forecast << (200 + (qrand() % 50)) / 1000.0; // kW
-    }
-    return forecast;
-}
-
-QVariantList EnergyEngine::getThermalDemandForecast(const QList<QDateTime> &timestamps, Thing *heatPump)
-{
-    Q_UNUSED(heatPump)
-
-    // FIXME: get actual thermal demand depending on outdoor temperature
-    QVariantList forecast;
-    for (int i = 0; i < timestamps.count(); i++) {
-        forecast << (2500 + (qrand() % 500)) / 1000.0; // kWh
-    }
-    return forecast;
 }
 
 void EnergyEngine::saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration)

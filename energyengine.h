@@ -92,10 +92,13 @@ signals:
 private:
     ThingManager *m_thingManager = nullptr;
     EnergyManager *m_energyManager = nullptr;
-    HemsOptimizerEngine *m_optimizer = nullptr;
+    HemsOptimizerEngine *m_optimizerEngine = nullptr;
 
+    // System information
     HemsUseCases m_availableUseCases;
     uint m_housholdPhaseLimit = 25;
+    uint m_housholdPhaseCount = 3;
+    double m_housholdPowerLimit = m_housholdPhaseCount * m_housholdPhaseLimit;
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
@@ -123,11 +126,6 @@ private slots:
     void updateSchedules();
 
     void evaluateAvailableUseCases();
-
-    QList<QDateTime> generateTimeStamps(uint resolutionMinutes, uint durationHours);
-    QVariantList getPvForecast(const QList<QDateTime> &timestamps, Thing *inverter);
-    QVariantList getConsumptionForecast(const QList<QDateTime> &timestamps);
-    QVariantList getThermalDemandForecast(const QList<QDateTime> &timestamps, Thing *heatPump);
 
     void saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration);
     void removeHeatingConfigurationFromSettings(const ThingId &heatPumpThingId);

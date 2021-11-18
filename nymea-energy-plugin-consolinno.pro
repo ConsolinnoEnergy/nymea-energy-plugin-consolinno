@@ -19,7 +19,8 @@ HEADERS += \
     consolinnojsonhandler.h \
     energyengine.h \
     energypluginconsolinno.h \
-    hemsoptimizerengine.h
+    hemsoptimizerengine.h \
+    hemsoptimizerinterface.h
 
 SOURCES += \
     configurations/chargingconfiguration.cpp \
@@ -27,7 +28,8 @@ SOURCES += \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
     energypluginconsolinno.cpp \
-    hemsoptimizerengine.cpp
+    hemsoptimizerengine.cpp \
+    hemsoptimizerinterface.cpp
 
 target.path = $$[QT_INSTALL_LIBS]/nymea/energy/
 INSTALLS += target
