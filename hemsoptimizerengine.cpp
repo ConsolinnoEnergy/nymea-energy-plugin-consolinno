@@ -6,29 +6,30 @@
 #include "loggingcategories.h"
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
-HemsOptimizerEngine::HemsOptimizerEngine(EnergyManager *energyManager, QObject *parent) :
+HemsOptimizerEngine::HemsOptimizerEngine(EnergyManager *energyManager, QNetworkAccessManager *networkManager, QObject *parent) :
     QObject(parent),
-    m_energyManager(energyManager)
+    m_energyManager(energyManager),
+    m_interface(new HemsOptimizerInterface(networkManager, this))
 {
-    m_interface = new HemsOptimizerInterface(this);
 
     updatePvOptimizationSchedule();
 
 //    //*********** Testing
 
-//    QDateTime currentDateTime = QDateTime::currentDateTime();
-//    QVector<QDateTime> timestamps = generateScheduleTimeStamps(currentDateTime, 15, m_scheduleWindowHours);
+//    QDateTime nowUtc = QDateTime::currentDateTimeUtc();
+//    QVector<QDateTime> timestamps = generateScheduleTimeStamps(nowUtc, 15, m_scheduleWindowHours);
 
-
-//    QVariantMap testData = getTemperatureForecast(currentDateTime);
+//    QVariantMap testData = getTemperatureForecast(nowUtc);
 //    HemsOptimizerSchedules testSchedules;
 //    int countIndex = 0;
 //    foreach (const QString &timestampString, testData.keys()) {
-//        HemsOptimizerSchedule schedule(QDateTime::fromString(timestampString, Qt::ISODate).toLocalTime(), countIndex);
+//        HemsOptimizerSchedule schedule(QDateTime::fromString(timestampString, Qt::ISODate), countIndex);
 //        qCDebug(dcConsolinnoEnergy()) << schedule;
 //        testSchedules.append(schedule);
 //        countIndex++;
 //    }
+
+//    testSchedules.sort();
 
 //    HemsOptimizerSchedules interpolatedSchedules = interpolateValues(timestamps, testSchedules);
 //    qCDebug(dcConsolinnoEnergy()) << "--------------- Interpolated result";
@@ -85,9 +86,12 @@ HemsOptimizerInterface *HemsOptimizerEngine::interface() const
 void HemsOptimizerEngine::updatePvOptimizationSchedule()
 {
     qCDebug(dcConsolinnoEnergy()) << "--> Update schedules for the next" << m_scheduleWindowHours << "hours on 15 minutes resolution...";
-    QDateTime currentDateTime = QDateTime::currentDateTime();
-    // Create timestamps for the next 12 hours in 10 min slots
-    QVector<QDateTime> timestamps = generateScheduleTimeStamps(currentDateTime, 15, m_scheduleWindowHours);
+    QDateTime nowUtc = QDateTime::currentDateTimeUtc();
+
+    // Note: everything communicated from and to the server must be UTC, within th system, we work with local time
+
+    // Create timestamps for the next 24 hours in 15 min timeslots
+    QVector<QDateTime> timestamps = generateScheduleTimeStamps(nowUtc, 15, m_scheduleWindowHours);
     qCDebug(dcConsolinnoEnergy()) << "Created" << timestamps.count() <<  "schedule time slots from" << timestamps.first().toString("dd.MM.yyyy HH:mm:ss") << "until" << timestamps.last().toString("dd.MM.yyyy HH:mm:ss");
 
     // Get the consumption from the yesterday for this time window
@@ -114,7 +118,7 @@ void HemsOptimizerEngine::updatePvOptimizationSchedule()
     QVariantMap electricalDemandMap = m_interface->buildElectricDemandInformation(timestamps, QUuid::createUuid(), consumptionForecast);
 
 
-    QNetworkReply *reply = m_interface->florHeatingPowerDemandStandardProfile(HemsOptimizerInterface::HouseTypeLowEnergy, 100, getTemperatureHistory(currentDateTime), getTemperatureForecast(currentDateTime));
+    QNetworkReply *reply = m_interface->florHeatingPowerDemandStandardProfile(HemsOptimizerInterface::HouseTypeLowEnergy, 100, getTemperatureHistory(nowUtc), getTemperatureForecast(nowUtc));
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
     connect(reply, &QNetworkReply::finished, reply, [=](){
         if (reply->error() != QNetworkReply::NoError) {
@@ -135,11 +139,11 @@ void HemsOptimizerEngine::updatePvOptimizationSchedule()
         qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request electrical demand standard profile finished successfully";
         qCDebug(dcConsolinnoEnergy()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
 
+        // Read the schedules
         HemsOptimizerSchedules floorHeatingPowerForecast = m_interface->parseSchedules(jsonDoc.toVariant().toMap());
         foreach (const HemsOptimizerSchedule &schedule, floorHeatingPowerForecast) {
             qCDebug(dcConsolinnoEnergy()) << schedule;
         }
-
 
         // Heat pump
         QVariantList thermalDemandForcast = getThermalDemandForecast(timestamps, floorHeatingPowerForecast);
@@ -173,7 +177,6 @@ void HemsOptimizerEngine::updatePvOptimizationSchedule()
 
 
 
-
         });
     });
 
@@ -189,12 +192,12 @@ void HemsOptimizerEngine::setHousholdPowerLimit(double housholdLimit)
     m_housholdPowerLimit = housholdLimit;
 }
 
-QVector<QDateTime> HemsOptimizerEngine::generateScheduleTimeStamps(const QDateTime &currentDateTime, uint resolutionMinutes, uint durationHours)
+QVector<QDateTime> HemsOptimizerEngine::generateScheduleTimeStamps(const QDateTime &nowUtc, uint resolutionMinutes, uint durationHours)
 {
     qCDebug(dcConsolinnoEnergy()) << "Generate timestamps for schedule in" << resolutionMinutes << "min resolution for the next" << durationHours;
     // Note: forecasts and schedules will be used on 15 min base starting at a full hour
-    QDate date = currentDateTime.date();
-    QTime time = currentDateTime.time();
+    QDate date = nowUtc.date();
+    QTime time = nowUtc.time();
     uint minutesOffsetToNextSlot = (15 - time.minute() % 15);
     time = time.addSecs(minutesOffsetToNextSlot * 60);
     time.setHMS(time.hour(), time.minute(), 0);
@@ -227,10 +230,11 @@ QVariantList HemsOptimizerEngine::getConsumptionForecast(const PowerBalanceLogEn
 QVariantList HemsOptimizerEngine::getPvForecast(const PowerBalanceLogEntries &powerBalanceHistory)
 {
     // Get the consumption from the yesterday for this time window
+    // Forcast values must be positive from the optimizer perspective
     // TODO: for now use the values from yesterday during this window as forecast
     QVariantList forecast;
     for (int i = 0; i < powerBalanceHistory.count(); i++) {
-        forecast << powerBalanceHistory.at(i).production() / 1000.0; // kW
+        forecast << abs(powerBalanceHistory.at(i).production() / 1000.0); // kW
     }
     return forecast;
 }
@@ -240,7 +244,7 @@ QVariantList HemsOptimizerEngine::getThermalDemandForecast(const QVector<QDateTi
     HemsOptimizerSchedules interpolatedForecast = interpolateValues(timestamps, floorHeatingPowerForecast);
     QVariantList thermalDemandForecast;
     for (int i = 0; i < interpolatedForecast.count(); i++) {
-        thermalDemandForecast << interpolatedForecast.at(i).value();
+        thermalDemandForecast << interpolatedForecast.at(i).value() / 1000.0; // kW
     }
     return thermalDemandForecast;
 }
@@ -254,12 +258,12 @@ QVariantList HemsOptimizerEngine::getCopForecast(const QVector<QDateTime> &times
     return copForecast;
 }
 
-QVariantMap HemsOptimizerEngine::getTemperatureHistory(const QDateTime &now)
+QVariantMap HemsOptimizerEngine::getTemperatureHistory(const QDateTime &nowUtc)
 {
     // Create a list of hourly 24h outdoor temperature history
     // TODO: fetch from weather plugin
-    QDateTime currentDateTimeRounded = now;
-    currentDateTimeRounded.setTime(QTime(now.time().hour(), 0, 0));
+    QDateTime currentDateTimeRounded = nowUtc;
+    currentDateTimeRounded.setTime(QTime(nowUtc.time().hour(), 0, 0));
 
     QVariantMap history;
     for (int i = 0; i < 24; i++) {
@@ -269,16 +273,16 @@ QVariantMap HemsOptimizerEngine::getTemperatureHistory(const QDateTime &now)
     return history;
 }
 
-QVariantMap HemsOptimizerEngine::getTemperatureForecast(const QDateTime &now)
+QVariantMap HemsOptimizerEngine::getTemperatureForecast(const QDateTime &nowUtc)
 {
     // Create a list of hourly 24h outdoor temperature history
     // TODO: fetch from weather plugin
-    QDateTime currentDateTimeRounded = now;
-    currentDateTimeRounded.setTime(QTime(now.time().hour(), 0, 0));
+    QDateTime currentDateTimeRounded = nowUtc;
+    currentDateTimeRounded.setTime(QTime(nowUtc.time().hour(), 0, 0));
 
     QVariantMap forecast;
     for (int i = 0; i < 24; i++) {
-        forecast.insert(currentDateTimeRounded.toUTC().addSecs(3600 * i).toString(Qt::ISODate), 5);
+        forecast.insert(currentDateTimeRounded.addSecs(3600 * i).toString(Qt::ISODate), 5);
     }
 
     return forecast;
@@ -287,13 +291,10 @@ QVariantMap HemsOptimizerEngine::getTemperatureForecast(const QDateTime &now)
 HemsOptimizerSchedules HemsOptimizerEngine::interpolateValues(const QVector<QDateTime> &desiredTimestamps, const HemsOptimizerSchedules &sourceSchedules)
 {
     int sourceScheduleIndex = 0;
-    QDateTime sourceScheduleStart = sourceSchedules.at(sourceScheduleIndex).timestamp();
-    QDateTime sourceScheduleNext;
     QDateTime targetScheduleStart;
     QDateTime targetScheduleEnd;
 
     HemsOptimizerSchedules outputSchedules;
-
     for (int i = 0; i < desiredTimestamps.count(); i++) {
         // Get the next time window
         targetScheduleStart = desiredTimestamps.at(i);
@@ -301,30 +302,28 @@ HemsOptimizerSchedules HemsOptimizerEngine::interpolateValues(const QVector<QDat
             targetScheduleEnd = desiredTimestamps.at(i + 1);
         } else {
             // Last value, we are done
-            outputSchedules << HemsOptimizerSchedule(desiredTimestamps.at(i), sourceSchedules.at(sourceScheduleIndex).value());
+            targetScheduleEnd = desiredTimestamps.at(i);
         }
 
-        // Get source time window
-        sourceScheduleStart = sourceSchedules.at(sourceScheduleIndex).timestamp();
-        // Get the next start time
-        if (sourceScheduleIndex < sourceSchedules.count() - 1) {
-            sourceScheduleNext = sourceSchedules.at(sourceScheduleIndex + 1).timestamp();
-        }
+        // Get the matching source index
+        for (int j = sourceScheduleIndex; j < sourceSchedules.count(); j++) {
+            // Check if the current source is still in range
+            if (targetScheduleStart >= sourceSchedules.at(j).timestamp()) {
+                sourceScheduleIndex++;
 
-        if (targetScheduleEnd >= sourceScheduleNext) {
-            // Check if we are at the end of the source schedules
-            if (sourceScheduleIndex == sourceSchedules.count() - 1) {
-                //outputSchedules << HemsOptimizerSchedule(targetScheduleStart, sourceSchedules.at(sourceScheduleIndex).value());
-            } else {
-                // Pick the next source schedule
-                outputSchedules << HemsOptimizerSchedule(targetScheduleStart, sourceSchedules.at(sourceScheduleIndex++).value());
+                // In case we run out of souce values for the next schedule, use the last one
+                if (sourceScheduleIndex >= sourceSchedules.count()) {
+                    sourceScheduleIndex = sourceSchedules.count() - 1;
+                }
             }
-        } else {
-            outputSchedules << HemsOptimizerSchedule(targetScheduleStart, sourceSchedules.at(sourceScheduleIndex).value());
         }
+
+        qCDebug(dcConsolinnoEnergy()) << "-------------------";
+        qCDebug(dcConsolinnoEnergy()) << "Target from" << targetScheduleStart.toString("hh:mm.ss") << "to" << targetScheduleEnd.toString("hh:mm.ss");
+        qCDebug(dcConsolinnoEnergy()) << sourceScheduleIndex << "Current schedule" << sourceSchedules.at(sourceScheduleIndex);
+        outputSchedules << HemsOptimizerSchedule(targetScheduleStart, sourceSchedules.at(sourceScheduleIndex).value());
     }
 
     Q_ASSERT_X(outputSchedules.count() == desiredTimestamps.count(), "HemsOptimizerEngine", "The interpolated schedules count does not match the desired schedule count");
-
     return outputSchedules;
 }

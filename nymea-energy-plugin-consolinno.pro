@@ -20,7 +20,8 @@ HEADERS += \
     energyengine.h \
     energypluginconsolinno.h \
     hemsoptimizerengine.h \
-    hemsoptimizerinterface.h
+    hemsoptimizerinterface.h \
+    weatherdataprovider.h
 
 SOURCES += \
     configurations/chargingconfiguration.cpp \
@@ -29,7 +30,8 @@ SOURCES += \
     energyengine.cpp \
     energypluginconsolinno.cpp \
     hemsoptimizerengine.cpp \
-    hemsoptimizerinterface.cpp
+    hemsoptimizerinterface.cpp \
+    weatherdataprovider.cpp
 
 target.path = $$[QT_INSTALL_LIBS]/nymea/energy/
 INSTALLS += target

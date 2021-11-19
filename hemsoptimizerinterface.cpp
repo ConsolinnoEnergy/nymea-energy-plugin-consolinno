@@ -38,9 +38,9 @@
 #include "loggingcategories.h"
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
-HemsOptimizerInterface::HemsOptimizerInterface(QObject *parent) :
+HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkManager, QObject *parent) :
     QObject(parent),
-    m_networkManager(new QNetworkAccessManager(this))
+    m_networkManager(networkManager)
 {
     // Docs can be found here using the same username and password
     // https://lash-upstage.runner.consolinno.de/docs
@@ -84,9 +84,10 @@ QVariantMap HemsOptimizerInterface::buildRootMeterInformation(const QVector<QDat
     ntp.insert("price", priceList);
 
     // Maximal power in (houshold phase limit * phases)
+    double limit = housholdPowerLimit / 1000.0; // in kW
     QVariantList powerIn;
     for (int i = 0; i < timestamps.count(); i++) {
-        powerIn.append(housholdPowerLimit / 1000.0); // kW
+        powerIn.append(limit);
     }
     ntp.insert("electric_power_in", powerIn);
 
@@ -94,9 +95,9 @@ QVariantMap HemsOptimizerInterface::buildRootMeterInformation(const QVector<QDat
     // we must allow returning energy otherwise there might be no solution
     QVariantList powerOut;
     for (int i = 0; i < timestamps.count(); i++) {
-        powerOut.append(housholdPowerLimit / 1000.0);
+        powerOut.append(limit);
     }
-    ntp.insert("electric_power_out", powerOut); // kW
+    ntp.insert("electric_power_out", powerOut);
     return ntp;
 }
 
@@ -159,12 +160,9 @@ HemsOptimizerSchedules HemsOptimizerInterface::parseSchedules(const QVariantMap 
 {
     HemsOptimizerSchedules schedules;
     foreach (const QString &timestampString, schedulesMap.keys()) {
-        schedules << HemsOptimizerSchedule(QDateTime::fromString(timestampString, Qt::ISODate).toLocalTime(), schedulesMap.value(timestampString).toDouble() * 1000.03);
+        schedules << HemsOptimizerSchedule(QDateTime::fromString(timestampString, Qt::ISODate), schedulesMap.value(timestampString).toDouble());
     }
-    std::sort(schedules.begin(), schedules.end(), [](const HemsOptimizerSchedule &a, const HemsOptimizerSchedule &b) {
-        return a.timestamp() < b.timestamp();
-    });
-
+    schedules.sort();
     return schedules;
 }
 
@@ -199,7 +197,6 @@ QNetworkReply *HemsOptimizerInterface::electricPowerDemandStandardProfile(const 
 QNetworkReply *HemsOptimizerInterface::florHeatingPowerDemandStandardProfile(HouseType houseType, double livingArea, const QVariantMap &temperatureHistory, const QVariantMap &temperatureForecast)
 {
     QVariantMap requestMap;
-    QString houseTypeString;
     QMetaEnum houseTypeMetaEnum = QMetaEnum::fromType<HemsOptimizerInterface::HouseType>();
     requestMap.insert("house_type", QString(houseTypeMetaEnum.valueToKey(houseType)).remove("HouseType"));
     requestMap.insert("area", livingArea);

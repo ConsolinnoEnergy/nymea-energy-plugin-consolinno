@@ -33,6 +33,7 @@
 
 #include <QHash>
 #include <QTimer>
+#include <QNetworkAccessManager>
 
 #include <integrations/thingmanager.h>
 #include <energymanager.h>
@@ -93,6 +94,7 @@ private:
     ThingManager *m_thingManager = nullptr;
     EnergyManager *m_energyManager = nullptr;
     HemsOptimizerEngine *m_optimizerEngine = nullptr;
+    QNetworkAccessManager *m_networkManager = nullptr;
 
     // System information
     HemsUseCases m_availableUseCases;

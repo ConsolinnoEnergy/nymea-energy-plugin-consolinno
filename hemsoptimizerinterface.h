@@ -63,6 +63,12 @@ class HemsOptimizerSchedules: public QList<HemsOptimizerSchedule>
 {
 public:
     HemsOptimizerSchedules() = default;
+
+    inline void sort() {
+        std::sort(begin(), end(), [](const HemsOptimizerSchedule &a, const HemsOptimizerSchedule &b) {
+            return a.timestamp() < b.timestamp();
+        });
+    }
 };
 
 
@@ -82,7 +88,7 @@ public:
     };
     Q_ENUM(HouseType)
 
-    explicit HemsOptimizerInterface(QObject *parent = nullptr);
+    explicit HemsOptimizerInterface(QNetworkAccessManager *networkManager, QObject *parent = nullptr);
 
     // Request optimization schedules
     QNetworkReply *pvOptimization(const QVariantMap &ntpInfos, const QVariantMap &photovoltaicInfos, const QVariantMap &electricDemandInfo, const QVariantMap &heatpumpInfo, const QVariantMap &evChargerInfo = QVariantMap());

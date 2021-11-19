@@ -40,7 +40,8 @@ Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyManager, QObject *parent):
     QObject(parent),
     m_thingManager(thingManager),
-    m_energyManager(energyManager)
+    m_energyManager(energyManager),
+    m_networkManager(new QNetworkAccessManager(this))
 {
     qCDebug(dcConsolinnoEnergy()) << "======> Initializing consolinno energy engine...";
 
@@ -102,11 +103,10 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     settings.endGroup();
 
     // Engine for interacting with the online Hems optimizer
-    m_optimizerEngine = new HemsOptimizerEngine(m_energyManager, this);
+    m_optimizerEngine = new HemsOptimizerEngine(m_energyManager, m_networkManager, this);
     m_optimizerEngine->setHousholdPowerLimit(m_housholdPowerLimit);
-    qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
 
-    updateSchedules();
+    qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
