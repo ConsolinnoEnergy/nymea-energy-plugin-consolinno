@@ -12,7 +12,7 @@ HemsOptimizerEngine::HemsOptimizerEngine(EnergyManager *energyManager, QNetworkA
     m_interface(new HemsOptimizerInterface(networkManager, this))
 {
 
-    updatePvOptimizationSchedule();
+//    updatePvOptimizationSchedule();
 
 //    //*********** Testing
 
