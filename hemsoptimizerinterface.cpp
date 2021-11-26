@@ -179,6 +179,7 @@ QNetworkReply *HemsOptimizerInterface::pvOptimization(const QVariantMap &ntpInfo
     QByteArray requestData = QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Compact);
     qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization...";
     qCDebug(dcConsolinnoEnergy()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
+
     return m_networkManager->post(buildRequest("/api/hems-pv/v1/pv-optimized/"), requestData);
 }
 

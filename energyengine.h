@@ -42,6 +42,7 @@
 #include "configurations/heatingconfiguration.h"
 
 class HemsOptimizerEngine;
+class WeatherDataProvider;
 
 class EnergyEngine : public QObject
 {
@@ -95,6 +96,7 @@ private:
     EnergyManager *m_energyManager = nullptr;
     HemsOptimizerEngine *m_optimizerEngine = nullptr;
     QNetworkAccessManager *m_networkManager = nullptr;
+    WeatherDataProvider *m_weatherDataProvider = nullptr;
 
     // System information
     HemsUseCases m_availableUseCases;
@@ -108,6 +110,8 @@ private:
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
     QHash<ThingId, Thing *> m_evChargers;
+
+    Thing *m_weatherThing = nullptr;
 
     void monitorHeatPump(Thing *thing);
     void monitorInverter(Thing *thing);

@@ -21,6 +21,7 @@ HEADERS += \
     energypluginconsolinno.h \
     hemsoptimizerengine.h \
     hemsoptimizerinterface.h \
+    weatherdataentry.h \
     weatherdataprovider.h
 
 SOURCES += \
@@ -31,6 +32,7 @@ SOURCES += \
     energypluginconsolinno.cpp \
     hemsoptimizerengine.cpp \
     hemsoptimizerinterface.cpp \
+    weatherdataentry.cpp \
     weatherdataprovider.cpp
 
 target.path = $$[QT_INSTALL_LIBS]/nymea/energy/

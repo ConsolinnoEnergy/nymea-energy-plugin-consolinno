@@ -31,6 +31,7 @@
 #include "energyengine.h"
 #include "nymeasettings.h"
 #include "hemsoptimizerengine.h"
+#include "weatherdataprovider.h"
 
 #include <QJsonDocument>
 #include <QNetworkReply>
@@ -44,6 +45,13 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     m_networkManager(new QNetworkAccessManager(this))
 {
     qCDebug(dcConsolinnoEnergy()) << "======> Initializing consolinno energy engine...";
+
+    // Weather data provider
+    // Note: initialize before the things get added, so the weather information get provided automatically
+    m_weatherDataProvider = new WeatherDataProvider(m_networkManager, this);
+    connect(m_weatherDataProvider, &WeatherDataProvider::weatherDataUpdated, this, [=](){
+        qCDebug(dcConsolinnoEnergy()) << "Weather data updated";
+    });
 
     // Energy engine
     connect(m_energyManager, &EnergyManager::rootMeterChanged, this, &EnergyEngine::onRootMeterChanged);
@@ -103,10 +111,11 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     settings.endGroup();
 
     // Engine for interacting with the online Hems optimizer
-    m_optimizerEngine = new HemsOptimizerEngine(m_energyManager, m_networkManager, this);
+    m_optimizerEngine = new HemsOptimizerEngine(m_energyManager, m_weatherDataProvider, m_networkManager, this);
     m_optimizerEngine->setHousholdPowerLimit(m_housholdPowerLimit);
-
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
+
+    //m_optimizerEngine->updatePvOptimizationSchedule();
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
@@ -284,6 +293,22 @@ void EnergyEngine::onThingAdded(Thing *thing)
     if (thing->thingClass().interfaces().contains("evcharger")) {
         monitorEvCharger(thing);
     }
+
+    if (thing->thingClass().interfaces().contains("weather")) {
+        // For now we support only the open weather map api, get the thing params
+        if (thing->thingClassId() == ThingClassId("985195aa-17ad-4530-88a4-cdd753d747d7")) {
+            m_weatherThing = thing;
+            qCDebug(dcConsolinnoEnergy()) << "Using open weather map service" << thing->name() << "as weather forcast provider.";
+
+            // Take the weather location from the openweathermap thing params
+            QString locationId = m_weatherThing->paramValue("id").toString();
+            QString apiKey = "c1b9d5584bb740804871583f6c62744f"; // Note: community key!
+            qCDebug(dcConsolinnoEnergy()) << "Setting up weather data provider using location" << locationId;
+            m_weatherDataProvider->setLocationId(locationId);
+            m_weatherDataProvider->setApiKey(apiKey);
+            m_weatherDataProvider->updateWeatherInformation();
+        }
+    }
 }
 
 void EnergyEngine::onThingRemoved(const ThingId &thingId)
@@ -310,7 +335,7 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
     // Ev charger
     if (m_evChargers.contains(thingId)) {
         m_evChargers.remove(thingId);
-        qCDebug(dcConsolinnoEnergy()) << "Removed ev charger from energy manager" << thingId.toString();
+        qCDebug(dcConsolinnoEnergy()) << "Removed evcharger from energy manager" << thingId.toString();
 
         if (m_chargingConfigurations.contains(thingId)) {
             ChargingConfiguration chargingConfig = m_chargingConfigurations.take(thingId);
@@ -318,6 +343,16 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
             emit chargingConfigurationRemoved(thingId);
             qCDebug(dcConsolinnoEnergy()) << "Removed charging configuration" << chargingConfig;
         }
+    }
+
+    // Weather
+    if (m_weatherThing && m_weatherThing->id() == thingId) {
+        qCDebug(dcConsolinnoEnergy()) << "Weather service has been removed.";
+        m_weatherThing = nullptr;
+        m_weatherDataProvider->setLocationId(QString());
+        qCDebug(dcConsolinnoEnergy()) << "The weather data provider is not available any more.";
+
+        // TODO: Check if there is any other weather location
     }
 
     // FIXME: update configuration if associated car thing or heat meter thing has been removed
@@ -368,17 +403,17 @@ void EnergyEngine::evaluate()
     bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit;
     double overshotPower = 0;
-    qCDebug(dcConsolinnoEnergy()) << "= Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
+    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
     foreach (const QString &phase, currentPhaseConsumption.keys()) {
         if (currentPhaseConsumption.value(phase) > phasePowerLimit) {
-            qCInfo(dcConsolinnoEnergy()) << " = Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
+            qCInfo(dcConsolinnoEnergy()) << "Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
             if (phaseOvershotPower > overshotPower) {
                 overshotPower = phaseOvershotPower;
             }
         } else {
-            qCInfo(dcConsolinnoEnergy()) << "= Phase" << phase << "at" << currentPhaseConsumption.value(phase) << "W from maximal" << phasePowerLimit << "W ->" << currentPhaseConsumption.value(phase) * 100.0 / phasePowerLimit << "%";
+            //qCInfo(dcConsolinnoEnergy()) << "= Phase" << phase << "at" << currentPhaseConsumption.value(phase) << "W from maximal" << phasePowerLimit << "W ->" << currentPhaseConsumption.value(phase) * 100.0 / phasePowerLimit << "%";
         }
     }
 

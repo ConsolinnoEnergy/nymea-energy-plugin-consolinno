@@ -4,15 +4,26 @@
 #include <QObject>
 #include <energymanager.h>
 
+#include "weatherdataprovider.h"
 #include "hemsoptimizerinterface.h"
 
 class HemsOptimizerEngine : public QObject
 {
     Q_OBJECT
 public:
-    explicit HemsOptimizerEngine(EnergyManager *energyManager, QNetworkAccessManager *networkManager, QObject *parent = nullptr);
+    enum State {
+        StateIdle,
+        StateGetWeatherData,
+        StateGetHeatingForecast,
+        StateGetPvOptimization
+    };
+    Q_ENUM(State)
+
+    explicit HemsOptimizerEngine(EnergyManager *energyManager, WeatherDataProvider *weatherDataProvider, QNetworkAccessManager *networkManager, QObject *parent = nullptr);
 
     HemsOptimizerInterface *interface() const;
+
+    State state() const;
 
     void updatePvOptimizationSchedule();
 
@@ -20,14 +31,25 @@ public:
     void setHousholdPowerLimit(double housholdLimit);
 
 signals:
+    void stateChanged(HemsOptimizerEngine::State state);
 
 private:
     EnergyManager *m_energyManager = nullptr;
+    WeatherDataProvider *m_weatherDataProvider = nullptr;
     HemsOptimizerInterface *m_interface = nullptr;
+
+    // Private members while the engine is working
+    State m_state = StateIdle;
+    QDateTime m_currentDateTimeUtc;
+    QVector<QDateTime> m_timestamps;
+    PowerBalanceLogEntries m_powerBalanceHistory;
+    HemsOptimizerSchedules m_floorHeatingPowerForecast;
 
     // Settings
     uint m_scheduleWindowHours = 24;
     double m_housholdPowerLimit;
+
+    void setState(State state);
 
     // Optimizer information
     QVector<QDateTime> generateScheduleTimeStamps(const QDateTime &nowUtc, uint resolutionMinutes, uint durationHours);
@@ -41,6 +63,9 @@ private:
     QVariantMap getTemperatureForecast(const QDateTime &nowUtc);
 
     HemsOptimizerSchedules interpolateValues(const QVector<QDateTime> &desiredTimestamps, const HemsOptimizerSchedules &sourceSchedules);
+
+    void getHeatingPowerForecast();
+    void getPvOptimizationSchedule();
 
 };
 
