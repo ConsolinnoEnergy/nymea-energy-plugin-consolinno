@@ -40,7 +40,6 @@
 
 #include "integrations/thing.h"
 
-
 class HemsOptimizerSchedule
 {
 public:

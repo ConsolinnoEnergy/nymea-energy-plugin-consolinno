@@ -1,10 +1,40 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*
+* Copyright 2013 - 2021, nymea GmbH
+* Contact: contact@nymea.io
+*
+* This file is part of nymea.
+* This project including source code and documentation is protected by
+* copyright law, and remains the property of nymea GmbH. All rights, including
+* reproduction, publication, editing and translation, are reserved. The use of
+* this project is subject to the terms of a license agreement to be concluded
+* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
+* under https://nymea.io/license
+*
+* GNU General Public License Usage
+* Alternatively, this project may be redistributed and/or modified under the
+* terms of the GNU General Public License as published by the Free Software
+* Foundation, GNU version 3. This project is distributed in the hope that it
+* will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+* Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with
+* this project. If not, see <https://www.gnu.org/licenses/>.
+*
+* For any further details and any questions please contact us under
+* contact@nymea.io or see our FAQ/Licensing Information on
+* https://nymea.io/license/faq
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 #include "hemsoptimizerengine.h"
 
 #include <QJsonDocument>
 #include <QNetworkReply>
 
-#include "loggingcategories.h"
-Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
+NYMEA_LOGGING_CATEGORY(dcHemsOptimizer, "HemsOptimizer")
+NYMEA_LOGGING_CATEGORY(dcHemsOptimizerTraffic, "HemsOptimizerTraffic")
 
 HemsOptimizerEngine::HemsOptimizerEngine(EnergyManager *energyManager, WeatherDataProvider *weatherDataProvider, QNetworkAccessManager *networkManager, QObject *parent) :
     QObject(parent),
@@ -15,14 +45,14 @@ HemsOptimizerEngine::HemsOptimizerEngine(EnergyManager *energyManager, WeatherDa
 
     connect(m_weatherDataProvider, &WeatherDataProvider::weatherDataUpdated, this, [=](){
         if (m_state == StateGetWeatherData) {
-            qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: The weather data have been fetched successfully.";
+            qCDebug(dcHemsOptimizer()) << "The weather data have been fetched successfully.";
             setState(StateGetHeatingForecast);
         }
     });
 
     connect(m_weatherDataProvider, &WeatherDataProvider::weatherDataUpdateFailed, this, [=](){
         if (m_state == StateGetWeatherData) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to fetch weather data. Cannot continue to fetch optimization schedules.";
+            qCWarning(dcHemsOptimizer()) << "Failed to fetch weather data. Cannot continue to fetch optimization schedules.";
             setState(StateIdle);
         }
     });
@@ -41,32 +71,32 @@ HemsOptimizerEngine::State HemsOptimizerEngine::state() const
 void HemsOptimizerEngine::updatePvOptimizationSchedule()
 {
     if (m_state != StateIdle) {
-        qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Could not update PV optimization schedule. The optimizer engine is currently busy.";
+        qCWarning(dcHemsOptimizer()) << "Could not update PV optimization schedule. The optimizer engine is currently busy.";
         return;
     }
 
     // We use this time as refference for the entire optimization data snapshot
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: --> Update schedules for the next" << m_scheduleWindowHours << "hours on 15 minutes resolution...";
+    qCDebug(dcHemsOptimizer()) << "--> Update schedules for the next" << m_scheduleWindowHours << "hours on 15 minutes resolution...";
     m_currentDateTimeUtc = QDateTime::currentDateTimeUtc();
 
     // Note: everything communicated from and to the server must be UTC, within the system, we work with local time
 
     // Create timestamps for the next 24 hours in 15 min timeslots
     m_timestamps = generateScheduleTimeStamps(m_currentDateTimeUtc, 15, m_scheduleWindowHours);
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Created" << m_timestamps.count() <<  "schedule time slots from" << m_timestamps.first().toString("dd.MM.yyyy HH:mm:ss") << "until" << m_timestamps.last().toString("dd.MM.yyyy HH:mm:ss");
+    qCDebug(dcHemsOptimizer()) << "Created" << m_timestamps.count() <<  "schedule time slots from" << m_timestamps.first().toString("dd.MM.yyyy HH:mm:ss") << "until" << m_timestamps.last().toString("dd.MM.yyyy HH:mm:ss");
 
     // Get the consumption from the yesterday for this time window
     m_powerBalanceHistory = m_energyManager->logs()->powerBalanceLogs(EnergyLogs::SampleRate15Mins, m_timestamps.first().addDays(-1), m_timestamps.last().addDays(-1));
     if (m_powerBalanceHistory.count() < m_timestamps.count()) {
-        qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Not enought historical data for optimization. Having" << m_powerBalanceHistory.count() << "historical samples but require at least" << m_timestamps.count() << "sampels for doing optimization.";
+        qCWarning(dcHemsOptimizer()) << "Not enought historical data for optimization. Having" << m_powerBalanceHistory.count() << "historical samples but require at least" << m_timestamps.count() << "sampels for doing optimization.";
         setState(StateIdle);
         return;
     }
 
     Q_ASSERT_X(m_powerBalanceHistory.count() == m_timestamps.count(), "HemsOptimizer", "Power balance history count does not match timestamp count.");
-    //    qCDebug(dcConsolinnoEnergy()) << "Logs form the past yesterday based on 15 min sample rate in this period";
+    //    qCDebug(dcHemsOptimizer()) << "Logs form the past yesterday based on 15 min sample rate in this period";
     //    foreach (const PowerBalanceLogEntry &log, powerBalanceHistory) {
-    //        qCDebug(dcConsolinnoEnergy()) << log.timestamp().toString("dd.MM.yyyy HH:mm:ss") << "Consumption" << log.consumption() << "W";
+    //        qCDebug(dcHemsOptimizer()) << log.timestamp().toString("dd.MM.yyyy HH:mm:ss") << "Consumption" << log.consumption() << "W";
     //    }
 
     // Preparation done, start the state machine for fetching PV schedules
@@ -88,7 +118,7 @@ void HemsOptimizerEngine::setState(State state)
     if (m_state == state)
         return;
 
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: The state changed" << state;
+    qCDebug(dcHemsOptimizer()) << "The state changed" << state;
     m_state = state;
     emit stateChanged(m_state);
 
@@ -101,7 +131,7 @@ void HemsOptimizerEngine::setState(State state)
         break;
     case StateGetWeatherData:
         if (!m_weatherDataProvider->available()) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: The weather data provider is not available. Cannot continue.";
+            qCWarning(dcHemsOptimizer()) << "The weather data provider is not available. Cannot continue.";
             setState(StateIdle);
             return;
         }
@@ -116,7 +146,12 @@ void HemsOptimizerEngine::setState(State state)
         setState(StateGetHeatingForecast);
         break;
     case StateGetHeatingForecast:
-        getHeatingPowerForecast();
+        // Get floor heating power forecast based on the house information and weather forecast
+        getHeatingPowerForecast(HemsOptimizerInterface::HouseTypeSince1984, 120);
+        break;
+    case StateGetElectricDemandForecast:
+        // Get consumption forecast based on the annual demand (standard profile)
+        getElectricDemandStandardProfileForecast(5000);
         break;
     case StateGetPvOptimization:
         getPvOptimizationSchedule();
@@ -128,7 +163,7 @@ void HemsOptimizerEngine::setState(State state)
 
 QVector<QDateTime> HemsOptimizerEngine::generateScheduleTimeStamps(const QDateTime &nowUtc, uint resolutionMinutes, uint durationHours)
 {
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Generate timestamps for schedule in" << resolutionMinutes << "min resolution for the next" << durationHours;
+    qCDebug(dcHemsOptimizer()) << "Generate timestamps for schedule in" << resolutionMinutes << "min resolution for the next" << durationHours;
     // Note: forecasts and schedules will be used on 15 min base starting at a full hour
     QDate date = nowUtc.date();
     QTime time = nowUtc.time();
@@ -137,7 +172,7 @@ QVector<QDateTime> HemsOptimizerEngine::generateScheduleTimeStamps(const QDateTi
     time.setHMS(time.hour(), time.minute(), 0);
 
     QDateTime scheduleStartDateTime = QDateTime(date, time);
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Minutes until next slot:" << minutesOffsetToNextSlot << scheduleStartDateTime.toString();
+    qCDebug(dcHemsOptimizer()) << "Minutes until next slot:" << minutesOffsetToNextSlot << scheduleStartDateTime.toString();
 
     // get minutes to the next 15 min schedule
 
@@ -256,9 +291,9 @@ HemsOptimizerSchedules HemsOptimizerEngine::interpolateValues(const QVector<QDat
             }
         }
 
-        //        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: -------------------";
-        //        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Target from" << targetScheduleStart.toString("hh:mm.ss") << "to" << targetScheduleEnd.toString("hh:mm.ss");
-        //        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: " << sourceScheduleIndex << "Current schedule" << sourceSchedules.at(sourceScheduleIndex);
+        //qCDebug(dcHemsOptimizer()) << "-------------------";
+        //qCDebug(dcHemsOptimizer()) << "Target from" << targetScheduleStart.toString("hh:mm.ss") << "to" << targetScheduleEnd.toString("hh:mm.ss");
+        //qCDebug(dcHemsOptimizer()) << "" << sourceScheduleIndex << "Current schedule" << sourceSchedules.at(sourceScheduleIndex);
         outputSchedules << HemsOptimizerSchedule(targetScheduleStart, sourceSchedules.at(sourceScheduleIndex).value());
     }
 
@@ -266,15 +301,15 @@ HemsOptimizerSchedules HemsOptimizerEngine::interpolateValues(const QVector<QDat
     return outputSchedules;
 }
 
-void HemsOptimizerEngine::getHeatingPowerForecast()
+void HemsOptimizerEngine::getHeatingPowerForecast(HemsOptimizerInterface::HouseType houseType, double livingArea)
 {
-    QNetworkReply *reply = m_interface->florHeatingPowerDemandStandardProfile(HemsOptimizerInterface::HouseTypeLowEnergy, 100, getTemperatureHistory(m_currentDateTimeUtc), getTemperatureForecast(m_currentDateTimeUtc));
+    QNetworkReply *reply = m_interface->florHeatingPowerDemandStandardProfile(houseType, livingArea, getTemperatureHistory(m_currentDateTimeUtc), getTemperatureForecast(m_currentDateTimeUtc));
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
     connect(reply, &QNetworkReply::finished, reply, [=](){
         if (reply->error() != QNetworkReply::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get electrical demand standard profile. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
+            qCWarning(dcHemsOptimizer()) << "Failed to get heating power forecast. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
             QByteArray responsedata = reply->readAll();
-            qCWarning(dcConsolinnoEnergy()) << qUtf8Printable(responsedata);
+            qCWarning(dcHemsOptimizer()) << qUtf8Printable(responsedata);
             setState(StateIdle);
             return;
         }
@@ -283,24 +318,54 @@ void HemsOptimizerEngine::getHeatingPowerForecast()
         QJsonParseError error;
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
         if (error.error != QJsonParseError::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse electrical demand standard profile data" << data << ":" << error.errorString();
+            qCWarning(dcHemsOptimizer()) << "Failed to parse heating power forecast data" << data << ":" << error.errorString();
             setState(StateIdle);
             return;
         }
 
-        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request electrical demand standard profile finished successfully";
-        qCDebug(dcConsolinnoEnergy()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
+        qCDebug(dcHemsOptimizer()) << "Request heating power forecast finished successfully";
+        qCDebug(dcHemsOptimizerTraffic()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
 
         // Read the schedules
         m_floorHeatingPowerForecast = m_interface->parseSchedules(jsonDoc.toVariant().toMap());
-        //        foreach (const HemsOptimizerSchedule &schedule, m_floorHeatingPowerForecast) {
-        //            qCDebug(dcConsolinnoEnergy()) << schedule;
-        //        }
+
+        // We have the heating power forecast, let's continue with the heat pump optimization schedule update
+        setState(StateGetElectricDemandForecast);
+    });
+
+}
+
+void HemsOptimizerEngine::getElectricDemandStandardProfileForecast(double annualDemand)
+{
+    QNetworkReply *reply = m_interface->electricPowerDemandStandardProfile(m_timestamps, annualDemand);
+    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
+    connect(reply, &QNetworkReply::finished, reply, [=](){
+        if (reply->error() != QNetworkReply::NoError) {
+            qCWarning(dcHemsOptimizer()) << "Failed to get electrical demand standard profile. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
+            QByteArray responsedata = reply->readAll();
+            qCWarning(dcHemsOptimizer()) << qUtf8Printable(responsedata);
+            setState(StateIdle);
+            return;
+        }
+
+        QByteArray data = reply->readAll();
+        QJsonParseError error;
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
+        if (error.error != QJsonParseError::NoError) {
+            qCWarning(dcHemsOptimizer()) << "Failed to parse electrical demand standard profile data" << data << ":" << error.errorString();
+            setState(StateIdle);
+            return;
+        }
+
+        qCDebug(dcHemsOptimizer()) << "Request electrical demand standard profile finished successfully";
+        qCDebug(dcHemsOptimizerTraffic()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
+
+        // Read the schedules
+        m_electricDemandStandardProfileForecast = m_interface->parseSchedules(jsonDoc.toVariant().toMap());
 
         // We have the heating power forecast, let's continue with the heat pump optimization schedule update
         setState(StateGetPvOptimization);
     });
-
 }
 
 void HemsOptimizerEngine::getPvOptimizationSchedule()
@@ -313,27 +378,36 @@ void HemsOptimizerEngine::getPvOptimizationSchedule()
     QVariantMap pvMap = m_interface->buildPhotovoltaicInformation(m_timestamps, productionForecast);
 
     // Electrical demand
-    QVariantList consumptionForecast = getConsumptionForecast(m_powerBalanceHistory);
+
+    // Use the last day as demand forecast
+    //QVariantList consumptionForecast = getConsumptionForecast(m_powerBalanceHistory);
+
+    // Use the online requested standard profile
+    QVariantList consumptionForecast;
+    for (int i = 0; i < m_electricDemandStandardProfileForecast.count(); i++) {
+        consumptionForecast << m_electricDemandStandardProfileForecast.at(i).value(); // kW
+    }
+
     QVariantMap electricalDemandMap = m_interface->buildElectricDemandInformation(m_timestamps, QUuid::createUuid(), consumptionForecast);
 
     // Heat pump
     QVariantList thermalDemandForcast = getThermalDemandForecast(m_timestamps, m_floorHeatingPowerForecast);
     QVariantList copForecast = getCopForecast(m_timestamps, 3.5);
 
-    // Heatpump has a maximum of 9 kW
+    // Heatpump has a maximum power of 9 kW and can produce a max thermal energy of 15 kWh
     double maxElectricalPower = 9;
-    // We assume a maximal themral energy of 4kWh
-    double maxThermalEnergy = 4;
+    double maxThermalEnergy = 15;
+    double soc = maxThermalEnergy * 0.6;
 
-    QVariantMap heatPumpMap = m_interface->buildHeatpumpInformation(m_timestamps, QUuid::createUuid(), maxThermalEnergy, 0.5, maxElectricalPower, thermalDemandForcast, copForecast, 0.1);
+    QVariantMap heatPumpMap = m_interface->buildHeatpumpInformation(m_timestamps, QUuid::createUuid(), maxThermalEnergy, soc, maxElectricalPower, thermalDemandForcast, copForecast, 0.1);
 
     QNetworkReply *reply = m_interface->pvOptimization(ntpMap, pvMap, electricalDemandMap, heatPumpMap);
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
     connect(reply, &QNetworkReply::finished, reply, [=](){
         if (reply->error() != QNetworkReply::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
+            qCWarning(dcHemsOptimizer()) << "Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
             QByteArray responsedata = reply->readAll();
-            qCWarning(dcConsolinnoEnergy()) << qUtf8Printable(responsedata);
+            qCWarning(dcHemsOptimizer()) << qUtf8Printable(responsedata);
             setState(StateIdle);
             return;
         }
@@ -342,13 +416,13 @@ void HemsOptimizerEngine::getPvOptimizationSchedule()
         QJsonParseError error;
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
         if (error.error != QJsonParseError::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse pv optimization data" << data << ":" << error.errorString();
+            qCWarning(dcHemsOptimizer()) << "Failed to parse pv optimization data" << data << ":" << error.errorString();
             setState(StateIdle);
             return;
         }
 
-        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization finished successfully";
-        qCDebug(dcConsolinnoEnergy()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
+        qCDebug(dcHemsOptimizer()) << "Request pv optimization finished successfully";
+        qCDebug(dcHemsOptimizerTraffic()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
 
 
     });

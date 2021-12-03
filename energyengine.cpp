@@ -115,7 +115,7 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     m_optimizerEngine->setHousholdPowerLimit(m_housholdPowerLimit);
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
 
-    //m_optimizerEngine->updatePvOptimizationSchedule();
+//    m_optimizerEngine->updatePvOptimizationSchedule();
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
@@ -384,7 +384,7 @@ void EnergyEngine::evaluate()
     if (!m_energyManager->rootMeter())
         return;
 
-    qCDebug(dcConsolinnoEnergy()) << "Root meter consumption changed" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble();
+    qCDebug(dcConsolinnoEnergy()) << "Root meter consumption changed" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W";
 
     // Evaluate individual device types
     evaluateInverters();

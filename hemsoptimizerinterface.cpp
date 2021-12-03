@@ -35,8 +35,9 @@
 #include <QJsonParseError>
 #include <QMetaEnum>
 
-#include "loggingcategories.h"
-Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
+#include <loggingcategories.h>
+Q_DECLARE_LOGGING_CATEGORY(dcHemsOptimizer)
+Q_DECLARE_LOGGING_CATEGORY(dcHemsOptimizerTraffic)
 
 HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkManager, QObject *parent) :
     QObject(parent),
@@ -44,7 +45,7 @@ HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkMan
 {
     // Docs can be found here using the same username and password
     // https://lash-upstage.runner.consolinno.de/docs
-    // All data values are kWh or kW
+    // All data values are kWh or kW, time always in UTC
     m_apiBaseUrl = QUrl("https://lash-upstage.runner.consolinno.de");
     m_username = "nymea";
     m_password = "3aB!NnUJe@Rez*%f3JY7";
@@ -53,7 +54,7 @@ HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkMan
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
     connect(reply, &QNetworkReply::finished, this, [reply](){
         if (reply->error() != QNetworkReply::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get heathz status. The reply returned with error" << reply->errorString();
+            qCWarning(dcHemsOptimizer()) << "Failed to get heathz status. The reply returned with error" << reply->errorString();
             return;
         }
 
@@ -61,11 +62,20 @@ HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkMan
         QJsonParseError error;
         QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
         if (error.error != QJsonParseError::NoError) {
-            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse healthz status data" << data << ":" << error.errorString();
+            qCWarning(dcHemsOptimizer()) << "Failed to parse healthz status data" << data << ":" << error.errorString();
             return;
         }
+        qCDebug(dcHemsOptimizerTraffic()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
 
-        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Get healthz status finished successfully:" << jsonDoc.toJson(QJsonDocument::Compact);
+        QVariantMap dataMap = jsonDoc.toVariant().toMap();
+        if (dataMap.contains("status") && dataMap.value("status").toString() == "healthz") {
+            qCDebug(dcHemsOptimizer()) << "Get healthz status finished successfully";
+        } else {
+            qCWarning(dcHemsOptimizer()) << "Get healthz status finished with error" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Compact));
+        }
+
+        // TODO: use this as check if the optimizer is available
+
     });
 }
 
@@ -177,8 +187,8 @@ QNetworkReply *HemsOptimizerInterface::pvOptimization(const QVariantMap &ntpInfo
         requestMap.insert("chargepoint", evChargerInfo);
 
     QByteArray requestData = QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Compact);
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization...";
-    qCDebug(dcConsolinnoEnergy()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
+    qCDebug(dcHemsOptimizer()) << "Request pv optimization...";
+    qCDebug(dcHemsOptimizerTraffic()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
 
     return m_networkManager->post(buildRequest("/api/hems-pv/v1/pv-optimized/"), requestData);
 }
@@ -190,8 +200,8 @@ QNetworkReply *HemsOptimizerInterface::electricPowerDemandStandardProfile(const 
     requestMap.insert("timestamps", convertTimestampsToStringList(timestamps));
 
     QByteArray requestData = QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Compact);
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv electric demand from standrad profile based on annual demand of" << annualDemand << "kWh";
-    qCDebug(dcConsolinnoEnergy()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
+    qCDebug(dcHemsOptimizer()) << "Request pv electric demand from standrad profile based on annual demand of" << annualDemand << "kWh";
+    qCDebug(dcHemsOptimizerTraffic()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
     return m_networkManager->post(buildRequest("/api/forecast/v1/electric/standard-load-profile"), requestData);
 }
 
@@ -205,8 +215,8 @@ QNetworkReply *HemsOptimizerInterface::florHeatingPowerDemandStandardProfile(Hou
     requestMap.insert("temperature_forecast", temperatureForecast);
 
     QByteArray requestData = QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Compact);
-    qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request flor heating demand from standrad profile based" << houseType << livingArea << "m^2";
-    qCDebug(dcConsolinnoEnergy()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
+    qCDebug(dcHemsOptimizer()) << "Request flor heating demand from standrad profile based" << houseType << livingArea << "m^2";
+    qCDebug(dcHemsOptimizerTraffic()) << "-->" << qUtf8Printable(QJsonDocument::fromVariant(requestMap).toJson(QJsonDocument::Indented));
     return m_networkManager->post(buildRequest("/api/forecast/v1/heating/floor-heating"), requestData);
 }
 
