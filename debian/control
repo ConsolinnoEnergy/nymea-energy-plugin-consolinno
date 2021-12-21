@@ -22,3 +22,23 @@ Depends: ${shlibs:Depends},
 Description: consolinno energy plugin for the nymea energy experience
  This consolinno energy plugin adds the HEMS optimization functionality to the 
  nymea energy experience.
+
+Package: consolinno-hems
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         nymea,
+         nymea-energy-plugin-consolinno,
+         nymea-plugin-keba,
+         nymea-plugin-idm,
+         nymea-plugin-energymeters,
+         nymea-plugin-mypv,
+         nymea-plugin-mtec,
+         nymea-plugin-sunspec,
+         nymea-plugin-wallbe,
+         nymea-plugin-webasto,
+Description: Consolinno Home Energy Management System
+ Meta package for everything required to install a consolinno
+ HEMS system.
