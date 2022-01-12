@@ -75,47 +75,11 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     m_housholdPowerLimit = m_housholdPhaseLimit * m_housholdPhaseCount * 230;
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] using" << m_housholdPhaseCount << "phases: max power" << m_housholdPowerLimit << "[W]";
 
-    settings.beginGroup("HeatingConfigurations");
-    foreach (const QString &heatPumpUuidString, settings.childGroups()) {
-        settings.beginGroup(heatPumpUuidString);
-        ThingId heatPumpThingId(heatPumpUuidString);
-
-        HeatingConfiguration configuration;
-        configuration.setHeatPumpThingId(heatPumpThingId);
-        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
-        configuration.setHeatMeterThingId(ThingId(settings.value("heatMeterThingId").toUuid()));
-        settings.endGroup();
-
-        m_heatingConfigurations.insert(heatPumpThingId, configuration);
-        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
-    }
-    settings.endGroup();
-
-    settings.beginGroup("ChargingConfigurations");
-    foreach (const QString &evChargerUuidString, settings.childGroups()) {
-        settings.beginGroup(evChargerUuidString);
-        ThingId evChargerThingId(evChargerUuidString);
-
-        ChargingConfiguration configuration;
-        configuration.setEvChargerThingId(evChargerThingId);
-        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
-        configuration.setCarThingId(ThingId(settings.value("carThingId").toUuid()));
-        configuration.setEndTime(settings.value("endTime").toTime());
-        configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
-        configuration.setZeroReturnPolicyEnabled(settings.value("zeroReturnPolicyEnabled").toBool());
-        settings.endGroup();
-
-        m_chargingConfigurations.insert(evChargerThingId, configuration);
-        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
-    }
-    settings.endGroup();
-
     // Engine for interacting with the online Hems optimizer
     m_optimizerEngine = new HemsOptimizerEngine(m_energyManager, m_weatherDataProvider, m_networkManager, this);
     m_optimizerEngine->setHousholdPowerLimit(m_housholdPowerLimit);
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
 
-//    m_optimizerEngine->updatePvOptimizationSchedule();
 }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const
@@ -165,6 +129,7 @@ EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfi
         return HemsErrorInvalidThing;
     }
 
+    // Verify the optional heat meter
     if (!heatingConfiguration.heatMeterThingId().isNull()) {
         Thing *heatMeterThing = m_thingManager->findConfiguredThing(heatingConfiguration.heatMeterThingId());
         if (!heatMeterThing) {
@@ -183,7 +148,11 @@ EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfi
         qCDebug(dcConsolinnoEnergy()) << "Heating configuration changed" << heatingConfiguration;
         saveHeatingConfigurationToSettings(heatingConfiguration);
         emit heatingConfigurationChanged(heatingConfiguration);
-        evaluate();
+
+        // Update the schedules for this heat pump since the configuration has changed
+        if (heatingConfiguration.optimizationEnabled()) {
+            updateSchedules();
+        }
     }
 
     return HemsErrorNoError;
@@ -231,6 +200,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
         saveChargingConfigurationToSettings(chargingConfiguration);
         emit chargingConfigurationChanged(chargingConfiguration);
         evaluate();
+        updateSchedules();
     }
 
     return HemsErrorNoError;
@@ -240,18 +210,8 @@ void EnergyEngine::monitorHeatPump(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring heatpump" << thing;
     m_heatPumps.insert(thing->id(), thing);
-
     evaluateAvailableUseCases();
-
-    if (!m_heatingConfigurations.contains(thing->id()) && m_availableUseCases.testFlag(HemsUseCaseHeating)) {
-        // Heating usecase is available and this heat pump has no configuration yet, lets add one
-        HeatingConfiguration configuration;
-        configuration.setHeatPumpThingId(thing->id());
-        m_heatingConfigurations.insert(thing->id(), configuration);
-        emit heatingConfigurationAdded(configuration);
-        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
-        saveHeatingConfigurationToSettings(configuration);
-    }
+    loadHeatingConfiguration(thing->id());
 }
 
 void EnergyEngine::monitorInverter(Thing *thing)
@@ -266,18 +226,8 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring ev charger" << thing;
     m_evChargers.insert(thing->id(), thing);
-
     evaluateAvailableUseCases();
-
-    if (!m_chargingConfigurations.contains(thing->id()) && m_availableUseCases.testFlag(HemsUseCaseCharging)) {
-        // Charging usecase is available and this ev charger has no configuration yet, lets add one
-        ChargingConfiguration configuration;
-        configuration.setEvChargerThingId(thing->id());
-        m_chargingConfigurations.insert(thing->id(), configuration);
-        emit chargingConfigurationAdded(configuration);
-        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
-        saveChargingConfigurationToSettings(configuration);
-    }
+    loadChargingConfiguration(thing->id());
 }
 
 void EnergyEngine::onThingAdded(Thing *thing)
@@ -298,7 +248,7 @@ void EnergyEngine::onThingAdded(Thing *thing)
         // For now we support only the open weather map api, get the thing params
         if (thing->thingClassId() == ThingClassId("985195aa-17ad-4530-88a4-cdd753d747d7")) {
             m_weatherThing = thing;
-            qCDebug(dcConsolinnoEnergy()) << "Using open weather map service" << thing->name() << "as weather forcast provider.";
+            qCDebug(dcConsolinnoEnergy()) << "Using open weather map service" << thing->name() << "as weather forecast provider.";
 
             // Take the weather location from the openweathermap thing params
             QString locationId = m_weatherThing->paramValue("id").toString();
@@ -355,7 +305,17 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
         // TODO: Check if there is any other weather location
     }
 
-    // FIXME: update configuration if associated car thing or heat meter thing has been removed
+    // Check if this was an assigned car and update the configuration
+    foreach (const ChargingConfiguration &chargingConfig, m_chargingConfigurations.values()) {
+        if (chargingConfig.carThingId() == thingId) {
+            qCDebug(dcConsolinnoEnergy()) << "Removing assigned car from charging configuration";
+            ChargingConfiguration config = chargingConfig;
+            config.setCarThingId(ThingId());
+            // Disable config since incomplete
+            config.setOptimizationEnabled(false);
+            setChargingConfiguration(config);
+        }
+    }
 
     evaluateAvailableUseCases();
 }
@@ -380,10 +340,11 @@ void EnergyEngine::onRootMeterChanged()
 
 void EnergyEngine::evaluate()
 {
-    // We need a root meter, otherwise no optimization can be done.
+    // We need a root meter, otherwise no optimization or blackout protection can be done.
     if (!m_energyManager->rootMeter())
         return;
 
+    qCDebug(dcConsolinnoEnergy()) << "============> Evaluate system:" << QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
     qCDebug(dcConsolinnoEnergy()) << "Root meter consumption changed" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W";
 
     // Evaluate individual device types
@@ -391,10 +352,8 @@ void EnergyEngine::evaluate()
     evaluateHeatPumps();
     evaluateEvChargers();
 
-    //updateSchedules();
-
     // Blackout protection just incase something is still over the limit
-    qCDebug(dcConsolinnoEnergy()) << "============> Evaluating blackout protection";
+    qCDebug(dcConsolinnoEnergy()) << "--> Evaluating blackout protection";
     QHash<QString, double> currentPhaseConsumption = {
         {"A", m_energyManager->rootMeter()->stateValue("currentPowerPhaseA").toDouble()},
         {"B", m_energyManager->rootMeter()->stateValue("currentPowerPhaseB").toDouble()},
@@ -434,90 +393,82 @@ void EnergyEngine::evaluate()
 
 void EnergyEngine::evaluateHeatPumps()
 {
+    if (m_heatPumps.isEmpty())
+        return;
 
+    qCDebug(dcConsolinnoEnergy()) << "--> Evaluating heat pumps";
+    foreach (const HeatingConfiguration &heatingConfiguration, m_heatingConfigurations) {
+        if (heatingConfiguration.optimizationEnabled()) {
+
+        }
+    }
 }
 
 void EnergyEngine::evaluateInverters()
 {
+    if (m_inverters.isEmpty())
+        return;
+
+    qCDebug(dcConsolinnoEnergy()) << "--> Evaluating inverters";
 
 }
 
 void EnergyEngine::evaluateEvChargers()
 {
+    if (m_evChargers.isEmpty())
+        return;
+
+    qCDebug(dcConsolinnoEnergy()) << "--> Evaluating EV chargers";
+
+    // Check if charging and update the SoC
 
 }
 
 void EnergyEngine::updateSchedules()
 {   
-    //qCDebug(dcConsolinnoEnergy()) << "--> Update schedules for the next" << m_scheduleWindowHours << "hours on 15 minutes resolution...";
-    //QDateTime currentDateTime = QDateTime::currentDateTime();
-//    // Create timestamps for the next 12 hours in 10 min slots
-//    QVector<QDateTime> timestamps = generateScheduleTimeStamps(15, m_scheduleWindowHours);
-//    qCDebug(dcConsolinnoEnergy()) << "Created" << timestamps.count() <<  "schedule time slots from" << timestamps.first().toString("dd.MM.yyyy HH:mm:ss") << "until" << timestamps.last().toString("dd.MM.yyyy HH:mm:ss");
+    // Get all information and update the optimizer schedules
+    HeatingConfiguration heatingConfig;
+    HemsOptimizerEngine::ChargingSchedule chargingSchedule;
 
-//    // Get the consumption from the yesterday for this time window
-//    PowerBalanceLogEntries powerBalanceHistory = m_energyManager->logs()->powerBalanceLogs(EnergyLogs::SampleRate15Mins, timestamps.first().addDays(-1), timestamps.last().addDays(-1));
-//    if (powerBalanceHistory.count() < timestamps.count()) {
-//        qCWarning(dcConsolinnoEnergy()) << "Not enought historical data for optimization. Having" << powerBalanceHistory.count() << "historical samples but require at least" << timestamps.count() << "sampels for doing optimization.";
-//        return;
-//    }
+    foreach (const HeatingConfiguration &heatingConfiguration, m_heatingConfigurations) {
+        if (heatingConfiguration.isValid() && heatingConfiguration.optimizationEnabled()) {
+            heatingConfig = heatingConfiguration;
+            // We support only one heating atm
+            break;
+        }
+    }
 
-//    qCDebug(dcConsolinnoEnergy()) << "Logs form the past yesterday based on 15 min sample rate in this period";
-//    foreach (const PowerBalanceLogEntry &log, powerBalanceHistory) {
-//        qCDebug(dcConsolinnoEnergy()) << log.timestamp().toString("dd.MM.yyyy HH:mm:ss") << "Consumption" << log.consumption() << "W";
-//    }
+    foreach (const ChargingConfiguration &chargingConfiguration, m_chargingConfigurations) {
+        if (chargingConfiguration.isValid() && chargingConfiguration.optimizationEnabled()) {
+            chargingSchedule.chargingConfiguration = chargingConfiguration;
+        }
+    }
 
-//    // Root meter
-//    QVariantMap ntpMap = m_optimizer->buildRootMeterInformation(timestamps, m_energyManager->rootMeter(), m_housholdPowerLimit, 0.3);
+    // Calculate schedule information
+    if (chargingSchedule.chargingConfiguration.isValid()) {
+        // Calculate the max power
+        Thing *evChargerThing = m_evChargers.value(chargingSchedule.chargingConfiguration.evChargerThingId());
+        Thing *carThing = m_thingManager->findConfiguredThing(chargingSchedule.chargingConfiguration.carThingId());
+        if (!evChargerThing || !carThing) {
+            qCWarning(dcConsolinnoEnergy()) << "Cannot get pv optimization for" << chargingSchedule.chargingConfiguration << "because the associated things could not be found.";
+            chargingSchedule.chargingConfiguration = ChargingConfiguration();
+        } else {
+            // Fill out chargingSchedule
+            uint maxChargingCurrent = evChargerThing->stateValue("maxChargingCurrent").toUInt(); // A
+            uint minChargingCurrent = carThing->stateValue("minChargingCurrent").toUInt(); // A
+            uint phaseCount = evChargerThing->stateValue("phaseCount").toUInt();
+            uint stateOfChargePercentage = carThing->stateValue("batteryLevel").toInt(); // %
+            uint totalCapacity = carThing->stateValue("capacity").toDouble() * 1000; // Wh
 
-//    // Inverter
-//    QVariantList productionForecast = getPvForecast(powerBalanceHistory);
-//    QVariantMap pvMap = m_optimizer->buildPhotovoltaicInformation(timestamps, productionForecast);
+            qCDebug(dcConsolinnoEnergy()) << "State of charge:" << stateOfChargePercentage << "Capacity:" << totalCapacity << "Wh";
+            chargingSchedule.maxPower = maxChargingCurrent * phaseCount * 230; // W
+            chargingSchedule.minPower = minChargingCurrent * phaseCount * 230; // W
+            chargingSchedule.energyNeeded = totalCapacity * stateOfChargePercentage / 100.0;
+            qCDebug(dcConsolinnoEnergy()) << chargingSchedule;
+       }
+    }
 
-//    // Electrical demand
-//    QVariantList consumptionForecast = getConsumptionForecast(powerBalanceHistory);
-//    QVariantMap electricalDemandMap = m_optimizer->buildElectricDemandInformation(timestamps, QUuid::createUuid(), consumptionForecast);
-
-
-
-
-
-
-    //    // Heat pump
-    //    QVariantList thermalDemandForcast = getThermalDemandForecast(timestamps, m_heatPump);
-    //    QVariantList copForecast;
-    //    for (int i = 0; i < timestamps.count(); i++) {
-    //        // Default to 3 for now
-    //        copForecast << 3;
-    //    }
-    //    // Heatpump has a maximum of 9 kW
-    //    double maxElectricalPower = 9;
-    //    // We assume a maximal themral energy of 4kWh
-    //    double maxThermalEnergy = 4;
-
-    //    QVariantMap heatPumpMap = m_optimizer->buildHeatpumpInformation(timestamps, m_heatPump, maxThermalEnergy, -1, maxElectricalPower, thermalDemandForcast, copForecast, 0.1);
-
-    //    QNetworkReply *reply = m_optimizer->pvOptimization(ntpMap, pvMap, electricalDemandMap, heatPumpMap);
-    //    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-    //    connect(reply, &QNetworkReply::finished, reply, [=](){
-    //        if (reply->error() != QNetworkReply::NoError) {
-    //            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
-    //            QByteArray responsedata = reply->readAll();
-    //            qCWarning(dcConsolinnoEnergy()) << qUtf8Printable(responsedata);
-    //            return;
-    //        }
-
-    //        QByteArray data = reply->readAll();
-    //        QJsonParseError error;
-    //        QJsonDocument jsonDoc = QJsonDocument::fromJson(data, &error);
-    //        if (error.error != QJsonParseError::NoError) {
-    //            qCWarning(dcConsolinnoEnergy()) << "HemsOptimizer: Failed to parse pv optimization data" << data << ":" << error.errorString();
-    //            return;
-    //        }
-
-    //        qCDebug(dcConsolinnoEnergy()) << "HemsOptimizer: Request pv optimization finished successfully";
-    //        qCDebug(dcConsolinnoEnergy()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
-    //    });
+    m_optimizerEngine->updatePvOptimizationSchedule(heatingConfig, chargingSchedule);
 }
 
 void EnergyEngine::evaluateAvailableUseCases()
@@ -534,16 +485,20 @@ void EnergyEngine::evaluateAvailableUseCases()
             m_availableUseCases = availableUseCases;
             emit availableUseCasesChanged(m_availableUseCases);
         }
+
+        // No root meter, we cannot do anything
         return;
     }
 
+    // Heating
     if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_heatPumps.isEmpty()) {
-        // We need a root meter, an inverter and and ev charging for having the charging usecase
+        // We need at least a root meter and and inverter for having the heating use case
         availableUseCases = availableUseCases.setFlag(HemsUseCaseHeating);
     }
 
+    // Charging
     if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_evChargers.isEmpty()) {
-        // We need a root meter, an inverter and and ev charging for having the charging usecase
+        // We need at least a root meter, an inverter and and ev charger for having the charging usecase
         availableUseCases = availableUseCases.setFlag(HemsUseCaseCharging);
     }
 
@@ -554,12 +509,49 @@ void EnergyEngine::evaluateAvailableUseCases()
     }
 }
 
+void EnergyEngine::loadHeatingConfiguration(const ThingId &heatPumpThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("HeatingConfigurations");
+    if (settings.childGroups().contains(heatPumpThingId.toString())) {
+        settings.beginGroup(heatPumpThingId.toString());
+
+        HeatingConfiguration configuration;
+        configuration.setHeatPumpThingId(heatPumpThingId);
+        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        configuration.setHouseType(static_cast<HemsOptimizerInterface::HouseType>(settings.value("houseType").toInt()));
+        configuration.setFloorHeatingArea(settings.value("floorHeatingArea").toDouble());
+        configuration.setMaxElectricalPower(settings.value("maxElectricalPower").toDouble());
+        configuration.setMaxThermalEnergy(settings.value("maxThermalEnergy").toDouble());
+        configuration.setHeatMeterThingId(ThingId(settings.value("heatMeterThingId").toUuid()));
+        settings.endGroup(); // ThingId
+
+        m_heatingConfigurations.insert(heatPumpThingId, configuration);
+        emit heatingConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // Heating usecase is available and this heat pump has no configuration yet, lets add one
+        HeatingConfiguration configuration;
+        configuration.setHeatPumpThingId(heatPumpThingId);
+        m_heatingConfigurations.insert(heatPumpThingId, configuration);
+        emit heatingConfigurationAdded(configuration);
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveHeatingConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // HeatingConfigurations
+}
+
 void EnergyEngine::saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration)
 {
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("HeatingConfigurations");
     settings.beginGroup(heatingConfiguration.heatPumpThingId().toString());
     settings.setValue("optimizationEnabled", heatingConfiguration.optimizationEnabled());
+    settings.setValue("houseType", heatingConfiguration.houseType());
+    settings.setValue("floorHeatingArea", heatingConfiguration.floorHeatingArea());
+    settings.setValue("maxElectricalPower", heatingConfiguration.maxElectricalPower());
+    settings.setValue("maxThermalEnergy", heatingConfiguration.maxThermalEnergy());
     settings.setValue("heatMeterThingId", heatingConfiguration.heatMeterThingId());
     settings.endGroup();
     settings.endGroup();
@@ -573,6 +565,39 @@ void EnergyEngine::removeHeatingConfigurationFromSettings(const ThingId &heatPum
     settings.remove("");
     settings.endGroup();
     settings.endGroup();
+}
+
+void EnergyEngine::loadChargingConfiguration(const ThingId &evChargerThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("ChargingConfigurations");
+    if (settings.childGroups().contains(evChargerThingId.toString())) {
+        settings.beginGroup(evChargerThingId.toString());
+
+        ChargingConfiguration configuration;
+        configuration.setEvChargerThingId(evChargerThingId);
+        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        configuration.setCarThingId(ThingId(settings.value("carThingId").toUuid()));
+        configuration.setEndTime(settings.value("endTime").toTime());
+        configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
+        configuration.setZeroReturnPolicyEnabled(settings.value("zeroReturnPolicyEnabled").toBool());
+        settings.endGroup();
+
+        m_chargingConfigurations.insert(evChargerThingId, configuration);
+        emit chargingConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // Charging usecase is available and this ev charger has no configuration yet, lets add one
+        ChargingConfiguration configuration;
+        configuration.setEvChargerThingId(evChargerThingId);
+        m_chargingConfigurations.insert(evChargerThingId, configuration);
+        emit chargingConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveChargingConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // ChargingConfigurations
 }
 
 void EnergyEngine::saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration)

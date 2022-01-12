@@ -89,13 +89,15 @@ public:
 
     explicit HemsOptimizerInterface(QNetworkAccessManager *networkManager, QObject *parent = nullptr);
 
+    bool available() const;
+
     // Request optimization schedules
     QNetworkReply *pvOptimization(const QVariantMap &ntpInfos, const QVariantMap &photovoltaicInfos, const QVariantMap &electricDemandInfo, const QVariantMap &heatpumpInfo, const QVariantMap &evChargerInfo = QVariantMap());
 
     // Get the electic demand based on the annual demand (kWh) within the given timestamps
     QNetworkReply *electricPowerDemandStandardProfile(const QVector<QDateTime> &timestamps, double annualDemand = 4000);
 
-    // Get the floor heaing power demand based on the house type and living area in m^2 and the hourly 24h history temperature and 24 h forcast temperature
+    // Get the floor heaing power demand based on the house type and living area in m^2 and the hourly 24h history temperature and 24 h forecast temperature
     QNetworkReply *florHeatingPowerDemandStandardProfile(HouseType houseType, double livingArea, const QVariantMap &temperatureHistory, const QVariantMap &temperatureForecast);
 
     // Build individual information blocks
@@ -103,17 +105,20 @@ public:
     QVariantMap buildPhotovoltaicInformation(const QVector<QDateTime> &timestamps, const QVariantList &forecast);
     QVariantMap buildElectricDemandInformation(const QVector<QDateTime> &timestamps, const QUuid &householdUuid, const QVariantList &forecast);
     QVariantMap buildHeatpumpInformation(const QVector<QDateTime> &timestamps, const QUuid &heatpumpUuid, double maxThermalEnergy, double soc, double electricPowerMax, const QVariantList &thermalDemandForecast, const QVariantList &copForecast, double rho = 0.1);
-    QVariantMap buildEvChargerInformation(const QVector<QDateTime> &timestamps, Thing *evCharger, double maxPower, double minPower, double energyNeeded, const QDateTime &endTime);
+    QVariantMap buildEvChargerInformation(const QVector<QDateTime> &timestamps, ThingId evChargerId, double maxPower, double minPower, double energyNeeded, const QDateTime &endTime);
 
     HemsOptimizerSchedules parseSchedules(const QVariantMap &schedulesMap);
 
 signals:
+    void availableChanged(bool available);
 
 private:
     QNetworkAccessManager *m_networkManager = nullptr;
     QUrl m_apiBaseUrl;
     QString m_username;
     QString m_password;
+
+    bool m_available = false;
 
     QNetworkRequest buildRequest(const QString &path);
 

@@ -36,6 +36,8 @@
 
 #include "weatherdataprovider.h"
 #include "hemsoptimizerinterface.h"
+#include "configurations/heatingconfiguration.h"
+#include "configurations/chargingconfiguration.h"
 
 #include <loggingcategories.h>
 Q_DECLARE_LOGGING_CATEGORY(dcHemsOptimizer)
@@ -54,13 +56,20 @@ public:
     };
     Q_ENUM(State)
 
+    typedef struct ChargingSchedule {
+        ChargingConfiguration chargingConfiguration;
+        double maxPower; // W
+        double minPower; // W
+        double energyNeeded; // Wh
+    } ChargingSchedule;
+
     explicit HemsOptimizerEngine(EnergyManager *energyManager, WeatherDataProvider *weatherDataProvider, QNetworkAccessManager *networkManager, QObject *parent = nullptr);
 
     HemsOptimizerInterface *interface() const;
 
     State state() const;
 
-    void updatePvOptimizationSchedule();
+    void updatePvOptimizationSchedule(const HeatingConfiguration &heatingConfiguration, const ChargingSchedule &chargingSchedule);
 
     double housholdPowerLimit() const;
     void setHousholdPowerLimit(double housholdLimit);
@@ -80,6 +89,8 @@ private:
     PowerBalanceLogEntries m_powerBalanceHistory;
     HemsOptimizerSchedules m_floorHeatingPowerForecast;
     HemsOptimizerSchedules m_electricDemandStandardProfileForecast;
+    HeatingConfiguration m_heatingConfiguration;
+    ChargingSchedule m_chargingSchedule;
 
     // Settings
     uint m_scheduleWindowHours = 24;
@@ -106,5 +117,8 @@ private:
     void getPvOptimizationSchedule();
 
 };
+
+QDebug operator<<(QDebug debug, const HemsOptimizerEngine::ChargingSchedule &schedule);
+
 
 #endif // HEMSOPTIMIZERENGINE_H

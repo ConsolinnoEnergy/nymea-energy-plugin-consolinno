@@ -39,6 +39,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 {
     // Enums
     registerEnum<EnergyEngine::HemsError>();
+    registerEnum<HemsOptimizerInterface::HouseType>();
 
     // Flags
     registerFlag<EnergyEngine::HemsUseCase, EnergyEngine::HemsUseCases>();
@@ -55,7 +56,6 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     description = "Get the current available optimization UseCases based on the thing setup available in the system.";
     returns.insert("availableUseCases", flagRef<EnergyEngine::HemsUseCases>());
     registerMethod("GetAvailableUseCases", description, params, returns);
-
 
     params.clear(); returns.clear();
     description = "Get the houshold phase limit in amperes. This value is gonna be used by the blackout protection use case for limiting the phase current.";

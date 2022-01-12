@@ -46,13 +46,13 @@ HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkMan
     // Docs can be found here using the same username and password
     // https://lash-upstage.runner.consolinno.de/docs
     // All data values are kWh or kW, time always in UTC
-    m_apiBaseUrl = QUrl("https://lash-upstage.runner.consolinno.de");
+    m_apiBaseUrl = QUrl("https://lash-upstage.services.consolinno.de/");
     m_username = "nymea";
     m_password = "3aB!NnUJe@Rez*%f3JY7";
 
     QNetworkReply *reply = m_networkManager->get(buildRequest("/healthz"));
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-    connect(reply, &QNetworkReply::finished, this, [reply](){
+    connect(reply, &QNetworkReply::finished, this, [this, reply](){
         if (reply->error() != QNetworkReply::NoError) {
             qCWarning(dcHemsOptimizer()) << "Failed to get heathz status. The reply returned with error" << reply->errorString();
             return;
@@ -65,11 +65,13 @@ HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkMan
             qCWarning(dcHemsOptimizer()) << "Failed to parse healthz status data" << data << ":" << error.errorString();
             return;
         }
-        qCDebug(dcHemsOptimizerTraffic()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
 
+        // qCDebug(dcHemsOptimizerTraffic()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
         QVariantMap dataMap = jsonDoc.toVariant().toMap();
         if (dataMap.contains("status") && dataMap.value("status").toString() == "healthz") {
             qCDebug(dcHemsOptimizer()) << "Get healthz status finished successfully";
+            m_available = true;
+            emit availableChanged(m_available);
         } else {
             qCWarning(dcHemsOptimizer()) << "Get healthz status finished with error" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Compact));
         }
@@ -77,6 +79,11 @@ HemsOptimizerInterface::HemsOptimizerInterface(QNetworkAccessManager *networkMan
         // TODO: use this as check if the optimizer is available
 
     });
+}
+
+bool HemsOptimizerInterface::available() const
+{
+    return m_available;
 }
 
 QVariantMap HemsOptimizerInterface::buildRootMeterInformation(const QVector<QDateTime> &timestamps, Thing *rootMeter, double housholdPowerLimit, double price)
@@ -153,15 +160,15 @@ QVariantMap HemsOptimizerInterface::buildHeatpumpInformation(const QVector<QDate
     return dataMap;
 }
 
-QVariantMap HemsOptimizerInterface::buildEvChargerInformation(const QVector<QDateTime> &timestamps, Thing *evCharger, double maxPower, double minPower, double energyNeeded, const QDateTime &endTime)
+QVariantMap HemsOptimizerInterface::buildEvChargerInformation(const QVector<QDateTime> &timestamps, ThingId evChargerId, double maxPower, double minPower, double energyNeeded, const QDateTime &endTime)
 {
     QVariantMap dataMap;
-    dataMap.insert("uuid", evCharger->id().toString().remove('{').remove('}'));
+    dataMap.insert("uuid", evChargerId.toString().remove('{').remove('}'));
     dataMap.insert("priority", 1);
     dataMap.insert("timestamps", convertTimestampsToStringList(timestamps));
-    dataMap.insert("electric_power_max", maxPower);
-    dataMap.insert("electric_power_min", minPower);
-    dataMap.insert("energy_needed", energyNeeded);
+    dataMap.insert("electric_power_max", maxPower / 1000.0);
+    dataMap.insert("electric_power_min", minPower / 1000.0);
+    dataMap.insert("energy_needed", energyNeeded  / 1000.0);
     dataMap.insert("finished_until", endTime.toString(Qt::ISODate));
     return dataMap;
 }
@@ -182,7 +189,9 @@ QNetworkReply *HemsOptimizerInterface::pvOptimization(const QVariantMap &ntpInfo
     requestMap.insert("ntp", ntpInfos);
     requestMap.insert("photovoltaic", photovoltaicInfos);
     requestMap.insert("electric_demand", electricDemandInfo);
-    requestMap.insert("heatpump", heatpumpInfo);
+    if (!heatpumpInfo.isEmpty())
+        requestMap.insert("heatpump", heatpumpInfo);
+
     if (!evChargerInfo.isEmpty())
         requestMap.insert("chargepoint", evChargerInfo);
 

@@ -294,7 +294,7 @@ bool WeatherDataProvider::updateWeatherInformation()
                     QVariantMap dataMap = jsonDoc.toVariant().toMap();
 
                     // Valid request, let's wipe the current data
-                    m_forcast.clear();
+                    m_forecast.clear();
 
                     // Update current weather value
                     QVariantMap currentMap = dataMap.value("current").toMap();
@@ -305,9 +305,9 @@ bool WeatherDataProvider::updateWeatherInformation()
                     // Hourly forecast
                     QVariantList hourlyForecastList = dataMap.value("hourly").toList();
                     foreach (const QVariant &hourlyForecastVariant, hourlyForecastList)
-                        m_forcast.append(parseHourlyEntry(hourlyForecastVariant.toMap()));
+                        m_forecast.append(parseHourlyEntry(hourlyForecastVariant.toMap()));
 
-                    m_forcast.sort();
+                    m_forecast.sort();
 
                     // Update the entries
                     updateEntries();
@@ -413,10 +413,10 @@ void WeatherDataProvider::updateEntries()
 
     // Add the forecast
     qCDebug(dcConsolinnoEnergy()) << "WeatherDataProvider: Process forecast data...";
-    for (int i = 0; i < m_forcast.count(); i++) {
-        if (m_entries.last().timestamp() != m_forcast.at(i).timestamp()) {
-            Q_ASSERT_X(m_entries.last().timestamp() == m_forcast.at(i).timestamp().addSecs(-3600), "WeatherData", "The previous weater data entry is not exactly one hour ago.");
-            m_entries.append(m_forcast.at(i));
+    for (int i = 0; i < m_forecast.count(); i++) {
+        if (m_entries.last().timestamp() != m_forecast.at(i).timestamp()) {
+            Q_ASSERT_X(m_entries.last().timestamp() == m_forecast.at(i).timestamp().addSecs(-3600), "WeatherData", "The previous weater data entry is not exactly one hour ago.");
+            m_entries.append(m_forecast.at(i));
         }
     }
 

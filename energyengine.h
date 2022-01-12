@@ -133,9 +133,11 @@ private slots:
 
     void evaluateAvailableUseCases();
 
+    void loadHeatingConfiguration(const ThingId &heatPumpThingId);
     void saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration);
     void removeHeatingConfigurationFromSettings(const ThingId &heatPumpThingId);
 
+    void loadChargingConfiguration(const ThingId &evChargerThingId);
     void saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration);
     void removeChargingConfigurationFromSettings(const ThingId &evChargerThingId);
 

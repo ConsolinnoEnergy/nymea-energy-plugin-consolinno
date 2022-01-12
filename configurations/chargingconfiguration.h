@@ -68,6 +68,8 @@ public:
     bool zeroReturnPolicyEnabled() const;
     void setZeroReturnPolicyEnabled(bool zeroReturnPolicyEnabled);
 
+    bool isValid() const;
+
     bool operator==(const ChargingConfiguration &other) const;
     bool operator!=(const ChargingConfiguration &other) const;
 

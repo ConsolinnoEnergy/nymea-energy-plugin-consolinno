@@ -36,11 +36,17 @@
 
 #include <typeutils.h>
 
+#include "hemsoptimizerinterface.h"
+
 class HeatingConfiguration
 {
     Q_GADGET
     Q_PROPERTY(QUuid heatPumpThingId READ heatPumpThingId WRITE setHeatPumpThingId)
     Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
+    Q_PROPERTY(double maxElectricalPower READ maxElectricalPower WRITE setMaxElectricalPower USER true)
+    Q_PROPERTY(double maxThermalEnergy READ maxThermalEnergy WRITE setMaxThermalEnergy USER true)
+    Q_PROPERTY(HemsOptimizerInterface::HouseType houseType READ houseType WRITE setHouseType USER true)
+    Q_PROPERTY(double floorHeatingArea READ floorHeatingArea WRITE setFloorHeatingArea USER true)
     Q_PROPERTY(QUuid heatMeterThingId READ heatMeterThingId WRITE setHeatMeterThingId USER true)
 
 public:
@@ -52,8 +58,26 @@ public:
     bool optimizationEnabled() const;
     void setOptimizationEnabled(bool optimizationEnabled);
 
+    // The maximal electric power in W the heat pump can consume
+    double maxElectricalPower() const;
+    void setMaxElectricalPower(double maxElectricalPower);
+
+    // The maximal thermal energy in kWh the heat pump can produce
+    double maxThermalEnergy() const;
+    void setMaxThermalEnergy(double maxThermalEnergy);
+
+    HemsOptimizerInterface::HouseType houseType() const;
+    void setHouseType(HemsOptimizerInterface::HouseType houseType);
+
+    // Area of the floor heating in m^2
+    double floorHeatingArea() const;
+    void setFloorHeatingArea(double floorHeatingArea);
+
+    // Optional extra information about heating energy produced
     ThingId heatMeterThingId() const;
     void setHeatMeterThingId(const ThingId &heatMeterThingId);
+
+    bool isValid() const;
 
     bool operator==(const HeatingConfiguration &other) const;
     bool operator!=(const HeatingConfiguration &other) const;
@@ -61,6 +85,10 @@ public:
 private:
     ThingId m_heatPumpThingId;
     bool m_optimizationEnabled = false;
+    double m_maxElectricalPower = 0;
+    double m_maxThermalEnergy = 0;
+    HemsOptimizerInterface::HouseType m_houseType = HemsOptimizerInterface::HouseTypeSince1984;
+    double m_floorHeatingArea = 0;
     ThingId m_heatMeterThingId;
 
 };

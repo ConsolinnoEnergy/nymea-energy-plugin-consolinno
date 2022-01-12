@@ -95,6 +95,11 @@ void ChargingConfiguration::setZeroReturnPolicyEnabled(bool zeroReturnPolicyEnab
     m_zeroReturnPolicyEnabled = zeroReturnPolicyEnabled;
 }
 
+bool ChargingConfiguration::isValid() const
+{
+    return !m_evChargerThingId.isNull() && !m_carThingId.isNull();
+}
+
 bool ChargingConfiguration::operator==(const ChargingConfiguration &other) const
 {
     return m_evChargerThingId == other.evChargerThingId() &&

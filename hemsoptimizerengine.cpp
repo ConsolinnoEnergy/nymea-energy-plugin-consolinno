@@ -42,7 +42,6 @@ HemsOptimizerEngine::HemsOptimizerEngine(EnergyManager *energyManager, WeatherDa
     m_weatherDataProvider(weatherDataProvider),
     m_interface(new HemsOptimizerInterface(networkManager, this))
 {
-
     connect(m_weatherDataProvider, &WeatherDataProvider::weatherDataUpdated, this, [=](){
         if (m_state == StateGetWeatherData) {
             qCDebug(dcHemsOptimizer()) << "The weather data have been fetched successfully.";
@@ -68,11 +67,26 @@ HemsOptimizerEngine::State HemsOptimizerEngine::state() const
     return m_state;
 }
 
-void HemsOptimizerEngine::updatePvOptimizationSchedule()
+void HemsOptimizerEngine::updatePvOptimizationSchedule(const HeatingConfiguration &heatingConfiguration, const ChargingSchedule &chargingSchedule)
 {
+    if (!heatingConfiguration.isValid() && !chargingSchedule.chargingConfiguration.isValid()) {
+        qCWarning(dcHemsOptimizer()) << "Failed to update heating optimization schedule. No valid configuration given" << heatingConfiguration << chargingSchedule.chargingConfiguration;
+        return;
+    }
+
     if (m_state != StateIdle) {
         qCWarning(dcHemsOptimizer()) << "Could not update PV optimization schedule. The optimizer engine is currently busy.";
         return;
+    }
+
+    if (heatingConfiguration.isValid()) {
+        qCDebug(dcHemsOptimizer()) << "--> Updating pv optimized heating schedule for" << heatingConfiguration;
+        m_heatingConfiguration = heatingConfiguration;
+    }
+
+    if (chargingSchedule.chargingConfiguration.isValid()) {
+        qCDebug(dcHemsOptimizer()) << "--> Updating pv optimized charging schedule for" << chargingSchedule.chargingConfiguration;
+        m_chargingSchedule = chargingSchedule;
     }
 
     // We use this time as refference for the entire optimization data snapshot
@@ -99,8 +113,12 @@ void HemsOptimizerEngine::updatePvOptimizationSchedule()
     //        qCDebug(dcHemsOptimizer()) << log.timestamp().toString("dd.MM.yyyy HH:mm:ss") << "Consumption" << log.consumption() << "W";
     //    }
 
-    // Preparation done, start the state machine for fetching PV schedules
-    setState(StateGetWeatherData);
+    // Preparation done, start the state machine for fetching PV schedules depending on what is possible
+    if (m_heatingConfiguration.isValid()) {
+        setState(StateGetWeatherData);
+    } else {
+        setState(StateGetElectricDemandForecast);
+    }
 }
 
 double HemsOptimizerEngine::housholdPowerLimit() const
@@ -147,18 +165,17 @@ void HemsOptimizerEngine::setState(State state)
         break;
     case StateGetHeatingForecast:
         // Get floor heating power forecast based on the house information and weather forecast
-        getHeatingPowerForecast(HemsOptimizerInterface::HouseTypeSince1984, 120);
+        getHeatingPowerForecast(m_heatingConfiguration.houseType(), m_heatingConfiguration.floorHeatingArea());
         break;
     case StateGetElectricDemandForecast:
         // Get consumption forecast based on the annual demand (standard profile)
-        getElectricDemandStandardProfileForecast(5000);
+        getElectricDemandStandardProfileForecast(8000);
         break;
     case StateGetPvOptimization:
         getPvOptimizationSchedule();
         break;
 
     }
-
 }
 
 QVector<QDateTime> HemsOptimizerEngine::generateScheduleTimeStamps(const QDateTime &nowUtc, uint resolutionMinutes, uint durationHours)
@@ -305,7 +322,7 @@ void HemsOptimizerEngine::getHeatingPowerForecast(HemsOptimizerInterface::HouseT
 {
     QNetworkReply *reply = m_interface->florHeatingPowerDemandStandardProfile(houseType, livingArea, getTemperatureHistory(m_currentDateTimeUtc), getTemperatureForecast(m_currentDateTimeUtc));
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-    connect(reply, &QNetworkReply::finished, reply, [=](){
+    connect(reply, &QNetworkReply::finished, this, [=](){
         if (reply->error() != QNetworkReply::NoError) {
             qCWarning(dcHemsOptimizer()) << "Failed to get heating power forecast. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
             QByteArray responsedata = reply->readAll();
@@ -339,7 +356,7 @@ void HemsOptimizerEngine::getElectricDemandStandardProfileForecast(double annual
 {
     QNetworkReply *reply = m_interface->electricPowerDemandStandardProfile(m_timestamps, annualDemand);
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-    connect(reply, &QNetworkReply::finished, reply, [=](){
+    connect(reply, &QNetworkReply::finished, this, [=](){
         if (reply->error() != QNetworkReply::NoError) {
             qCWarning(dcHemsOptimizer()) << "Failed to get electrical demand standard profile. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
             QByteArray responsedata = reply->readAll();
@@ -389,21 +406,34 @@ void HemsOptimizerEngine::getPvOptimizationSchedule()
     }
 
     QVariantMap electricalDemandMap = m_interface->buildElectricDemandInformation(m_timestamps, QUuid::createUuid(), consumptionForecast);
+    QVariantMap heatPumpMap;
+    QVariantMap evChargerMap;
 
-    // Heat pump
-    QVariantList thermalDemandForcast = getThermalDemandForecast(m_timestamps, m_floorHeatingPowerForecast);
-    QVariantList copForecast = getCopForecast(m_timestamps, 3.5);
+    if (m_heatingConfiguration.isValid()) {
+        // Heat pump
+        QVariantList thermalDemandForcast = getThermalDemandForecast(m_timestamps, m_floorHeatingPowerForecast);
+        QVariantList copForecast = getCopForecast(m_timestamps, 3.5);
 
-    // Heatpump has a maximum power of 9 kW and can produce a max thermal energy of 15 kWh
-    double maxElectricalPower = 9;
-    double maxThermalEnergy = 15;
-    double soc = maxThermalEnergy * 0.6;
+        // Heatpump has a maximum power of 9 kW and can produce a max thermal energy of 15 kWh
+        double maxElectricalPower = m_heatingConfiguration.maxElectricalPower() / 1000.0;
+        double maxThermalEnergy = m_heatingConfiguration.maxThermalEnergy();
+        double soc = maxThermalEnergy * 0.5;
 
-    QVariantMap heatPumpMap = m_interface->buildHeatpumpInformation(m_timestamps, QUuid::createUuid(), maxThermalEnergy, soc, maxElectricalPower, thermalDemandForcast, copForecast, 0.1);
+        heatPumpMap = m_interface->buildHeatpumpInformation(m_timestamps, QUuid::createUuid(), maxThermalEnergy, soc, maxElectricalPower, thermalDemandForcast, copForecast, 0.1);
+    }
 
-    QNetworkReply *reply = m_interface->pvOptimization(ntpMap, pvMap, electricalDemandMap, heatPumpMap);
+    if (m_chargingSchedule.chargingConfiguration.isValid()) {
+        QDateTime endDateTime = QDateTime(QDate::currentDate(), m_chargingSchedule.chargingConfiguration.endTime());
+        if (endDateTime < m_currentDateTimeUtc) {
+            endDateTime = endDateTime.addDays(1);
+        }
+
+        evChargerMap = m_interface->buildEvChargerInformation(m_timestamps, m_chargingSchedule.chargingConfiguration.evChargerThingId(), m_chargingSchedule.maxPower, m_chargingSchedule.minPower, m_chargingSchedule.energyNeeded, endDateTime.toUTC());
+    }
+
+    QNetworkReply *reply = m_interface->pvOptimization(ntpMap, pvMap, electricalDemandMap, heatPumpMap, evChargerMap);
     connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-    connect(reply, &QNetworkReply::finished, reply, [=](){
+    connect(reply, &QNetworkReply::finished, this, [=](){
         if (reply->error() != QNetworkReply::NoError) {
             qCWarning(dcHemsOptimizer()) << "Failed to get pv optimization. The reply returned with error" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) << reply->errorString();
             QByteArray responsedata = reply->readAll();
@@ -424,6 +454,24 @@ void HemsOptimizerEngine::getPvOptimizationSchedule()
         qCDebug(dcHemsOptimizer()) << "Request pv optimization finished successfully";
         qCDebug(dcHemsOptimizerTraffic()) << "<--" << qUtf8Printable(jsonDoc.toJson(QJsonDocument::Indented));
 
+        QVariantMap responseMap = jsonDoc.toVariant().toMap();
+        if (responseMap.contains("heatpump")) {
+            QVariantMap heatPumpResponseMap = responseMap.value("heatpump").toMap();
+            if (heatPumpResponseMap.contains("schedule")) {
+                qCDebug(dcHemsOptimizer()) << "Received heatpump schedule." << heatPumpResponseMap.value("schedule").toList();
+            }
+        }
 
+        setState(StateIdle);
     });
+}
+
+
+QDebug operator<<(QDebug debug, const HemsOptimizerEngine::ChargingSchedule &schedule)
+{
+    debug.nospace() << "ChargingSchedule(" << schedule.chargingConfiguration;
+    debug.nospace() << ", max power:" << schedule.maxPower << "W";
+    debug.nospace() << ", min power:" << schedule.minPower << "W";
+    debug.nospace() << ", energy needed:" << schedule.energyNeeded << "Wh)";
+    return debug.maybeSpace();
 }

@@ -93,7 +93,7 @@ private:
     QNetworkReply *getWeatherHistory(int dayOffset);
 
     WeatherDataEntries m_history;
-    WeatherDataEntries m_forcast;
+    WeatherDataEntries m_forecast;
 
     WeatherDataEntries m_entries;
 
