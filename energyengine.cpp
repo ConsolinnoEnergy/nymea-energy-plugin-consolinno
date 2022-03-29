@@ -123,6 +123,10 @@ QList<HeatingConfiguration> EnergyEngine::heatingConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfiguration &heatingConfiguration)
 {
+    qCWarning(dcConsolinnoEnergy()) << "setHeatingConfiguration" << heatingConfiguration;
+    qCWarning(dcConsolinnoEnergy()) << "More indepth: " << m_heatingConfigurations.value(heatingConfiguration.heatPumpThingId());
+
+
     qCDebug(dcConsolinnoEnergy()) << "Set heating configuration called" << heatingConfiguration;
     if (!m_heatingConfigurations.contains(heatingConfiguration.heatPumpThingId())) {
         qCWarning(dcConsolinnoEnergy()) << "Could not set heating configuration. The given heat pump thing id does not exist." << heatingConfiguration;
@@ -206,6 +210,43 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
     return HemsErrorNoError;
 }
 
+
+
+
+
+QList<PvConfiguration> EnergyEngine::pvConfigurations() const
+{
+
+    return m_pvConfigurations.values();
+
+}
+
+EnergyEngine::HemsError EnergyEngine::setPvConfiguration(const PvConfiguration &pvConfiguration)
+{
+    qCWarning(dcConsolinnoEnergy()) << "setPvConfiguration" << pvConfiguration;
+    qCWarning(dcConsolinnoEnergy()) << "More indepth: " << m_pvConfigurations.value(pvConfiguration.pvThingId());
+    if (!m_pvConfigurations.contains(pvConfiguration.pvThingId())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set pv configuration. The given pv thing id does not exist." << pvConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+
+     if (m_pvConfigurations.value(pvConfiguration.pvThingId()) != pvConfiguration) {
+
+        m_pvConfigurations[pvConfiguration.pvThingId()] = pvConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Pv configuration changed" << pvConfiguration;
+        savePvConfigurationToSettings(pvConfiguration);
+        emit pvConfigurationChanged(pvConfiguration);
+
+    }
+
+    return HemsErrorNoError;
+}
+
+
+
+
+
 void EnergyEngine::monitorHeatPump(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring heatpump" << thing;
@@ -218,8 +259,8 @@ void EnergyEngine::monitorInverter(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring inverter" << thing;
     m_inverters.insert(thing->id(), thing);
-
     evaluateAvailableUseCases();
+    loadPvConfiguration(thing->id());
 }
 
 void EnergyEngine::monitorEvCharger(Thing *thing)
@@ -267,6 +308,14 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
     if (m_inverters.contains(thingId)) {
         m_inverters.remove(thingId);
         qCDebug(dcConsolinnoEnergy()) << "Removed inverter from energy manager"  << thingId.toString();
+
+        if (m_pvConfigurations.contains(thingId)) {
+            PvConfiguration pvConfig = m_pvConfigurations.take(thingId);
+            removePvConfigurationFromSettings(thingId);
+            emit pvConfigurationRemoved(thingId);
+            qCDebug(dcConsolinnoEnergy()) << "Removed heating configuration" << pvConfig;
+        }
+
     }
 
     // Heat pump
@@ -410,7 +459,8 @@ void EnergyEngine::evaluateInverters()
         return;
 
     qCDebug(dcConsolinnoEnergy()) << "--> Evaluating inverters";
-
+    //foreach (const PvConfiguration &pvConfiguration, m_pvConfigurations) {
+    //}
 }
 
 void EnergyEngine::evaluateEvChargers()
@@ -500,6 +550,11 @@ void EnergyEngine::evaluateAvailableUseCases()
     if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_evChargers.isEmpty()) {
         // We need at least a root meter, an inverter and and ev charger for having the charging usecase
         availableUseCases = availableUseCases.setFlag(HemsUseCaseCharging);
+    }
+
+    if (m_energyManager->rootMeter() && !m_inverters.isEmpty()){
+        //we need atleast a root meter and an inverter to read pv data
+        availableUseCases = availableUseCases.setFlag(HemsUseCasePv);
     }
 
     if (m_availableUseCases != availableUseCases) {
@@ -624,3 +679,63 @@ void EnergyEngine::removeChargingConfigurationFromSettings(const ThingId &evChar
     settings.endGroup();
 }
 
+void EnergyEngine::savePvConfigurationToSettings(const PvConfiguration &pvConfiguration)
+{
+
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("PvConfigurations");
+    settings.setValue("longitude", pvConfiguration.longitude());
+    settings.setValue("latitude", pvConfiguration.latitude());
+    settings.setValue("roofPitch", pvConfiguration.roofPitch());
+    settings.setValue("alignment", pvConfiguration.alignment());
+    settings.setValue("kwPeak", pvConfiguration.kwPeak());
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::removePvConfigurationFromSettings(const ThingId &pvThingId)
+{
+
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("PvConfigurations");
+    settings.beginGroup(pvThingId.toString());
+    settings.remove("");
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::loadPvConfiguration(const ThingId &pvThingId)
+{
+
+   QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("PvConfigurations");
+    if (settings.childGroups().contains(pvThingId.toString())) {
+        settings.beginGroup(pvThingId.toString());
+
+        PvConfiguration configuration;
+        configuration.setPvThingId(pvThingId);
+        configuration.setLongitude(settings.value("longitude").toDouble());
+        configuration.setLatitude(settings.value("latitude").toDouble());
+        configuration.setRoofPitch(settings.value("roofPitch").toInt());
+        configuration.setAlignment(settings.value("alignment").toInt());
+        configuration.setKwPeak(settings.value("kwPeak").toFloat());
+
+        settings.endGroup(); // ThingId
+
+        m_pvConfigurations.insert(pvThingId, configuration);
+
+        emit pvConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded";
+    }
+    else {
+        // Heating usecase is available and this heat pump has no configuration yet, lets add one
+        PvConfiguration configuration;
+        configuration.setPvThingId(pvThingId);
+        m_pvConfigurations.insert(pvThingId, configuration);
+        emit pvConfigurationAdded(configuration);
+        qCDebug(dcConsolinnoEnergy()) << "Added new";
+        savePvConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // PvConfigurations
+}

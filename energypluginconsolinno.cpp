@@ -39,7 +39,7 @@ NYMEA_LOGGING_CATEGORY(dcConsolinnoEnergy, "ConsolinnoEnergy")
 
 EnergyPluginConsolinno::EnergyPluginConsolinno()
 {
-    qCDebug(dcConsolinnoEnergy()) << "Loading consolinno energy plugin";
+    qCInfo(dcConsolinnoEnergy()) << "Loading consolinno energy plugin";
 }
 
 void EnergyPluginConsolinno::init()
