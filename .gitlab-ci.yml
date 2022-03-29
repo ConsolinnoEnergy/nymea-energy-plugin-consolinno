@@ -1,0 +1,10 @@
+image: lheiz/dc-armv7-nymea-d10
+
+build:
+  stage: build
+  script:
+    - CONFIG_SITE=/etc/dpkg-cross/cross-config.armhf  gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build && gosu root mv ../*.deb build
+  artifacts:
+    paths:
+      - build/*.deb
+
