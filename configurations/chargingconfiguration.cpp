@@ -65,12 +65,12 @@ void ChargingConfiguration::setCarThingId(const ThingId &carThingId)
     m_carThingId = carThingId;
 }
 
-QTime ChargingConfiguration::endTime() const
+QString ChargingConfiguration::endTime() const
 {
     return m_endTime;
 }
 
-void ChargingConfiguration::setEndTime(const QTime &endTime)
+void ChargingConfiguration::setEndTime(const QString &endTime)
 {
     m_endTime = endTime;
 }
@@ -125,7 +125,7 @@ QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig)
         debug.nospace() << ", no car assigned";
     }
     debug.nospace() << ", target percentage: " << chargingConfig.targetPercentage() << "%";
-    debug.nospace() << ", target time: " << chargingConfig.endTime().toString("HH:mm");
+    debug.nospace() << ", target time: " << chargingConfig.endTime();
     debug.nospace() << ", zero return policy:" << (chargingConfig.zeroReturnPolicyEnabled() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();

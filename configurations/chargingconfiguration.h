@@ -43,7 +43,7 @@ class ChargingConfiguration
     Q_PROPERTY(QUuid evChargerThingId READ evChargerThingId WRITE setEvChargerThingId)
     Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
     Q_PROPERTY(QUuid carThingId READ carThingId WRITE setCarThingId USER true)
-    Q_PROPERTY(QTime endTime READ endTime WRITE setEndTime USER true)
+    Q_PROPERTY(QString endTime READ endTime WRITE setEndTime USER true)
     Q_PROPERTY(uint targetPercentage READ targetPercentage WRITE setTargetPercentage USER true)
     Q_PROPERTY(bool zeroReturnPolicyEnabled READ zeroReturnPolicyEnabled WRITE setZeroReturnPolicyEnabled USER true)
 
@@ -59,8 +59,8 @@ public:
     ThingId carThingId() const;
     void setCarThingId(const ThingId &carThingId);
 
-    QTime endTime() const;
-    void setEndTime(const QTime &endTime);
+    QString endTime() const;
+    void setEndTime(const QString &endTime);
 
     uint targetPercentage() const;
     void setTargetPercentage(uint targetPercentage);
@@ -77,7 +77,7 @@ private:
     ThingId m_evChargerThingId;
     bool m_optimizationEnabled = false;
     ThingId m_carThingId;
-    QTime m_endTime;
+    QString m_endTime = "12:30:00";
     uint m_targetPercentage = 100;
     bool m_zeroReturnPolicyEnabled = false;
 

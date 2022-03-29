@@ -633,7 +633,9 @@ void EnergyEngine::loadChargingConfiguration(const ThingId &evChargerThingId)
         configuration.setEvChargerThingId(evChargerThingId);
         configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
         configuration.setCarThingId(ThingId(settings.value("carThingId").toUuid()));
-        configuration.setEndTime(settings.value("endTime").toTime());
+
+        configuration.setEndTime(settings.value("endTime").toString());
+
         configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
         configuration.setZeroReturnPolicyEnabled(settings.value("zeroReturnPolicyEnabled").toBool());
         settings.endGroup();
