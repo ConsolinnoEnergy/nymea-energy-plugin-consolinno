@@ -21,7 +21,7 @@
 *
 * You should have received a copy of the GNU General Public License along with
 * this project. If not, see <https://www.gnu.org/licenses/>.
-*ic
+*
 * For any further details and any questions please contact us under
 * contact@nymea.io or see our FAQ/Licensing Information on
 * https://nymea.io/license/faq
@@ -139,8 +139,8 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     registerNotification("PvConfigurationAdded", description, params);
 
     params.clear();
-    description = "Emitted whenever a pv configuration has been removed from the energy engine with the given heat pump thing ID.";
-    params.insert("heatPumpThingId", enumValueName(Uuid));
+    description = "Emitted whenever a pv configuration has been removed from the energy engine with the given pv thing ID.";
+    params.insert("pvThingId", enumValueName(Uuid));
     registerNotification("PvConfigurationRemoved", description, params);
 
     params.clear();
@@ -273,7 +273,7 @@ JsonReply *ConsolinnoJsonHandler::SetHousholdPhaseLimit(const QVariantMap &param
 JsonReply *ConsolinnoJsonHandler::GetPvConfigurations(const QVariantMap &params)
 {
 
-    qCWarning(dcConsolinnoEnergy()) << "GetPvConfigurationJsonHandler:" << params << "\n";
+    qCDebug(dcConsolinnoEnergy()) << "GetPvConfigurationJsonHandler:" << params << "\n";
     Q_UNUSED(params)
     QVariantMap returns;
     QVariantList configurations;
@@ -288,10 +288,6 @@ JsonReply *ConsolinnoJsonHandler::GetPvConfigurations(const QVariantMap &params)
 
 JsonReply *ConsolinnoJsonHandler::SetPvConfiguration(const QVariantMap &params)
 {
-   qCWarning(dcConsolinnoEnergy()) << "SetPvConfigurationJsonHandler:" << params << "\n";
-   qCWarning(dcConsolinnoEnergy()) << "params: " << params.value("pvConfiguration").toMap() << "\n";
-   qCWarning(dcConsolinnoEnergy()) << "unpack: " <<unpack<PvConfiguration>(params.value("pvConfiguration").toMap()) << "\n";
-
    EnergyEngine::HemsError error = m_energyEngine->setPvConfiguration(unpack<PvConfiguration>(params.value("pvConfiguration").toMap()));
    QVariantMap returns;
    returns.insert("hemsError", enumValueName(error));

@@ -123,9 +123,6 @@ QList<HeatingConfiguration> EnergyEngine::heatingConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setHeatingConfiguration(const HeatingConfiguration &heatingConfiguration)
 {
-    qCWarning(dcConsolinnoEnergy()) << "setHeatingConfiguration" << heatingConfiguration;
-    qCWarning(dcConsolinnoEnergy()) << "More indepth: " << m_heatingConfigurations.value(heatingConfiguration.heatPumpThingId());
-
 
     qCDebug(dcConsolinnoEnergy()) << "Set heating configuration called" << heatingConfiguration;
     if (!m_heatingConfigurations.contains(heatingConfiguration.heatPumpThingId())) {
@@ -212,8 +209,6 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
 
 
 
-
-
 QList<PvConfiguration> EnergyEngine::pvConfigurations() const
 {
 
@@ -223,8 +218,7 @@ QList<PvConfiguration> EnergyEngine::pvConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setPvConfiguration(const PvConfiguration &pvConfiguration)
 {
-    qCWarning(dcConsolinnoEnergy()) << "setPvConfiguration" << pvConfiguration;
-    qCWarning(dcConsolinnoEnergy()) << "More indepth: " << m_pvConfigurations.value(pvConfiguration.pvThingId());
+
     if (!m_pvConfigurations.contains(pvConfiguration.pvThingId())) {
         qCWarning(dcConsolinnoEnergy()) << "Could not set pv configuration. The given pv thing id does not exist." << pvConfiguration;
         return HemsErrorInvalidThing;
@@ -313,7 +307,7 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
             PvConfiguration pvConfig = m_pvConfigurations.take(thingId);
             removePvConfigurationFromSettings(thingId);
             emit pvConfigurationRemoved(thingId);
-            qCDebug(dcConsolinnoEnergy()) << "Removed heating configuration" << pvConfig;
+            qCDebug(dcConsolinnoEnergy()) << "Removed pv configuration" << pvConfig;
         }
 
     }
@@ -459,8 +453,7 @@ void EnergyEngine::evaluateInverters()
         return;
 
     qCDebug(dcConsolinnoEnergy()) << "--> Evaluating inverters";
-    //foreach (const PvConfiguration &pvConfiguration, m_pvConfigurations) {
-    //}
+
 }
 
 void EnergyEngine::evaluateEvChargers()
@@ -731,7 +724,7 @@ void EnergyEngine::loadPvConfiguration(const ThingId &pvThingId)
         qCDebug(dcConsolinnoEnergy()) << "Loaded";
     }
     else {
-        // Heating usecase is available and this heat pump has no configuration yet, lets add one
+        // Pv usecase is available and this inverter has no configuration yet, lets add one
         PvConfiguration configuration;
         configuration.setPvThingId(pvThingId);
         m_pvConfigurations.insert(pvThingId, configuration);
