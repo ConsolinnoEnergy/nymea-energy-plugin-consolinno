@@ -709,8 +709,8 @@ void EnergyEngine::loadPvConfiguration(const ThingId &pvThingId)
 
         PvConfiguration configuration;
         configuration.setPvThingId(pvThingId);
-        configuration.setLongitude(settings.value("longitude").toDouble());
-        configuration.setLatitude(settings.value("latitude").toDouble());
+        configuration.setLongitude(settings.value("longitude").toFloat());
+        configuration.setLatitude(settings.value("latitude").toFloat());
         configuration.setRoofPitch(settings.value("roofPitch").toInt());
         configuration.setAlignment(settings.value("alignment").toInt());
         configuration.setKwPeak(settings.value("kwPeak").toFloat());

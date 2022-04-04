@@ -15,23 +15,23 @@ void PvConfiguration::setPvThingId(const ThingId &pvThingId)
     m_pvThingId = pvThingId;
 }
 
-double PvConfiguration::longitude() const
+float PvConfiguration::longitude() const
 {
  return m_longitude;
 }
 
-void PvConfiguration::setLongitude(const double longitude)
+void PvConfiguration::setLongitude(const float longitude)
 {
     m_longitude = longitude;
 }
 
 
-double PvConfiguration::latitude() const
+float PvConfiguration::latitude() const
 {
  return m_latitude;
 }
 
-void PvConfiguration::setLatitude(const double latitude)
+void PvConfiguration::setLatitude(const float latitude)
 {
     m_latitude = latitude;
 }
