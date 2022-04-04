@@ -60,6 +60,7 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     // Thing manager
     foreach (Thing *thing, m_thingManager->configuredThings()) {
         onThingAdded(thing);
+
     }
 
     connect(thingManager, &ThingManager::thingAdded, this, &EnergyEngine::onThingAdded);
@@ -201,7 +202,8 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
         saveChargingConfigurationToSettings(chargingConfiguration);
         emit chargingConfigurationChanged(chargingConfiguration);
         evaluate();
-        updateSchedules();
+        updateSchedules(); 
+
     }
 
     return HemsErrorNoError;
@@ -408,7 +410,7 @@ void EnergyEngine::evaluate()
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
     foreach (const QString &phase, currentPhaseConsumption.keys()) {
         if (currentPhaseConsumption.value(phase) > phasePowerLimit) {
-            qCInfo(dcConsolinnoEnergy()) << "Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
+            qCDebug(dcConsolinnoEnergy()) << "Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
             if (phaseOvershotPower > overshotPower) {
@@ -626,9 +628,7 @@ void EnergyEngine::loadChargingConfiguration(const ThingId &evChargerThingId)
         configuration.setEvChargerThingId(evChargerThingId);
         configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
         configuration.setCarThingId(ThingId(settings.value("carThingId").toUuid()));
-
         configuration.setEndTime(settings.value("endTime").toString());
-
         configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
         configuration.setZeroReturnPolicyEnabled(settings.value("zeroReturnPolicyEnabled").toBool());
         settings.endGroup();
