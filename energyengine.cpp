@@ -679,6 +679,7 @@ void EnergyEngine::savePvConfigurationToSettings(const PvConfiguration &pvConfig
 
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("PvConfigurations");
+    settings.beginGroup(pvConfiguration.pvThingId().toString());
     settings.setValue("longitude", pvConfiguration.longitude());
     settings.setValue("latitude", pvConfiguration.latitude());
     settings.setValue("roofPitch", pvConfiguration.roofPitch());
