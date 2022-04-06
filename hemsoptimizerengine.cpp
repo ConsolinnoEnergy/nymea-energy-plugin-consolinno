@@ -423,7 +423,7 @@ void HemsOptimizerEngine::getPvOptimizationSchedule()
     }
 
     if (m_chargingSchedule.chargingConfiguration.isValid()) {
-        QDateTime endDateTime = QDateTime(QDate::currentDate(), m_chargingSchedule.chargingConfiguration.endTime());
+        QDateTime endDateTime = QDateTime(QDate::currentDate(), QTime::fromString( m_chargingSchedule.chargingConfiguration.endTime() )  );
         if (endDateTime < m_currentDateTimeUtc) {
             endDateTime = endDateTime.addDays(1);
         }

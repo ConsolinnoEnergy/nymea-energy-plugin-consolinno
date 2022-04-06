@@ -16,6 +16,7 @@ gcc {
 HEADERS += \
     configurations/chargingconfiguration.h \
     configurations/heatingconfiguration.h \
+    configurations/pvconfiguration.h \
     consolinnojsonhandler.h \
     energyengine.h \
     energypluginconsolinno.h \
@@ -27,6 +28,7 @@ HEADERS += \
 SOURCES += \
     configurations/chargingconfiguration.cpp \
     configurations/heatingconfiguration.cpp \
+    configurations/pvconfiguration.cpp \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
     energypluginconsolinno.cpp \

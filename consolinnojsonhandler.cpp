@@ -47,6 +47,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     // Types
     registerObject<HeatingConfiguration>();
     registerObject<ChargingConfiguration>();
+    registerObject<PvConfiguration>();
 
     QVariantMap params, returns;
     QString description;
@@ -80,6 +81,17 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetHeatingConfiguration", description, params, returns);
 
+
+    params.clear(); returns.clear();
+    description = "Get the list of available pv configurations from the energy engine.";
+    returns.insert("pvConfigurations", QVariantList() << objectRef<PvConfiguration>());
+    registerMethod("GetPvConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a pv configuration to the given pv configuration. The pv thing ID will be used as an identifier.";
+    params.insert("pvConfiguration", objectRef<PvConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetPvConfiguration", description, params, returns);
 
     params.clear(); returns.clear();
     description = "Get the list of available charging configurations from the energy engine.";
@@ -121,6 +133,20 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     params.insert("heatingConfiguration", objectRef<HeatingConfiguration>());
     registerNotification("HeatingConfigurationChanged", description, params);
 
+    params.clear();
+    description = "Emitted whenever a new pv configuration has been added to the energy engine.";
+    params.insert("pvConfiguration", objectRef<PvConfiguration>());
+    registerNotification("PvConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a pv configuration has been removed from the energy engine with the given pv thing ID.";
+    params.insert("pvThingId", enumValueName(Uuid));
+    registerNotification("PvConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a pv configuration has changed in the energy engine.";
+    params.insert("pvConfiguration", objectRef<PvConfiguration>());
+    registerNotification("PvConfigurationChanged", description, params);
 
     params.clear();
     description = "Emitted whenever a new charging configuration has been added to the energy engine.";
@@ -167,6 +193,28 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         params.insert("heatingConfiguration", pack(heatingConfiguration));
         emit HeatingConfigurationChanged(params);
     });
+
+
+
+    connect(m_energyEngine, &EnergyEngine::pvConfigurationAdded, this, [=](const PvConfiguration &pvConfiguration){
+
+        QVariantMap params;
+       params.insert("pvConfiguration", pack(pvConfiguration));
+        emit PvConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::pvConfigurationRemoved, this, [=](const ThingId &pvThingId){
+        QVariantMap params;
+        params.insert("pvThingId", pvThingId);
+        emit PvConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::pvConfigurationChanged, this, [=](const PvConfiguration &pvConfiguration){
+        QVariantMap params;
+        params.insert("pvConfiguration", pack(pvConfiguration));
+        emit PvConfigurationChanged(params);
+    });
+
 
     connect(m_energyEngine, &EnergyEngine::chargingConfigurationAdded, this, [=](const ChargingConfiguration &chargingConfiguration){
         QVariantMap params;
@@ -219,10 +267,38 @@ JsonReply *ConsolinnoJsonHandler::SetHousholdPhaseLimit(const QVariantMap &param
     return createReply(returns);
 }
 
+
+
+
+JsonReply *ConsolinnoJsonHandler::GetPvConfigurations(const QVariantMap &params)
+{
+
+    qCDebug(dcConsolinnoEnergy()) << "GetPvConfigurationJsonHandler:" << params << "\n";
+    Q_UNUSED(params)
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const PvConfiguration &pvConfig, m_energyEngine->pvConfigurations()) { 
+        configurations << pack(pvConfig);
+
+        }
+    returns.insert("pvConfigurations", configurations);
+
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetPvConfiguration(const QVariantMap &params)
+{
+   EnergyEngine::HemsError error = m_energyEngine->setPvConfiguration(unpack<PvConfiguration>(params.value("pvConfiguration").toMap()));
+   QVariantMap returns;
+   returns.insert("hemsError", enumValueName(error));
+   return createReply(returns);
+}
+
+
+
 JsonReply *ConsolinnoJsonHandler::GetHeatingConfigurations(const QVariantMap &params)
 {
     Q_UNUSED(params)
-
     QVariantMap returns;
     QVariantList configurations;
     foreach (const HeatingConfiguration &heatingConfig, m_energyEngine->heatingConfigurations()) {
@@ -256,6 +332,7 @@ JsonReply *ConsolinnoJsonHandler::GetChargingConfigurations(const QVariantMap &p
 
 JsonReply *ConsolinnoJsonHandler::SetChargingConfiguration(const QVariantMap &params)
 {
+    qCDebug(dcConsolinnoEnergy()) << params;
     EnergyEngine::HemsError error = m_energyEngine->setChargingConfiguration(unpack<ChargingConfiguration>(params.value("chargingConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));

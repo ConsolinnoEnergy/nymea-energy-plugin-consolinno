@@ -40,6 +40,7 @@
 
 #include "configurations/chargingconfiguration.h"
 #include "configurations/heatingconfiguration.h"
+#include "configurations/pvconfiguration.h"
 
 class HemsOptimizerEngine;
 class WeatherDataProvider;
@@ -60,7 +61,8 @@ public:
     enum HemsUseCase {
         HemsUseCaseBlackoutProtection = 0x01,
         HemsUseCaseHeating = 0x02,
-        HemsUseCaseCharging = 0x04
+        HemsUseCaseCharging = 0x04,
+        HemsUseCasePv = 0x08
     };
     Q_ENUM(HemsUseCase)
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
@@ -81,15 +83,26 @@ public:
     QList<ChargingConfiguration> chargingConfigurations() const;
     EnergyEngine::HemsError setChargingConfiguration(const ChargingConfiguration &chargingConfiguration);
 
+    // Pv configurations
+    QList<PvConfiguration> pvConfigurations() const;
+    EnergyEngine::HemsError setPvConfiguration(const PvConfiguration &pvConfiguration);
+
+
 signals:
     void availableUseCasesChanged(EnergyEngine::HemsUseCases availableUseCases);
     void housholdPhaseLimitChanged(uint housholdPhaseLimit);
+
     void heatingConfigurationAdded(const HeatingConfiguration &heatingConfiguration);
     void heatingConfigurationChanged(const HeatingConfiguration &heatingConfiguration);
     void heatingConfigurationRemoved(const ThingId &heatPumpThingId);
+
     void chargingConfigurationAdded(const ChargingConfiguration &chargingConfiguration);
     void chargingConfigurationChanged(const ChargingConfiguration &chargingConfiguration);
     void chargingConfigurationRemoved(const ThingId &evChargerThingId);
+
+    void pvConfigurationAdded(const PvConfiguration &pvConfiguration);
+    void pvConfigurationChanged(const PvConfiguration &pvConfiguration);
+    void pvConfigurationRemoved(const ThingId &pvThingId);
 
 private:
     ThingManager *m_thingManager = nullptr;
@@ -106,6 +119,7 @@ private:
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
+    QHash<ThingId, PvConfiguration> m_pvConfigurations;
 
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
@@ -140,6 +154,10 @@ private slots:
     void loadChargingConfiguration(const ThingId &evChargerThingId);
     void saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration);
     void removeChargingConfigurationFromSettings(const ThingId &evChargerThingId);
+
+    void loadPvConfiguration(const ThingId &pvThingId);
+    void savePvConfigurationToSettings(const PvConfiguration &pvConfiguration);
+    void removePvConfigurationFromSettings(const ThingId &pvThingId);
 
 };
 

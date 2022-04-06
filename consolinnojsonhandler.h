@@ -52,6 +52,11 @@ public:
     Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
 
+    Q_INVOKABLE JsonReply* GetPvConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetPvConfiguration(const QVariantMap &params);
+
+
+
     Q_INVOKABLE JsonReply* GetChargingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
 
@@ -67,6 +72,11 @@ signals:
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);
     void ChargingConfigurationChanged(const QVariantMap &params);
+
+    void PvConfigurationAdded(const QVariantMap &params);
+    void PvConfigurationRemoved(const QVariantMap &params);
+    void PvConfigurationChanged(const QVariantMap &params);
+
 
 private:
     EnergyEngine *m_energyEngine = nullptr;
