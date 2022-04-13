@@ -213,9 +213,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
 
 QList<PvConfiguration> EnergyEngine::pvConfigurations() const
 {
-
     return m_pvConfigurations.values();
-
 }
 
 EnergyEngine::HemsError EnergyEngine::setPvConfiguration(const PvConfiguration &pvConfiguration)
@@ -240,7 +238,31 @@ EnergyEngine::HemsError EnergyEngine::setPvConfiguration(const PvConfiguration &
 }
 
 
+QList<ChargingSessionConfiguration> EnergyEngine::chargingSessionConfigurations() const
+{
+    return m_chargingSessionConfigurations.values();
+}
 
+EnergyEngine::HemsError EnergyEngine::setChargingSessionConfiguration(const ChargingSessionConfiguration &chargingSessionConfiguration)
+{
+
+    if (!m_chargingSessionConfigurations.contains(chargingSessionConfiguration.chargingSessionThingId())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set pv configuration. The given pv thing id does not exist." << chargingSessionConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+
+     if (m_chargingSessionConfigurations.value(chargingSessionConfiguration.chargingSessionThingId()) != chargingSessionConfiguration) {
+
+        m_chargingSessionConfigurations[chargingSessionConfiguration.chargingSessionThingId()] = chargingSessionConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Pv configuration changed" << chargingSessionConfiguration;
+        saveChargingSessionConfigurationToSettings(chargingSessionConfiguration);
+        emit chargingSessionConfigurationChanged(chargingSessionConfiguration);
+
+    }
+
+    return HemsErrorNoError;
+}
 
 
 void EnergyEngine::monitorHeatPump(Thing *thing)
@@ -265,6 +287,7 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
     m_evChargers.insert(thing->id(), thing);
     evaluateAvailableUseCases();
     loadChargingConfiguration(thing->id());
+    //loadChargingSessionConfiguration(thing->id());
 }
 
 void EnergyEngine::onThingAdded(Thing *thing)
@@ -331,13 +354,36 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
     if (m_evChargers.contains(thingId)) {
         m_evChargers.remove(thingId);
         qCDebug(dcConsolinnoEnergy()) << "Removed evcharger from energy manager" << thingId.toString();
-
+        // Charger
         if (m_chargingConfigurations.contains(thingId)) {
             ChargingConfiguration chargingConfig = m_chargingConfigurations.take(thingId);
             removeChargingConfigurationFromSettings(thingId);
             emit chargingConfigurationRemoved(thingId);
             qCDebug(dcConsolinnoEnergy()) << "Removed charging configuration" << chargingConfig;
         }
+        // charging Session
+        // Remove ChargingSession Note: Maybe we need to change this
+
+        foreach(const ChargingSessionConfiguration &chargingSession, m_chargingSessionConfigurations){
+                if(chargingSession.evChargerThingId() == thingId){
+                    ChargingSessionConfiguration debugMessage = m_chargingSessionConfigurations.take(chargingSession.chargingSessionThingId());
+                    removeChargingSessionConfigurationFromSettings(chargingSession.chargingSessionThingId());
+                    emit chargingSessionConfigurationRemoved(chargingSession.chargingSessionThingId());
+                    qCDebug(dcConsolinnoEnergy()) << "Removed chargingsession configuration" << debugMessage;
+                    break;
+                }
+
+        }
+
+        /*
+        if (m_chargingSessionConfigurations.contains(thingId)  ) {
+            ChargingConfiguration chargingConfig = m_chargingConfigurations.take(thingId);
+            removeChargingConfigurationFromSettings(thingId);
+            emit chargingConfigurationRemoved(thingId);
+            qCDebug(dcConsolinnoEnergy()) << "Removed charging configuration" << chargingConfig;
+        }
+        */
+
     }
 
     // Weather
@@ -673,6 +719,75 @@ void EnergyEngine::removeChargingConfigurationFromSettings(const ThingId &evChar
     settings.endGroup();
     settings.endGroup();
 }
+
+void EnergyEngine::loadChargingSessionConfiguration(const ThingId &chargingSessionThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("ChargingSettingConfigurations");
+    if (settings.childGroups().contains(chargingSessionThingId.toString())) {
+        settings.beginGroup(chargingSessionThingId.toString());
+
+        ChargingSessionConfiguration configuration;
+
+        configuration.setChargingSessionthingId(chargingSessionThingId);
+        configuration.setCarThingId(settings.value("carThingId").toUuid());
+        configuration.setEvChargerThingId(settings.value("evCharger").toUuid());
+        configuration.setStartedAt(settings.value("started_at").toTime());
+        configuration.setFinishedAt(settings.value("finished_at").toTime());
+        configuration.setInitialBatteryEnergy(settings.value("initial_battery_energy").toFloat());
+        configuration.setDuration(settings.value("duration").toInt());
+        configuration.setEnergyCharged(settings.value("energy_charged").toFloat());
+        configuration.setEnergyBattery(settings.value("energy_battery").toFloat());
+        configuration.setBatteryLevel(settings.value("battery_level").toInt());
+        settings.endGroup();
+
+        m_chargingSessionConfigurations.insert(chargingSessionThingId, configuration);
+        emit chargingSessionConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // Charging usecase is available and this ev charger has no configuration yet, lets add one
+        ChargingSessionConfiguration configuration;
+        configuration.setChargingSessionthingId(chargingSessionThingId);
+        m_chargingSessionConfigurations.insert(chargingSessionThingId, configuration);
+        emit chargingSessionConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveChargingSessionConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // ChargingConfigurations
+}
+
+void EnergyEngine::saveChargingSessionConfigurationToSettings(const ChargingSessionConfiguration &chargingSessionConfiguration)
+{
+
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("ChargingSessionConfigurations");
+    settings.beginGroup(chargingSessionConfiguration.chargingSessionThingId().toString());
+
+    settings.setValue("carThingId", chargingSessionConfiguration.carThingId());
+    settings.setValue("evCharger", chargingSessionConfiguration.evChargerThingId());
+    settings.setValue("started_at" , chargingSessionConfiguration.startedAt());
+    settings.setValue("finished_at", chargingSessionConfiguration.finishedAt());
+    settings.setValue("initial_battery_energy", chargingSessionConfiguration.initialBatteryEnergy());
+    settings.setValue("duration", chargingSessionConfiguration.duration() );
+    settings.setValue("energy_charged", chargingSessionConfiguration.energyCharged());
+    settings.setValue("energy_battery", chargingSessionConfiguration.energyBattery());
+    settings.setValue("battery_level", chargingSessionConfiguration.batteryLevel());
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::removeChargingSessionConfigurationFromSettings(const ThingId &chargingSessionThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("ChargingConfigurations");
+    settings.beginGroup(chargingSessionThingId.toString());
+    settings.remove("");
+    settings.endGroup();
+    settings.endGroup();
+}
+
 
 void EnergyEngine::savePvConfigurationToSettings(const PvConfiguration &pvConfiguration)
 {
