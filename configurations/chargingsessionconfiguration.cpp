@@ -5,16 +5,6 @@ ChargingSessionConfiguration::ChargingSessionConfiguration()
 
 }
 
-ThingId ChargingSessionConfiguration::chargingSessionThingId() const
-{
-    return m_chargingSessionthingId;
-}
-
-void ChargingSessionConfiguration::setChargingSessionthingId(const ThingId &chargingSessionThingId)
-{
-    m_chargingSessionthingId = chargingSessionThingId;
-}
-
 ThingId ChargingSessionConfiguration::carThingId() const
 {
     return m_carThingId;
@@ -107,8 +97,7 @@ void ChargingSessionConfiguration::setBatteryLevel(const int battery_level)
 
 bool ChargingSessionConfiguration::operator ==(const ChargingSessionConfiguration &other) const
 {
-    return m_chargingSessionthingId == other.chargingSessionThingId() &&
-            m_carThingId == other.carThingId() &&
+    return  m_carThingId == other.carThingId() &&
             m_evChargerThingId == other.evChargerThingId() &&
             m_started_at == other.startedAt() &&
             m_finished_at == other.finishedAt() &&
@@ -128,7 +117,6 @@ bool ChargingSessionConfiguration::operator !=(const ChargingSessionConfiguratio
 
 QDebug operator<<(QDebug debug, const ChargingSessionConfiguration &chargingSessionConfig)
 {
-    debug.nospace() << "ChargingSessionConfiguration(" << chargingSessionConfig.chargingSessionThingId().toString();
     debug.nospace() << "Car: " << chargingSessionConfig.carThingId().toString();
     debug.nospace() << "Wallbox: " << chargingSessionConfig.evChargerThingId().toString();
     debug.nospace() << ", started at:  " << chargingSessionConfig.startedAt().toString();

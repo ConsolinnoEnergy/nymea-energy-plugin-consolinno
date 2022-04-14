@@ -168,7 +168,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     params.clear();
     description = "Emitted whenever a chargingsession configuration has been removed from the energy engine with the given pv thing ID.";
-    params.insert("chargingSessionThingId", enumValueName(Uuid));
+    params.insert("evChargerThingId", enumValueName(Uuid));
     registerNotification("ChargingSessionConfigurationRemoved", description, params);
 
     params.clear();
@@ -221,7 +221,6 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         params.insert("heatingConfiguration", pack(heatingConfiguration));
         emit HeatingConfigurationChanged(params);
     });
-
 
 
     connect(m_energyEngine, &EnergyEngine::pvConfigurationAdded, this, [=](const PvConfiguration &pvConfiguration){
@@ -381,6 +380,7 @@ JsonReply *ConsolinnoJsonHandler::GetChargingConfigurations(const QVariantMap &p
 JsonReply *ConsolinnoJsonHandler::SetChargingConfiguration(const QVariantMap &params)
 {
     qCDebug(dcConsolinnoEnergy()) << params;
+    //
     EnergyEngine::HemsError error = m_energyEngine->setChargingConfiguration(unpack<ChargingConfiguration>(params.value("chargingConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));

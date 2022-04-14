@@ -11,7 +11,6 @@
 class ChargingSessionConfiguration
 {
     Q_GADGET
-    Q_PROPERTY(QUuid chargingSessionThingId READ chargingSessionThingId WRITE setChargingSessionthingId)
     Q_PROPERTY(QUuid carThingId READ carThingId WRITE setCarThingId USER true)
     Q_PROPERTY(QUuid evChargerThingId READ evChargerThingId WRITE setEvChargerThingId USER true)
     Q_PROPERTY(QTime startedAt READ startedAt WRITE setStartedAt USER true)
@@ -28,8 +27,7 @@ class ChargingSessionConfiguration
 public:
     ChargingSessionConfiguration();
 
-    ThingId chargingSessionThingId() const;
-    void setChargingSessionthingId(const ThingId &chargingSessionThingId);
+
 
     ThingId carThingId() const;
     void setCarThingId(const ThingId &carThingId);
@@ -63,16 +61,15 @@ public:
 
 
 private:
-    ThingId m_chargingSessionthingId;
     ThingId m_carThingId;
     ThingId m_evChargerThingId;
-    QTime m_started_at;
-    QTime m_finished_at;
+    QTime m_started_at = QTime(3,2) ;
+    QTime m_finished_at = QTime(4,2);
     float m_initial_battery_energy;
     int m_duration;
-    float m_energy_charged;
+    float m_energy_charged = 0;
     float m_energy_battery;
-    int m_battery_level;
+    int m_battery_level = 0;
 
 
 
