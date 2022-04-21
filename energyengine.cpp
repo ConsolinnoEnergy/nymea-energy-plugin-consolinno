@@ -293,9 +293,9 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
     loadChargingConfiguration(thing->id());
 }
 
-void EnergyEngine::monitorLoadingSession(Thing *thing)
+void EnergyEngine::monitorChargingSession(Thing *thing)
 {
-    qCDebug(dcConsolinnoEnergy()) << "Start monitoring ev chargers LoadingSessions" << thing;
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring ev chargers chargingSessions" << thing;
     //m_evChargers.insert(thing->id(), thing);
     evaluateAvailableUseCases();
     loadChargingSessionConfiguration(thing->id());
@@ -314,7 +314,7 @@ void EnergyEngine::onThingAdded(Thing *thing)
 
     if (thing->thingClass().interfaces().contains("evcharger")) {
         monitorEvCharger(thing);
-        monitorLoadingSession(thing);
+        monitorChargingSession(thing);
     }
 
     if (thing->thingClass().interfaces().contains("weather")) {

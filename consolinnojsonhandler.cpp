@@ -173,7 +173,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     params.clear();
     description = "Emitted whenever a chargingsession configuration has changed in the energy engine.";
-    params.insert("chargingSessionConfiguraiton", objectRef<ChargingSessionConfiguration>());
+    params.insert("chargingSessionConfiguration", objectRef<ChargingSessionConfiguration>());
     registerNotification("ChargingSessionConfigurationChanged", description, params);
 
     params.clear();

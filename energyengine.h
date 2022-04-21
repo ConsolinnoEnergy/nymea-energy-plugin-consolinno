@@ -141,7 +141,7 @@ private:
     void monitorHeatPump(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorEvCharger(Thing *thing);
-    void monitorLoadingSession(Thing *thing);
+    void monitorChargingSession(Thing *thing);
 
 private slots:
     void onThingAdded(Thing *thing);
