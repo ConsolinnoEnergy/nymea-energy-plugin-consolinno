@@ -45,9 +45,17 @@ class ChargingConfiguration
     Q_PROPERTY(QUuid carThingId READ carThingId WRITE setCarThingId USER true)
     Q_PROPERTY(QString endTime READ endTime WRITE setEndTime USER true)
     Q_PROPERTY(uint targetPercentage READ targetPercentage WRITE setTargetPercentage USER true)
-    Q_PROPERTY(bool zeroReturnPolicyEnabled READ zeroReturnPolicyEnabled WRITE setZeroReturnPolicyEnabled USER true)
-
+    Q_PROPERTY(int optimizationMode READ optimizationMode WRITE setOptimizationMode USER true)
+    Q_PROPERTY(QUuid uniqueIdentifier READ uniqueIdentifier WRITE setUniqueIdentifier USER true)
 public:
+
+    enum OptimizationMode {
+        Unoptimized = 0,
+        PVOptimized = 1
+
+    };
+    Q_ENUM(OptimizationMode);
+
     ChargingConfiguration();
 
     ThingId evChargerThingId() const;
@@ -65,8 +73,11 @@ public:
     uint targetPercentage() const;
     void setTargetPercentage(uint targetPercentage);
 
-    bool zeroReturnPolicyEnabled() const;
-    void setZeroReturnPolicyEnabled(bool zeroReturnPolicyEnabled);
+    int optimizationMode() const;
+    void setOptimizationMode(int optimizationMode);
+
+    QUuid uniqueIdentifier() const;
+    void setUniqueIdentifier(QUuid uniqueIdentifier);
 
     bool isValid() const;
 
@@ -79,8 +90,8 @@ private:
     ThingId m_carThingId;
     QString m_endTime = "12:30:00";
     uint m_targetPercentage = 100;
-    bool m_zeroReturnPolicyEnabled = false;
-
+    int m_optimizationMode;
+    QUuid m_uniqueIdentifier;
 };
 
 QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig);

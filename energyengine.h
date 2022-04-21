@@ -39,6 +39,7 @@
 #include <energymanager.h>
 
 #include "configurations/chargingconfiguration.h"
+#include "configurations/chargingsessionconfiguration.h"
 #include "configurations/heatingconfiguration.h"
 #include "configurations/pvconfiguration.h"
 
@@ -62,7 +63,8 @@ public:
         HemsUseCaseBlackoutProtection = 0x01,
         HemsUseCaseHeating = 0x02,
         HemsUseCaseCharging = 0x04,
-        HemsUseCasePv = 0x08
+        HemsUseCasePv = 0x08,
+       // HemsUseCaseChargingSession = 0x16
     };
     Q_ENUM(HemsUseCase)
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
@@ -82,6 +84,10 @@ public:
     // Charging configurations
     QList<ChargingConfiguration> chargingConfigurations() const;
     EnergyEngine::HemsError setChargingConfiguration(const ChargingConfiguration &chargingConfiguration);
+
+    // Charging Session configurations
+    QList<ChargingSessionConfiguration> chargingSessionConfigurations() const;
+    EnergyEngine::HemsError setChargingSessionConfiguration(const ChargingSessionConfiguration &chargingSessionConfiguration);
 
     // Pv configurations
     QList<PvConfiguration> pvConfigurations() const;
@@ -104,6 +110,10 @@ signals:
     void pvConfigurationChanged(const PvConfiguration &pvConfiguration);
     void pvConfigurationRemoved(const ThingId &pvThingId);
 
+    void chargingSessionConfigurationAdded(const ChargingSessionConfiguration &chargingSessionConfiguration);
+    void chargingSessionConfigurationChanged(const ChargingSessionConfiguration &chargingSessionConfiguration);
+    void chargingSessionConfigurationRemoved(const ThingId &evChargerThingId);
+
 private:
     ThingManager *m_thingManager = nullptr;
     EnergyManager *m_energyManager = nullptr;
@@ -120,6 +130,7 @@ private:
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
     QHash<ThingId, PvConfiguration> m_pvConfigurations;
+    QHash<ThingId, ChargingSessionConfiguration> m_chargingSessionConfigurations;
 
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
@@ -130,6 +141,7 @@ private:
     void monitorHeatPump(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorEvCharger(Thing *thing);
+    void monitorChargingSession(Thing *thing);
 
 private slots:
     void onThingAdded(Thing *thing);
@@ -154,6 +166,10 @@ private slots:
     void loadChargingConfiguration(const ThingId &evChargerThingId);
     void saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration);
     void removeChargingConfigurationFromSettings(const ThingId &evChargerThingId);
+
+    void loadChargingSessionConfiguration(const ThingId &chargingSessionThingId);
+    void saveChargingSessionConfigurationToSettings(const ChargingSessionConfiguration &chargingConfiguration);
+    void removeChargingSessionConfigurationFromSettings(const ThingId &chargingSessionThingId);
 
     void loadPvConfiguration(const ThingId &pvThingId);
     void savePvConfigurationToSettings(const PvConfiguration &pvConfiguration);

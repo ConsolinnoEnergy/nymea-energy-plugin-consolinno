@@ -55,7 +55,8 @@ public:
     Q_INVOKABLE JsonReply* GetPvConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetPvConfiguration(const QVariantMap &params);
 
-
+    Q_INVOKABLE JsonReply* GetChargingSessionConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetChargingSessionConfiguration(const QVariantMap &params);
 
     Q_INVOKABLE JsonReply* GetChargingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
@@ -76,6 +77,10 @@ signals:
     void PvConfigurationAdded(const QVariantMap &params);
     void PvConfigurationRemoved(const QVariantMap &params);
     void PvConfigurationChanged(const QVariantMap &params);
+
+    void ChargingSessionConfigurationAdded (const QVariantMap &params);
+    void ChargingSessionConfigurationRemoved(const QVariantMap &params);
+    void ChargingSessionConfigurationChanged(const QVariantMap &params);
 
 
 private:
