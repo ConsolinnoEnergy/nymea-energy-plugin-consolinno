@@ -45,6 +45,18 @@ void ChargingConfiguration::setEvChargerThingId(const ThingId &evChargerThingId)
     m_evChargerThingId = evChargerThingId;
 }
 
+int ChargingConfiguration::optimizationMode() const
+{
+    return m_optimizationMode;
+}
+
+void ChargingConfiguration::setOptimizationMode(int optimizationMode)
+{
+    m_optimizationMode = optimizationMode;
+}
+
+
+
 bool ChargingConfiguration::optimizationEnabled() const
 {
     return m_optimizationEnabled;
@@ -85,15 +97,19 @@ void ChargingConfiguration::setTargetPercentage(uint targetPercentage)
     m_targetPercentage = targetPercentage;
 }
 
-bool ChargingConfiguration::zeroReturnPolicyEnabled() const
+QUuid ChargingConfiguration::uniqueIdentifier() const
 {
-    return m_zeroReturnPolicyEnabled;
+    return m_uniqueIdentifier;
 }
 
-void ChargingConfiguration::setZeroReturnPolicyEnabled(bool zeroReturnPolicyEnabled)
+void ChargingConfiguration::setUniqueIdentifier(QUuid uniqueIdentifier)
 {
-    m_zeroReturnPolicyEnabled = zeroReturnPolicyEnabled;
+    m_uniqueIdentifier = uniqueIdentifier;
 }
+
+
+
+
 
 bool ChargingConfiguration::isValid() const
 {
@@ -104,10 +120,11 @@ bool ChargingConfiguration::operator==(const ChargingConfiguration &other) const
 {
     return m_evChargerThingId == other.evChargerThingId() &&
             m_optimizationEnabled == other.optimizationEnabled() &&
+            m_optimizationMode == other.optimizationMode() &&
             m_carThingId == other.carThingId() &&
             m_endTime == other.endTime() &&
-            m_targetPercentage == other.targetPercentage() &&
-            m_zeroReturnPolicyEnabled == other.zeroReturnPolicyEnabled();
+            m_uniqueIdentifier == other.uniqueIdentifier() &&
+            m_targetPercentage == other.targetPercentage();
 }
 
 bool ChargingConfiguration::operator!=(const ChargingConfiguration &other) const
@@ -118,15 +135,16 @@ bool ChargingConfiguration::operator!=(const ChargingConfiguration &other) const
 QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig)
 {
     debug.nospace() << "ChargingConfiguration(" << chargingConfig.evChargerThingId().toString();
+    debug.nospace() << "unique Identifier: " << chargingConfig.uniqueIdentifier().toString();
     debug.nospace() << ", " << (chargingConfig.optimizationEnabled() ? "enabled" : "disabled");
     if (!chargingConfig.carThingId().isNull()) {
         debug.nospace() << ", assigned car: " << chargingConfig.carThingId().toString();
     } else {
         debug.nospace() << ", no car assigned";
     }
+    debug.nospace() << ", optimization Mode: " << chargingConfig.optimizationMode();
     debug.nospace() << ", target percentage: " << chargingConfig.targetPercentage() << "%";
     debug.nospace() << ", target time: " << chargingConfig.endTime();
-    debug.nospace() << ", zero return policy:" << (chargingConfig.zeroReturnPolicyEnabled() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }

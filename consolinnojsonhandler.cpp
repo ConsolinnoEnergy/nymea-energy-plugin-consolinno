@@ -250,9 +250,9 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         emit ChargingSessionConfigurationAdded(params);
     });
 
-    connect(m_energyEngine, &EnergyEngine::chargingSessionConfigurationRemoved, this, [=](const ThingId &pvThingId){
+    connect(m_energyEngine, &EnergyEngine::chargingSessionConfigurationRemoved, this, [=](const ThingId &evChargerThingId){
         QVariantMap params;
-        params.insert("pvThingId", pvThingId);
+        params.insert("evCharger", evChargerThingId);
         emit ChargingSessionConfigurationRemoved(params);
     });
 

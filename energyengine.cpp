@@ -174,7 +174,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
     }
 
     // Make sure the configuration is valid if enabled
-    if (chargingConfiguration.optimizationEnabled()) {
+    //if (chargingConfiguration.optimizationEnabled()) {
         // Make sure we have an assigned car, otherwise we cannot enable the optimization
         if (chargingConfiguration.carThingId().isNull()) {
             qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The configuration is enabled but there is no assigned car." << chargingConfiguration;
@@ -193,7 +193,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
                 return HemsErrorInvalidThing;
             }
         }
-    }
+    //}
 
     // Update the configuraton
     if (m_chargingConfigurations.value(chargingConfiguration.evChargerThingId()) != chargingConfiguration) {
@@ -685,11 +685,12 @@ void EnergyEngine::loadChargingConfiguration(const ThingId &evChargerThingId)
 
         ChargingConfiguration configuration;
         configuration.setEvChargerThingId(evChargerThingId);
+        configuration.setOptimizationMode(settings.value("optimizationMode").toInt());
         configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
         configuration.setCarThingId(ThingId(settings.value("carThingId").toUuid()));
         configuration.setEndTime(settings.value("endTime").toString());
         configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
-        configuration.setZeroReturnPolicyEnabled(settings.value("zeroReturnPolicyEnabled").toBool());
+        configuration.setUniqueIdentifier(settings.value("uniqueIdentifier").toUuid());
         settings.endGroup();
 
         m_chargingConfigurations.insert(evChargerThingId, configuration);
@@ -714,11 +715,12 @@ void EnergyEngine::saveChargingConfigurationToSettings(const ChargingConfigurati
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingConfigurations");
     settings.beginGroup(chargingConfiguration.evChargerThingId().toString());
+    settings.setValue("optimizationMode", chargingConfiguration.optimizationMode());
     settings.setValue("optimizationEnabled", chargingConfiguration.optimizationEnabled());
     settings.setValue("carThingId", chargingConfiguration.carThingId());
     settings.setValue("endTime", chargingConfiguration.endTime());
     settings.setValue("targetPercentage", chargingConfiguration.targetPercentage());
-    settings.setValue("zeroReturnPolicyEnabled", chargingConfiguration.zeroReturnPolicyEnabled());
+    settings.setValue("uniqueIdentifier", chargingConfiguration.uniqueIdentifier());
     settings.endGroup();
     settings.endGroup();
 }
@@ -819,6 +821,11 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
         configuration.setEnergyCharged(settings.value("energyCharged").toFloat());
         configuration.setEnergyBattery(settings.value("energyBattery").toFloat());
         configuration.setBatteryLevel(settings.value("batteryLevel").toInt());
+        configuration.setSessionId(settings.value("sessionId").toUuid());
+        configuration.setState(settings.value("state").toInt());
+        configuration.setTimestamp(settings.value("timestamp").toInt());
+
+
         settings.endGroup();
 
         m_chargingSessionConfigurations.insert(evChargerThingId, configuration);
@@ -852,6 +859,9 @@ void EnergyEngine::saveChargingSessionConfigurationToSettings(const ChargingSess
     settings.setValue("energyCharged", chargingSessionConfiguration.energyCharged());
     settings.setValue("energyBattery", chargingSessionConfiguration.energyBattery());
     settings.setValue("batteryLevel", chargingSessionConfiguration.batteryLevel());
+    settings.setValue("sessionId", chargingSessionConfiguration.sessionId());
+    settings.setValue("state", chargingSessionConfiguration.state());
+    settings.setValue("timestamp", chargingSessionConfiguration.timestamp());
     settings.endGroup();
     settings.endGroup();
 
