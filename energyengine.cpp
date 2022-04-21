@@ -174,7 +174,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
     }
 
     // Make sure the configuration is valid if enabled
-    //if (chargingConfiguration.optimizationEnabled()) {
+    if (chargingConfiguration.optimizationEnabled()) {
         // Make sure we have an assigned car, otherwise we cannot enable the optimization
         if (chargingConfiguration.carThingId().isNull()) {
             qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The configuration is enabled but there is no assigned car." << chargingConfiguration;
@@ -193,7 +193,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
                 return HemsErrorInvalidThing;
             }
         }
-    //}
+    }
 
     // Update the configuraton
     if (m_chargingConfigurations.value(chargingConfiguration.evChargerThingId()) != chargingConfiguration) {
