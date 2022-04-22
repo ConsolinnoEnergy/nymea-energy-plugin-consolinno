@@ -750,7 +750,7 @@ void EnergyEngine::savePvConfigurationToSettings(const PvConfiguration &pvConfig
     settings.endGroup();
     settings.endGroup();
 
-    qCDebug(dcConsolinnoEnergy()) << "saved Pv settings: " << settings.childGroups();
+
 }
 
 void EnergyEngine::removePvConfigurationFromSettings(const ThingId &pvThingId)
@@ -814,8 +814,10 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
 
         configuration.setEvChargerThingId(evChargerThingId);
         configuration.setCarThingId(settings.value("carThingId").toUuid());
-        configuration.setStartedAt(settings.value("startedAt").toTime());
-        configuration.setFinishedAt(settings.value("finishedAt").toTime());
+
+        configuration.setStartedAt(settings.value("startedAt").toString());
+        configuration.setFinishedAt(settings.value("finishedAt").toString());
+
         configuration.setInitialBatteryEnergy(settings.value("initialBatteryEnergy").toFloat());
         configuration.setDuration(settings.value("duration").toInt());
         configuration.setEnergyCharged(settings.value("energyCharged").toFloat());
@@ -847,13 +849,15 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
 
 void EnergyEngine::saveChargingSessionConfigurationToSettings(const ChargingSessionConfiguration &chargingSessionConfiguration)
 {
-
+    qCWarning(dcConsolinnoEnergy() ) << " saving ChargingSessionConfiguration" ;
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingSessionConfigurations");
     settings.beginGroup(chargingSessionConfiguration.evChargerThingId().toString());
     settings.setValue("carThingId", chargingSessionConfiguration.carThingId());
-    settings.setValue("startedAt" , chargingSessionConfiguration.startedAt());
-    settings.setValue("finishedAt", chargingSessionConfiguration.finishedAt());
+
+    settings.setValue("startedAt" , chargingSessionConfiguration.startedAt() );
+    settings.setValue("finishedAt", chargingSessionConfiguration.finishedAt() );
+
     settings.setValue("initialBatteryEnergy", chargingSessionConfiguration.initialBatteryEnergy());
     settings.setValue("duration", chargingSessionConfiguration.duration() );
     settings.setValue("energyCharged", chargingSessionConfiguration.energyCharged());
@@ -865,7 +869,6 @@ void EnergyEngine::saveChargingSessionConfigurationToSettings(const ChargingSess
     settings.endGroup();
     settings.endGroup();
 
-    qCDebug(dcConsolinnoEnergy()) << "saved ChargingSession settings: " << settings.childGroups();
 }
 
 void EnergyEngine::removeChargingSessionConfigurationFromSettings(const ThingId &evChargerThingId)

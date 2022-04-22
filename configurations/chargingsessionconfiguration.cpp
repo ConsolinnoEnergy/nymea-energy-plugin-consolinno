@@ -25,22 +25,22 @@ void ChargingSessionConfiguration::setEvChargerThingId(const ThingId &evChargerT
     m_evChargerThingId = evChargerThingId;
 }
 
-QTime ChargingSessionConfiguration::startedAt() const
+QString ChargingSessionConfiguration::startedAt() const
 {
     return m_started_at;
 }
 
-void ChargingSessionConfiguration::setStartedAt(const QTime started_at)
+void ChargingSessionConfiguration::setStartedAt(const QString started_at)
 {
     m_started_at = started_at;
 }
 
-QTime ChargingSessionConfiguration::finishedAt() const
+QString ChargingSessionConfiguration::finishedAt() const
 {
     return m_finished_at;
 }
 
-void ChargingSessionConfiguration::setFinishedAt(const QTime finished_at)
+void ChargingSessionConfiguration::setFinishedAt(const QString finished_at)
 {
     m_finished_at = finished_at;
 }
@@ -155,11 +155,11 @@ QDebug operator<<(QDebug debug, const ChargingSessionConfiguration &chargingSess
 {
     debug.nospace() << "Car: " << chargingSessionConfig.carThingId().toString();
     debug.nospace() << "Wallbox: " << chargingSessionConfig.evChargerThingId().toString();
-    debug.nospace() << ", started at:  " << chargingSessionConfig.startedAt().toString();
-    if (!chargingSessionConfig.finishedAt().isNull()){
+    debug.nospace() << ", started at:  " << chargingSessionConfig.startedAt();
+    if (chargingSessionConfig.finishedAt() == "" ){
         debug.nospace() << " not finished yet";
     } else {
-        debug.nospace() << chargingSessionConfig.finishedAt().toString();
+        debug.nospace() << chargingSessionConfig.finishedAt();
     }
     debug.nospace() << ", initial battery energy:  " << chargingSessionConfig.initialBatteryEnergy();
     debug.nospace() << ", duration in seconds:  " << chargingSessionConfig.duration();

@@ -96,7 +96,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     params.clear(); returns.clear();
     description = "Get the list of available chargingSession configurations from the energy engine.";
-    returns.insert("chargingSessionConfiguration", QVariantList() << objectRef<ChargingSessionConfiguration>());
+    returns.insert("chargingSessionConfigurations", QVariantList() << objectRef<ChargingSessionConfiguration>());
     registerMethod("GetChargingSessionConfigurations", description, params, returns);
 
 
@@ -252,7 +252,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     connect(m_energyEngine, &EnergyEngine::chargingSessionConfigurationRemoved, this, [=](const ThingId &evChargerThingId){
         QVariantMap params;
-        params.insert("evCharger", evChargerThingId);
+        params.insert("evChargerThingId", evChargerThingId);
         emit ChargingSessionConfigurationRemoved(params);
     });
 
