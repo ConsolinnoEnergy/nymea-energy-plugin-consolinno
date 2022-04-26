@@ -291,6 +291,26 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
     m_evChargers.insert(thing->id(), thing);
     evaluateAvailableUseCases();
     loadChargingConfiguration(thing->id());
+
+    // this enables to monitor all state changes individually
+    connect(thing, &Thing::stateValueChanged, this, [=](const StateTypeId &stateTypeId){
+        StateType stateType = m_evChargers.value(thing->id())->thingClass().getStateType(stateTypeId);
+        // use case: EvCharger gets unplugged, while an optimization is happening
+        if (stateType.name() == "pluggedIn"){
+            qCDebug(dcConsolinnoEnergy()) << "EvCharger pluggedin value changed ";
+            if (m_evChargers.value(thing->id())->state(stateTypeId).value() == false){
+                qCDebug(dcConsolinnoEnergy()) << "the value changed to false";
+                ChargingConfiguration configuration = m_chargingConfigurations.value(thing->id());
+                configuration.setOptimizationEnabled(false);
+                saveChargingConfigurationToSettings(configuration);
+                emit chargingConfigurationChanged(configuration);
+            }
+        }else{
+            qCDebug(dcConsolinnoEnergy()) << "The state: " << stateType.name()  << " changed";
+        }
+
+
+            });
 }
 
 void EnergyEngine::monitorChargingSession(Thing *thing)
@@ -299,6 +319,7 @@ void EnergyEngine::monitorChargingSession(Thing *thing)
     //m_evChargers.insert(thing->id(), thing);
     evaluateAvailableUseCases();
     loadChargingSessionConfiguration(thing->id());
+
 }
 
 

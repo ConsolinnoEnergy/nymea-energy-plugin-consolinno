@@ -62,9 +62,12 @@ public:
     Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
 
 signals:
+    void PluggedInChanged(const QVariantMap &params);
+
     void AvailableUseCasesChanged(const QVariantMap &params);
 
     void HousholdPhaseLimitChanged(const QVariantMap &params);
+
 
     void HeatingConfigurationAdded(const QVariantMap &params);
     void HeatingConfigurationRemoved(const QVariantMap &params);

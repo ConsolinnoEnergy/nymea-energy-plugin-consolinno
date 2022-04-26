@@ -97,6 +97,8 @@ public:
 signals:
     void availableUseCasesChanged(EnergyEngine::HemsUseCases availableUseCases);
     void housholdPhaseLimitChanged(uint housholdPhaseLimit);
+    void pluggedInChanged(QVariant pluggedIn);
+
 
     void heatingConfigurationAdded(const HeatingConfiguration &heatingConfiguration);
     void heatingConfigurationChanged(const HeatingConfiguration &heatingConfiguration);
