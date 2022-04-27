@@ -4,7 +4,7 @@ build:
   stage: build
   script:
     - gosu root apt-get install -y git-buildpackage
-    - gbp dch -S -a --snapshot-number='os.popen("git log --pretty=oneline | wc -l").readlines()[0]' --ignore-branch
+    - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
     - CONFIG_SITE=/etc/dpkg-cross/cross-config.armhf  gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build && gosu root mv ../*.deb build
   artifacts:
     paths:
