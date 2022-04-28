@@ -136,7 +136,7 @@ QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig)
 {
     debug.nospace() << "ChargingConfiguration(" << chargingConfig.evChargerThingId().toString();
     debug.nospace() << "unique Identifier: " << chargingConfig.uniqueIdentifier().toString();
-    debug.nospace() << ", " << (chargingConfig.optimizationEnabled() ? "enabled" : "disabled");
+    debug.nospace() << "optimization: " << (chargingConfig.optimizationEnabled() ? "enabled" : "disabled");
     if (!chargingConfig.carThingId().isNull()) {
         debug.nospace() << ", assigned car: " << chargingConfig.carThingId().toString();
     } else {

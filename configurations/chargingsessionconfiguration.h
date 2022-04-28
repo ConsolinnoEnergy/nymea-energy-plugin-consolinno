@@ -13,14 +13,13 @@ class ChargingSessionConfiguration
     Q_GADGET
     Q_PROPERTY(QUuid carThingId READ carThingId WRITE setCarThingId USER true)
     Q_PROPERTY(QUuid evChargerThingId READ evChargerThingId WRITE setEvChargerThingId USER true)
-    Q_PROPERTY(QTime startedAt READ startedAt WRITE setStartedAt USER true)
-    Q_PROPERTY(QTime finishedAt READ finishedAt WRITE setFinishedAt USER true)
+    Q_PROPERTY(QString startedAt READ startedAt WRITE setStartedAt USER true)
+    Q_PROPERTY(QString finishedAt READ finishedAt WRITE setFinishedAt USER true)
     Q_PROPERTY(float initialBatteryEnergy READ initialBatteryEnergy WRITE setInitialBatteryEnergy USER true)
     Q_PROPERTY(int duration READ duration WRITE setDuration USER true)
     Q_PROPERTY(float energyCharged READ energyCharged WRITE setEnergyCharged USER true)
     Q_PROPERTY(float energyBattery READ energyBattery WRITE setEnergyBattery USER true)
     Q_PROPERTY(int batteryLevel READ batteryLevel WRITE setBatteryLevel USER true)
-
     Q_PROPERTY(int state READ state WRITE setState USER true)
     Q_PROPERTY(QUuid sessionId READ sessionId WRITE setSessionId USER true)
     Q_PROPERTY(int timestamp READ timestamp WRITE setTimestamp USER true )
@@ -46,11 +45,11 @@ public:
     ThingId evChargerThingId() const;
     void setEvChargerThingId(const ThingId &evChargerThingId);
 
-    QTime startedAt() const;
-    void setStartedAt(const QTime started_at);
+    QString startedAt() const;
+    void setStartedAt(const QString started_at);
 
-    QTime finishedAt() const;
-    void setFinishedAt(const QTime finished_at);
+    QString finishedAt() const;
+    void setFinishedAt(const QString finished_at);
 
     float initialBatteryEnergy() const;
     void setInitialBatteryEnergy( const float initial_battery_energy);
@@ -84,16 +83,16 @@ public:
 private:
     ThingId m_carThingId;
     ThingId m_evChargerThingId;
-    QTime m_started_at = QTime(3,2);
-    QTime m_finished_at = QTime(4,2);
-    float m_initial_battery_energy;
-    int m_duration;
+    QString m_started_at = "";
+    QString m_finished_at = "";
+    float m_initial_battery_energy = 0;
+    int m_duration = 0;
     float m_energy_charged = 0;
-    float m_energy_battery;
+    float m_energy_battery = 0;
     int m_battery_level = 0;
     QUuid m_sessionId;
-    int m_state;
-    int m_timestamp;
+    int m_state = 0;
+    int m_timestamp = 0;
 
 
 

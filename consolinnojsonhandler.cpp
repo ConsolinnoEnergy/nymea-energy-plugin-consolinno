@@ -96,7 +96,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     params.clear(); returns.clear();
     description = "Get the list of available chargingSession configurations from the energy engine.";
-    returns.insert("chargingSessionConfiguration", QVariantList() << objectRef<ChargingSessionConfiguration>());
+    returns.insert("chargingSessionConfigurations", QVariantList() << objectRef<ChargingSessionConfiguration>());
     registerMethod("GetChargingSessionConfigurations", description, params, returns);
 
 
@@ -191,7 +191,22 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     params.insert("chargingConfiguration", objectRef<ChargingConfiguration>());
     registerNotification("ChargingConfigurationChanged", description, params);
 
+    params.clear();
+    description = "Emitted whenever the EvCharger state pluggedIn changes";
+    params.insert("pluggedIn", enumValueName(Bool));
+    registerNotification("PluggedInChanged", description, params);
+
     // Connections for the notification
+/*  // not needed for now but can be interesting if the app needs to act and not the plugin
+    connect(m_energyEngine, &EnergyEngine::pluggedInChanged, this, [=](QVariant pluggedIn){
+        QVariantMap params;
+        params.insert("pluggedIn", pluggedIn.toBool());
+        qCWarning(dcConsolinnoEnergy()) << "The plugged in value has been Changed. jsonHandler";
+        // ToDo: Here should the chargingconfig geändert werden.
+
+        emit PluggedInChanged(params);
+    });
+*/
     connect(m_energyEngine, &EnergyEngine::availableUseCasesChanged, this, [=](EnergyEngine::HemsUseCases availableUseCases){
         QVariantMap params;
         params.insert("availableUseCases", flagValueNames(availableUseCases));
@@ -252,7 +267,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     connect(m_energyEngine, &EnergyEngine::chargingSessionConfigurationRemoved, this, [=](const ThingId &evChargerThingId){
         QVariantMap params;
-        params.insert("evCharger", evChargerThingId);
+        params.insert("evChargerThingId", evChargerThingId);
         emit ChargingSessionConfigurationRemoved(params);
     });
 
