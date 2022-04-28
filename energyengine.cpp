@@ -870,7 +870,7 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
 
 void EnergyEngine::saveChargingSessionConfigurationToSettings(const ChargingSessionConfiguration &chargingSessionConfiguration)
 {
-    qCWarning(dcConsolinnoEnergy() ) << " saving ChargingSessionConfiguration" ;
+    qCDebug(dcConsolinnoEnergy() ) << " saving ChargingSessionConfiguration" ;
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingSessionConfigurations");
     settings.beginGroup(chargingSessionConfiguration.evChargerThingId().toString());
