@@ -1,6 +1,15 @@
-image: lheiz/dc-armv7-nymea-d10
+# Defines stages which are to be executed
+stages:  
+  - build
+  - deploy
 
-build:
+.deploy_template: &deploy_script_templ
+  - git clone https://$GL_UPLOADER_USER:$GL_UPLOADER_PASSWORD@gitlab.consolinno-it.de/leafletfirmware/package-upload.git
+  - ./package-upload/debupload.sh snapshot $PWD/build/$(ls build/ | grep .*.deb)
+
+
+build:buster:
+  image: lheiz/dc-armv7-nymea-d10
   stage: build
   script:
     - gosu root apt-get install -y git-buildpackage
@@ -9,4 +18,10 @@ build:
   artifacts:
     paths:
       - build/*.deb
+
+deploy:
+  stage: deploy
+  image: debian:buster
+  script:
+    - *deploy_script_templ
 
