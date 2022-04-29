@@ -14,6 +14,7 @@ gbp:
   image: debian:buster
   stage: .pre
   script:
+    - apt-get update
     - apt-get install -y git-buildpackage
     - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
 
@@ -30,8 +31,6 @@ build:buster:
   image: lheiz/dc-armv7-nymea-d10
   stage: build
   script:
-    - gosu root apt-get install -y git-buildpackage
-    - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
     - CONFIG_SITE=/etc/dpkg-cross/cross-config.armhf  gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build && gosu root mv ../*.deb build
   artifacts:
     paths:
