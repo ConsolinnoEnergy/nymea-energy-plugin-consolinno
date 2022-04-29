@@ -38,7 +38,9 @@ build:buster:
 
 deploy:
   stage: deploy
-  image: debian:buster
+  before_script:
+    - apt-get update
+    - apt-get install curl
   script:
     - *deploy_script_templ
 
