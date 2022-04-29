@@ -4,6 +4,7 @@ stages:
   - deploy
 
 .deploy_template: &deploy_script_templ
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y git
   - git clone https://$GL_UPLOADER_USER:$GL_UPLOADER_PASSWORD@gitlab.consolinno-it.de/leafletfirmware/package-upload.git
   - ./package-upload/debupload.sh snapshot $PWD/build/$(ls build/ | grep .*.deb)
 
