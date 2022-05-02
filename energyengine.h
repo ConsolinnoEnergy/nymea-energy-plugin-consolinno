@@ -153,11 +153,8 @@ private slots:
 
     void evaluate();
 
-    void evaluateHeatPumps();
-    void evaluateInverters();
-    void evaluateEvChargers();
 
-    void updateSchedules();
+
 
     void evaluateAvailableUseCases();
 
