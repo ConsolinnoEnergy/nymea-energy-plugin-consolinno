@@ -3,40 +3,64 @@ stages:
   - build
   - deploy
 
+##### Development snapshots #####
+.snapshot:
+  only:
+   - develop
+   - add-ci
+
 .deploy_template: &deploy_script_templ
   - apt update
   - DEBIAN_FRONTEND=noninteractive apt-get install -y git
-  - git clone https://$GL_UPLOADER_USER:$GL_UPLOADER_PASSWORD@gitlab.consolinno-it.de/leafletfirmware/package-upload.git
-  - ./package-upload/debupload.sh snapshot $PWD/build/$(ls build/ | grep .*.deb)
+  - git clone --branch add-other-distro-support https://$GL_UPLOADER_USER:$GL_UPLOADER_PASSWORD@gitlab.consolinno-it.de/leafletfirmware/package-upload.git
+  - ./package-upload/debupload.sh snapshot buster $PWD/build/buster/*.deb
+  - ./package-upload/debupload.sh snapshot bullseye $PWD/build/bullseye/*.deb
+  - ./package-upload/debupload.sh snapshot focal $PWD/build/focal/*.deb
 
-
-gbp:
-  image: debian:buster
-  stage: .pre
+build:buster:
+  extends: .snapshot
+  image: lheiz/dc-armv7-nymea-d10
+  stage: build
   script:
     - apt-get update
     - apt-get install -y git-buildpackage
     - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
-
-#build:focal:
-#  image: ubuntu:focal
-#  stage: build
-#  script:
-#    - CONFIG_SITE=/etc/dpkg-cross/cross-config.armhf  gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build &#& gosu root mv ../*.deb build
-#  artifacts:
-#    paths:
-#      - build/*.deb
-
-build:buster:
-  image: lheiz/dc-armv7-nymea-d10
-  stage: build
-  script:
-    - CONFIG_SITE=/etc/dpkg-cross/cross-config.armhf  gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build && gosu root mv ../*.deb build
+    - CONFIG_SITE=/etc/dpkg-cross/cross-config.armhf  gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build/buster && gosu root mv ../*.deb build/buster/
   artifacts:
     paths:
-      - build/*.deb
+      - build/buster/*.deb
+
+
+build:bullseye:
+  extends: .snapshot
+  image: lheiz/dc-amd64-nymea-d10
+  stage: build
+  script:
+    - apt-get update
+    - apt-get install -y git-buildpackage
+    - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
+    - gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build/bullseye && gosu root mv ../*.deb build/bullseye/
+  artifacts:
+    paths:
+      - build/bullseye/*.deb
+
+
+build:focal:
+  extends: .snapshot
+  image: lheiz/dc-amd64-nymea-focal
+  stage: build
+  script:
+    - apt-get update
+    - apt-get install -y git-buildpackage
+    - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
+    - dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build/focal &&  mv ../*.deb build/focal
+  artifacts:
+    paths:
+      - build/focal/*.deb
+
 
 deploy:
+  extends: .snapshot
   stage: deploy
   before_script:
     - apt-get update
