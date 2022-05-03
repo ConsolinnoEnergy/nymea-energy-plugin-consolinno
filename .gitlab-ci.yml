@@ -34,12 +34,13 @@ build:buster:
 build:bullseye:
   extends: .snapshot
   image: lheiz/dc-amd64-nymea-d10
+  needs: ["build:buster"]
   stage: build
   script:
     - apt-get update
     - apt-get install -y git-buildpackage
     - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
-    - gosu root dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build/bullseye && gosu root mv ../*.deb build/bullseye/
+    - gosu root dpkg-buildpackage -b  && mkdir -p build/bullseye && gosu root mv ../*.deb build/bullseye/
   artifacts:
     paths:
       - build/bullseye/*.deb
@@ -48,12 +49,13 @@ build:bullseye:
 build:focal:
   extends: .snapshot
   image: lheiz/dc-amd64-nymea-focal
+  needs: ["build:bullseye"]
   stage: build
   script:
     - apt-get update
     - apt-get install -y git-buildpackage
     - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
-    - dpkg-buildpackage -b -aarmhf -Pcross,nocheck && mkdir -p build/focal &&  mv ../*.deb build/focal
+    - dpkg-buildpackage -b  && mkdir -p build/focal &&  mv ../*.deb build/focal
   artifacts:
     paths:
       - build/focal/*.deb
