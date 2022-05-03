@@ -7,7 +7,6 @@ stages:
 .snapshot:
   only:
    - develop
-   - add-ci
 
 .deploy_template: &deploy_script_templ
   - apt update
