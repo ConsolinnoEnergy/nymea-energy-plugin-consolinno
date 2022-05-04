@@ -32,7 +32,8 @@
 
 ChargingConfiguration::ChargingConfiguration()
 {
-
+    QUuid dummy;
+    m_carThingId = dummy;
 }
 
 ThingId ChargingConfiguration::evChargerThingId() const

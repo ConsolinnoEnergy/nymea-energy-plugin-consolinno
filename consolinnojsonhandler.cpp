@@ -39,7 +39,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 {
     // Enums
     registerEnum<EnergyEngine::HemsError>();
-    registerEnum<HemsOptimizerInterface::HouseType>();
+    registerEnum<HeatingConfiguration::HouseType>();
 
     // Flags
     registerFlag<EnergyEngine::HemsUseCase, EnergyEngine::HemsUseCases>();

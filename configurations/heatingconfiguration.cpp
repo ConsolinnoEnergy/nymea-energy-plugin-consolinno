@@ -75,12 +75,12 @@ void HeatingConfiguration::setMaxThermalEnergy(double maxThermalEnergy)
     m_maxThermalEnergy = maxThermalEnergy;
 }
 
-HemsOptimizerInterface::HouseType HeatingConfiguration::houseType() const
+HeatingConfiguration::HouseType HeatingConfiguration::houseType() const
 {
     return m_houseType;
 }
 
-void HeatingConfiguration::setHouseType(HemsOptimizerInterface::HouseType houseType)
+void HeatingConfiguration::setHouseType(HouseType houseType)
 {
     m_houseType = houseType;
 }

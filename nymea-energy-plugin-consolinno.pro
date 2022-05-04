@@ -20,11 +20,7 @@ HEADERS += \
     configurations/pvconfiguration.h \
     consolinnojsonhandler.h \
     energyengine.h \
-    energypluginconsolinno.h \
-    hemsoptimizerengine.h \
-    hemsoptimizerinterface.h \
-    weatherdataentry.h \
-    weatherdataprovider.h
+    energypluginconsolinno.h
 
 SOURCES += \
     configurations/chargingconfiguration.cpp \
@@ -33,11 +29,7 @@ SOURCES += \
     configurations/pvconfiguration.cpp \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
-    energypluginconsolinno.cpp \
-    hemsoptimizerengine.cpp \
-    hemsoptimizerinterface.cpp \
-    weatherdataentry.cpp \
-    weatherdataprovider.cpp
+    energypluginconsolinno.cpp
 
 target.path = $$[QT_INSTALL_LIBS]/nymea/energy/
 INSTALLS += target

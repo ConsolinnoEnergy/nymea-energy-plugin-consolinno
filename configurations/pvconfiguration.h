@@ -8,7 +8,6 @@
 
 #include <typeutils.h>
 
-//#include "hemsoptimizerinterface.h"
 
 class PvConfiguration
 {

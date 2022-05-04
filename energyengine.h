@@ -43,8 +43,6 @@
 #include "configurations/heatingconfiguration.h"
 #include "configurations/pvconfiguration.h"
 
-class HemsOptimizerEngine;
-class WeatherDataProvider;
 
 class EnergyEngine : public QObject
 {
@@ -119,9 +117,9 @@ signals:
 private:
     ThingManager *m_thingManager = nullptr;
     EnergyManager *m_energyManager = nullptr;
-    HemsOptimizerEngine *m_optimizerEngine = nullptr;
-    QNetworkAccessManager *m_networkManager = nullptr;
-    WeatherDataProvider *m_weatherDataProvider = nullptr;
+    //HemsOptimizerEngine *m_optimizerEngine = nullptr;
+    //QNetworkAccessManager *m_networkManager = nullptr;
+    //WeatherDataProvider *m_weatherDataProvider = nullptr;
 
     // System information
     HemsUseCases m_availableUseCases;
@@ -138,12 +136,14 @@ private:
     QHash<ThingId, Thing *> m_heatPumps;
     QHash<ThingId, Thing *> m_evChargers;
 
-    Thing *m_weatherThing = nullptr;
+    //Thing *m_weatherThing = nullptr;
 
     void monitorHeatPump(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorEvCharger(Thing *thing);
     void monitorChargingSession(Thing *thing);
+
+    void pluggedInEventHandling(Thing *thing);
 
 private slots:
     void onThingAdded(Thing *thing);
@@ -153,10 +153,9 @@ private slots:
 
     void evaluate();
 
-
-
-
     void evaluateAvailableUseCases();
+
+
 
     void loadHeatingConfiguration(const ThingId &heatPumpThingId);
     void saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration);
