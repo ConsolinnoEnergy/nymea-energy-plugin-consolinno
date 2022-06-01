@@ -42,6 +42,7 @@
 #include "configurations/chargingsessionconfiguration.h"
 #include "configurations/heatingconfiguration.h"
 #include "configurations/pvconfiguration.h"
+#include "configurations/conemsstate.h"
 
 
 class EnergyEngine : public QObject
@@ -91,6 +92,10 @@ public:
     QList<PvConfiguration> pvConfigurations() const;
     EnergyEngine::HemsError setPvConfiguration(const PvConfiguration &pvConfiguration);
 
+    // ConEMSStates
+    ConEMSState ConemsState() const;
+    EnergyEngine::HemsError setConEMSState(const ConEMSState &conEMSState);
+
 
 signals:
     void availableUseCasesChanged(EnergyEngine::HemsUseCases availableUseCases);
@@ -114,12 +119,13 @@ signals:
     void chargingSessionConfigurationChanged(const ChargingSessionConfiguration &chargingSessionConfiguration);
     void chargingSessionConfigurationRemoved(const ThingId &evChargerThingId);
 
+    void conEMSStatesAdded(const ConEMSState &conEMSState);
+    void conEMSStatesChanged(const ConEMSState &conEMSState);
+    void conEMSStatesRemoved(const QUuid &conEMSStateID);
+
 private:
     ThingManager *m_thingManager = nullptr;
     EnergyManager *m_energyManager = nullptr;
-    //HemsOptimizerEngine *m_optimizerEngine = nullptr;
-    //QNetworkAccessManager *m_networkManager = nullptr;
-    //WeatherDataProvider *m_weatherDataProvider = nullptr;
 
     // System information
     HemsUseCases m_availableUseCases;
@@ -131,17 +137,19 @@ private:
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
     QHash<ThingId, PvConfiguration> m_pvConfigurations;
     QHash<ThingId, ChargingSessionConfiguration> m_chargingSessionConfigurations;
+    ConEMSState m_conEMSState;
 
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
     QHash<ThingId, Thing *> m_evChargers;
 
-    //Thing *m_weatherThing = nullptr;
 
     void monitorHeatPump(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorEvCharger(Thing *thing);
     void monitorChargingSession(Thing *thing);
+    //void monitorConEMSState();
+
 
     void pluggedInEventHandling(Thing *thing);
 
@@ -172,6 +180,10 @@ private slots:
     void loadPvConfiguration(const ThingId &pvThingId);
     void savePvConfigurationToSettings(const PvConfiguration &pvConfiguration);
     void removePvConfigurationFromSettings(const ThingId &pvThingId);
+
+//    void loadConEMSState(const QUuid &conEMSStateID);
+//    void saveConEMSStateToSettings(const ConEMSState &conEMSState);
+//    void removeConEMSStateFromSettings(const QUuid &conEMSStateID);
 
 };
 

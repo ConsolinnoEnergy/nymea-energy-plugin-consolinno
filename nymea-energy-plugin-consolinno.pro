@@ -16,6 +16,7 @@ gcc {
 HEADERS += \
     configurations/chargingconfiguration.h \
     configurations/chargingsessionconfiguration.h \
+    configurations/conemsstate.h \
     configurations/heatingconfiguration.h \
     configurations/pvconfiguration.h \
     consolinnojsonhandler.h \
@@ -25,6 +26,7 @@ HEADERS += \
 SOURCES += \
     configurations/chargingconfiguration.cpp \
     configurations/chargingsessionconfiguration.cpp \
+    configurations/conemsstate.cpp \
     configurations/heatingconfiguration.cpp \
     configurations/pvconfiguration.cpp \
     consolinnojsonhandler.cpp \

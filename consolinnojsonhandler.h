@@ -61,6 +61,9 @@ public:
     Q_INVOKABLE JsonReply* GetChargingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
 
+    Q_INVOKABLE JsonReply* GetConEMSStates(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetConEMSState(const QVariantMap &params);
+
 signals:
     void PluggedInChanged(const QVariantMap &params);
 
@@ -84,6 +87,10 @@ signals:
     void ChargingSessionConfigurationAdded (const QVariantMap &params);
     void ChargingSessionConfigurationRemoved(const QVariantMap &params);
     void ChargingSessionConfigurationChanged(const QVariantMap &params);
+
+    void ConEMSStateAdded (const QVariantMap &params);
+    void ConEMSStateRemoved(const QVariantMap &params);
+    void ConEMSStateChanged(const QVariantMap &params);
 
 
 private:

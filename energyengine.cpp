@@ -30,8 +30,6 @@
 
 #include "energyengine.h"
 #include "nymeasettings.h"
-//#include "hemsoptimizerengine.h"
-//#include "weatherdataprovider.h"
 
 #include <QJsonDocument>
 #include <QNetworkReply>
@@ -96,7 +94,6 @@ EnergyEngine::HemsError EnergyEngine::setHousholdPhaseLimit(uint housholdPhaseLi
 
     m_housholdPowerLimit = m_housholdPhaseLimit * m_housholdPhaseCount * 230;
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit changed to" << m_housholdPhaseLimit << "[A] using" << m_housholdPhaseCount << "phases: max power" << m_housholdPowerLimit << "[W]";
-    //m_optimizerEngine->setHousholdPowerLimit(m_housholdPowerLimit);
 
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("BlackoutProtection");
@@ -105,6 +102,33 @@ EnergyEngine::HemsError EnergyEngine::setHousholdPhaseLimit(uint housholdPhaseLi
 
     return HemsErrorNoError;
 }
+
+ConEMSState EnergyEngine::ConemsState() const
+{
+    return m_conEMSState;
+}
+
+EnergyEngine::HemsError EnergyEngine::setConEMSState(const ConEMSState &conEMSState)
+{
+
+    qCWarning(dcConsolinnoEnergy()) << "Set ConEMSState configuration called" << conEMSState;
+    if (m_conEMSState.ConEMSStateID() != conEMSState.ConEMSStateID()) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set ConEMSState. The given QUUID does not the same." << conEMSState;
+        return HemsErrorInvalidThing;
+    }
+
+    qCWarning(dcConsolinnoEnergy()) << "m_conEMSState" << m_conEMSState;
+
+    if (m_conEMSState != conEMSState) {
+        m_conEMSState = conEMSState;
+        qCWarning(dcConsolinnoEnergy()) << "ConEMSState changed" << conEMSState;
+        //saveConEMSStateToSettings(conEMSState);
+        emit conEMSStatesChanged(conEMSState);
+    }
+
+    return HemsErrorNoError;
+}
+
 
 QList<HeatingConfiguration> EnergyEngine::heatingConfigurations() const
 {
@@ -186,7 +210,6 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
         saveChargingConfigurationToSettings(chargingConfiguration);
         emit chargingConfigurationChanged(chargingConfiguration);
         evaluate();
-        //updateSchedules();
 
     }
 
@@ -269,6 +292,16 @@ void EnergyEngine::monitorInverter(Thing *thing)
     loadPvConfiguration(thing->id());
 }
 
+//void EnergyEngine::monitorConEMSState()
+//{
+//    qCDebug(dcConsolinnoEnergy()) << "Start monitoring ConEMS";
+//    //m_inverters.insert(thing->id(), thing);
+//    //evaluateAvailableUseCases();
+//    //loadConEMSState("f002d80e-5f90-445c-8e95-a0256a0b464e");
+//    //loadPvConfiguration(thing->id());
+//}
+
+
 void EnergyEngine::monitorEvCharger(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring ev charger" << thing;
@@ -319,6 +352,8 @@ void EnergyEngine::onThingAdded(Thing *thing)
         monitorEvCharger(thing);
         monitorChargingSession(thing);
     }
+
+    //monitorConEMSState();
 
 }
 
@@ -587,8 +622,65 @@ void EnergyEngine::removeHeatingConfigurationFromSettings(const ThingId &heatPum
     settings.endGroup();
 }
 
+
+
+//void EnergyEngine::loadConEMSState(const QUuid &conEMSStateID)
+//{
+//      qCWarning(dcConsolinnoEnergy()) << "Loading ConEMS State from settings";
+//    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+//    settings.beginGroup("ConEMSStates");
+//    if (settings.childGroups().contains(conEMSStateID.toString())) {
+//        settings.beginGroup(conEMSStateID.toString());
+
+//        ConEMSState Cstate;
+//        Cstate.setConEMSStateID(conEMSStateID);
+//        Cstate.setCurrentState(static_cast<ConEMSState::State>(settings.value("currentState").toInt()));
+//        Cstate.setOperationMode(settings.value("operationMode").toInt());
+
+//        settings.endGroup(); // ThingId
+
+//        m_conEMSStates.insert(conEMSStateID, Cstate);
+//        emit conEMSStatesAdded(Cstate);
+
+//        qCDebug(dcConsolinnoEnergy()) << "Loaded" << Cstate;
+//    } else {
+//        // ConEMS is available and has no configuration yet, lets add one
+//        ConEMSState cState;
+//        cState.setConEMSStateID(conEMSStateID);
+//        m_conEMSStates.insert(conEMSStateID, cState);
+//        emit conEMSStatesAdded(cState);
+//        qCDebug(dcConsolinnoEnergy()) << "Added new" << cState;
+//        saveConEMSStateToSettings(cState);
+//    }
+//    settings.endGroup();
+//}
+
+//void EnergyEngine::saveConEMSStateToSettings(const ConEMSState &conEMSState)
+//{
+//    qCWarning(dcConsolinnoEnergy()) << "Saveing ConEMSState to settings";
+//    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+//    settings.beginGroup("ConEMSStates");
+//    settings.beginGroup(conEMSState.ConEMSStateID().toString());
+//    settings.setValue("currentState", conEMSState.currentState());
+//    settings.setValue("operationMode", conEMSState.operationMode());
+//    settings.endGroup();
+//    settings.endGroup();
+//}
+
+//void EnergyEngine::removeConEMSStateFromSettings(const QUuid &conEMSStateID)
+//{
+//    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+//    settings.beginGroup("ConEMSStates");
+//    settings.beginGroup(conEMSStateID.toString());
+//    settings.remove("");
+//    settings.endGroup();
+//    settings.endGroup();
+//}
+
+
 void EnergyEngine::loadChargingConfiguration(const ThingId &evChargerThingId)
 {
+
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingConfigurations");
     if (settings.childGroups().contains(evChargerThingId.toString())) {
@@ -725,10 +817,8 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
 
         configuration.setEvChargerThingId(evChargerThingId);
         configuration.setCarThingId(settings.value("carThingId").toUuid());
-
         configuration.setStartedAt(settings.value("startedAt").toString());
         configuration.setFinishedAt(settings.value("finishedAt").toString());
-
         configuration.setInitialBatteryEnergy(settings.value("initialBatteryEnergy").toFloat());
         configuration.setDuration(settings.value("duration").toInt());
         configuration.setEnergyCharged(settings.value("energyCharged").toFloat());
@@ -765,10 +855,8 @@ void EnergyEngine::saveChargingSessionConfigurationToSettings(const ChargingSess
     settings.beginGroup("ChargingSessionConfigurations");
     settings.beginGroup(chargingSessionConfiguration.evChargerThingId().toString());
     settings.setValue("carThingId", chargingSessionConfiguration.carThingId());
-
     settings.setValue("startedAt" , chargingSessionConfiguration.startedAt() );
     settings.setValue("finishedAt", chargingSessionConfiguration.finishedAt() );
-
     settings.setValue("initialBatteryEnergy", chargingSessionConfiguration.initialBatteryEnergy());
     settings.setValue("duration", chargingSessionConfiguration.duration() );
     settings.setValue("energyCharged", chargingSessionConfiguration.energyCharged());
