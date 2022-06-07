@@ -16,28 +16,22 @@ gcc {
 HEADERS += \
     configurations/chargingconfiguration.h \
     configurations/chargingsessionconfiguration.h \
+    configurations/conemsstate.h \
     configurations/heatingconfiguration.h \
     configurations/pvconfiguration.h \
     consolinnojsonhandler.h \
     energyengine.h \
-    energypluginconsolinno.h \
-    hemsoptimizerengine.h \
-    hemsoptimizerinterface.h \
-    weatherdataentry.h \
-    weatherdataprovider.h
+    energypluginconsolinno.h
 
 SOURCES += \
     configurations/chargingconfiguration.cpp \
     configurations/chargingsessionconfiguration.cpp \
+    configurations/conemsstate.cpp \
     configurations/heatingconfiguration.cpp \
     configurations/pvconfiguration.cpp \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
-    energypluginconsolinno.cpp \
-    hemsoptimizerengine.cpp \
-    hemsoptimizerinterface.cpp \
-    weatherdataentry.cpp \
-    weatherdataprovider.cpp
+    energypluginconsolinno.cpp
 
 target.path = $$[QT_INSTALL_LIBS]/nymea/energy/
 INSTALLS += target
