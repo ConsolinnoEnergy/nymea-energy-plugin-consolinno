@@ -193,6 +193,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     params.insert("pvConfiguration", objectRef<PvConfiguration>());
     registerNotification("PvConfigurationChanged", description, params);
 
+    // chargingSessionConfiguration
     params.clear();
     description = "Emitted whenever a new chargingsession configuration has been added to the energy engine.";
     params.insert("chargingSessionConfiguration", objectRef<ChargingSessionConfiguration>());
@@ -433,7 +434,7 @@ JsonReply *ConsolinnoJsonHandler::SetHeatingConfiguration(const QVariantMap &par
 //ConEMS
 JsonReply *ConsolinnoJsonHandler::GetConEMSStates(const QVariantMap &params)
 {
-    qCWarning(dcConsolinnoEnergy()) << "Reached GetConEMSStates" << params;
+    qCDebug(dcConsolinnoEnergy()) << "Reached GetConEMSStates" << params;
     Q_UNUSED(params)
     QVariantMap returns;
     QVariantList Cstates;
@@ -441,7 +442,6 @@ JsonReply *ConsolinnoJsonHandler::GetConEMSStates(const QVariantMap &params)
     Cstates << pack(m_energyEngine->ConemsState());
 
     returns.insert("conEMSStates", Cstates);
-    qCWarning(dcConsolinnoEnergy()) << "Return GetConEMSStates" << returns;
     return createReply(returns);
 }
 
