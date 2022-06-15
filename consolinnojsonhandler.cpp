@@ -193,6 +193,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     params.insert("pvConfiguration", objectRef<PvConfiguration>());
     registerNotification("PvConfigurationChanged", description, params);
 
+    // chargingSessionConfiguration
     params.clear();
     description = "Emitted whenever a new chargingsession configuration has been added to the energy engine.";
     params.insert("chargingSessionConfiguration", objectRef<ChargingSessionConfiguration>());

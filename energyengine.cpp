@@ -117,9 +117,10 @@ EnergyEngine::HemsError EnergyEngine::setConEMSState(const ConEMSState &conEMSSt
         return HemsErrorInvalidThing;
     }
 
-    qCWarning(dcConsolinnoEnergy()) << "m_conEMSState" << m_conEMSState;
+    qCWarning(dcConsolinnoEnergy()) << "Timestamp conEMSState: " << conEMSState.timestamp();
 
-    if (m_conEMSState != conEMSState) {
+    qCWarning(dcConsolinnoEnergy()) << "Timestamp m_conEMSState: " << m_conEMSState.timestamp();
+    if (m_conEMSState.timestamp() != conEMSState.timestamp()) {
         m_conEMSState = conEMSState;
         qCWarning(dcConsolinnoEnergy()) << "ConEMSState changed" << conEMSState;
         //saveConEMSStateToSettings(conEMSState);
@@ -622,60 +623,6 @@ void EnergyEngine::removeHeatingConfigurationFromSettings(const ThingId &heatPum
     settings.endGroup();
 }
 
-
-
-//void EnergyEngine::loadConEMSState(const QUuid &conEMSStateID)
-//{
-//      qCWarning(dcConsolinnoEnergy()) << "Loading ConEMS State from settings";
-//    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
-//    settings.beginGroup("ConEMSStates");
-//    if (settings.childGroups().contains(conEMSStateID.toString())) {
-//        settings.beginGroup(conEMSStateID.toString());
-
-//        ConEMSState Cstate;
-//        Cstate.setConEMSStateID(conEMSStateID);
-//        Cstate.setCurrentState(static_cast<ConEMSState::State>(settings.value("currentState").toInt()));
-//        Cstate.setOperationMode(settings.value("operationMode").toInt());
-
-//        settings.endGroup(); // ThingId
-
-//        m_conEMSStates.insert(conEMSStateID, Cstate);
-//        emit conEMSStatesAdded(Cstate);
-
-//        qCDebug(dcConsolinnoEnergy()) << "Loaded" << Cstate;
-//    } else {
-//        // ConEMS is available and has no configuration yet, lets add one
-//        ConEMSState cState;
-//        cState.setConEMSStateID(conEMSStateID);
-//        m_conEMSStates.insert(conEMSStateID, cState);
-//        emit conEMSStatesAdded(cState);
-//        qCDebug(dcConsolinnoEnergy()) << "Added new" << cState;
-//        saveConEMSStateToSettings(cState);
-//    }
-//    settings.endGroup();
-//}
-
-//void EnergyEngine::saveConEMSStateToSettings(const ConEMSState &conEMSState)
-//{
-//    qCWarning(dcConsolinnoEnergy()) << "Saveing ConEMSState to settings";
-//    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
-//    settings.beginGroup("ConEMSStates");
-//    settings.beginGroup(conEMSState.ConEMSStateID().toString());
-//    settings.setValue("currentState", conEMSState.currentState());
-//    settings.setValue("operationMode", conEMSState.operationMode());
-//    settings.endGroup();
-//    settings.endGroup();
-//}
-
-//void EnergyEngine::removeConEMSStateFromSettings(const QUuid &conEMSStateID)
-//{
-//    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
-//    settings.beginGroup("ConEMSStates");
-//    settings.beginGroup(conEMSStateID.toString());
-//    settings.remove("");
-//    settings.endGroup();
-//    settings.endGroup();
-//}
 
 
 void EnergyEngine::loadChargingConfiguration(const ThingId &evChargerThingId)
