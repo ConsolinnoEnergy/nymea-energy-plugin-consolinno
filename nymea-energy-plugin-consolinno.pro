@@ -19,6 +19,7 @@ HEADERS += \
     configurations/conemsstate.h \
     configurations/heatingconfiguration.h \
     configurations/pvconfiguration.h \
+    configurations/userconfiguration.h \
     consolinnojsonhandler.h \
     energyengine.h \
     energypluginconsolinno.h
@@ -29,6 +30,7 @@ SOURCES += \
     configurations/conemsstate.cpp \
     configurations/heatingconfiguration.cpp \
     configurations/pvconfiguration.cpp \
+    configurations/userconfiguration.cpp \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
     energypluginconsolinno.cpp
