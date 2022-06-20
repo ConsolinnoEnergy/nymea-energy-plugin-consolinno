@@ -52,6 +52,9 @@ public:
     Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
 
+    Q_INVOKABLE JsonReply* GetUserConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetUserConfiguration(const QVariantMap &params);
+
     Q_INVOKABLE JsonReply* GetPvConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetPvConfiguration(const QVariantMap &params);
 
@@ -71,6 +74,9 @@ signals:
 
     void HousholdPhaseLimitChanged(const QVariantMap &params);
 
+    void UserConfigurationAdded(const QVariantMap &params);
+    void UserConfigurationRemoved(const QVariantMap &params);
+    void UserConfigurationChanged(const QVariantMap &params);
 
     void HeatingConfigurationAdded(const QVariantMap &params);
     void HeatingConfigurationRemoved(const QVariantMap &params);

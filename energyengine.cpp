@@ -59,6 +59,9 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     // Load configurations
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
 
+    // Load UserConfig
+    monitorUserConfig();
+
     settings.beginGroup("BlackoutProtection");
     m_housholdPhaseLimit = settings.value("housholdPhaseLimit", 25).toUInt();
     settings.endGroup();
@@ -275,6 +278,41 @@ EnergyEngine::HemsError EnergyEngine::setChargingSessionConfiguration(const Char
     return HemsErrorNoError;
 }
 
+QList<UserConfiguration> EnergyEngine::userConfigurations() const
+{
+    return m_userConfigurations.values();
+}
+
+EnergyEngine::HemsError EnergyEngine::setUserConfiguration(const UserConfiguration &userConfiguration)
+{
+
+    if (!m_userConfigurations.contains(userConfiguration.userConfigID())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set user configuration. The given user QUUid does not exist." << userConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+    qCWarning(dcConsolinnoEnergy()) << "User configuration: " << userConfiguration;
+
+    qCWarning(dcConsolinnoEnergy()) << "User m_userConfigurations " << m_userConfigurations.value(userConfiguration.userConfigID());
+
+     if (m_userConfigurations.value(userConfiguration.userConfigID()) != userConfiguration) {
+
+        m_userConfigurations[userConfiguration.userConfigID()] = userConfiguration;
+        qCWarning(dcConsolinnoEnergy()) << "User configuration changed" << userConfiguration;
+        saveUserConfigurationToSettings(userConfiguration);
+        emit userConfigurationChanged(userConfiguration);
+
+    }
+
+    return HemsErrorNoError;
+}
+
+void EnergyEngine::monitorUserConfig()
+{
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring UserConfig";
+    loadUserConfiguration();
+}
+
 
 void EnergyEngine::monitorHeatPump(Thing *thing)
 {
@@ -291,15 +329,6 @@ void EnergyEngine::monitorInverter(Thing *thing)
     evaluateAvailableUseCases();
     loadPvConfiguration(thing->id());
 }
-
-//void EnergyEngine::monitorConEMSState()
-//{
-//    qCDebug(dcConsolinnoEnergy()) << "Start monitoring ConEMS";
-//    //m_inverters.insert(thing->id(), thing);
-//    //evaluateAvailableUseCases();
-//    //loadConEMSState("f002d80e-5f90-445c-8e95-a0256a0b464e");
-//    //loadPvConfiguration(thing->id());
-//}
 
 
 void EnergyEngine::monitorEvCharger(Thing *thing)
@@ -352,8 +381,6 @@ void EnergyEngine::onThingAdded(Thing *thing)
         monitorEvCharger(thing);
         monitorChargingSession(thing);
     }
-
-    //monitorConEMSState();
 
 }
 
@@ -617,6 +644,57 @@ void EnergyEngine::removeHeatingConfigurationFromSettings(const ThingId &heatPum
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("HeatingConfigurations");
     settings.beginGroup(heatPumpThingId.toString());
+    settings.remove("");
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::loadUserConfiguration()
+{
+    QUuid userConfigID = "528b3820-1b6d-4f37-aea7-a99d21d42e72";
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("UserConfigurations");
+    if (settings.childGroups().contains(userConfigID.toString())) {
+        settings.beginGroup(userConfigID.toString());
+
+        UserConfiguration configuration;
+        configuration.setLastSelectedCar(settings.value("lastSelectedCar").toUuid());
+        configuration.setDefaultChargingMode(settings.value("defaultChargingMode").toInt());
+        settings.endGroup(); // ThingId
+
+        m_userConfigurations.insert(userConfigID, configuration);
+        emit userConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // UserConfig does not exist yet, so add one
+        UserConfiguration configuration;
+        m_userConfigurations.insert(userConfigID, configuration);
+        emit userConfigurationAdded(configuration);
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveUserConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // HeatingConfigurations
+}
+
+void EnergyEngine::saveUserConfigurationToSettings(const UserConfiguration &userConfiguration)
+{
+    qCWarning(dcConsolinnoEnergy()) << "saveUserConfiguration" << userConfiguration;
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("UserConfigurations");
+    settings.beginGroup(userConfiguration.userConfigID().toString());
+    settings.setValue("lastSelectedCar", userConfiguration.lastSelectedCar());
+    settings.setValue("defaultChargingMode", userConfiguration.defaultChargingMode());
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::removeUserConfigurationFromSettings()
+{
+    QUuid userConfigID = "528b3820-1b6d-4f37-aea7-a99d21d42e72";
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("UserConfigurations");
+    settings.beginGroup(userConfigID.toString());
     settings.remove("");
     settings.endGroup();
     settings.endGroup();

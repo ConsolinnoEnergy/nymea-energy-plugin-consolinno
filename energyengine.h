@@ -43,6 +43,7 @@
 #include "configurations/heatingconfiguration.h"
 #include "configurations/pvconfiguration.h"
 #include "configurations/conemsstate.h"
+#include "configurations/userconfiguration.h"
 
 
 class EnergyEngine : public QObject
@@ -63,7 +64,6 @@ public:
         HemsUseCaseHeating = 0x02,
         HemsUseCaseCharging = 0x04,
         HemsUseCasePv = 0x08,
-       // HemsUseCaseChargingSession = 0x16
     };
     Q_ENUM(HemsUseCase)
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
@@ -75,6 +75,10 @@ public:
 
     uint housholdPhaseLimit() const;
     EnergyEngine::HemsError setHousholdPhaseLimit(uint housholdPhaseLimit);
+
+    // User configurations
+    QList<UserConfiguration> userConfigurations() const;
+    EnergyEngine::HemsError setUserConfiguration(const UserConfiguration &userConfiguration);
 
     // Heating configurations
     QList<HeatingConfiguration> heatingConfigurations() const;
@@ -102,6 +106,10 @@ signals:
     void housholdPhaseLimitChanged(uint housholdPhaseLimit);
     void pluggedInChanged(QVariant pluggedIn);
 
+
+    void userConfigurationAdded(const UserConfiguration &userConfiguration);
+    void userConfigurationChanged(const UserConfiguration &userConfiguration);
+    void userConfigurationRemoved(const QUuid &userConfigID);
 
     void heatingConfigurationAdded(const HeatingConfiguration &heatingConfiguration);
     void heatingConfigurationChanged(const HeatingConfiguration &heatingConfiguration);
@@ -137,6 +145,7 @@ private:
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
     QHash<ThingId, PvConfiguration> m_pvConfigurations;
     QHash<ThingId, ChargingSessionConfiguration> m_chargingSessionConfigurations;
+    QHash<QUuid, UserConfiguration> m_userConfigurations;
     ConEMSState m_conEMSState;
 
     QHash<ThingId, Thing *> m_inverters;
@@ -148,8 +157,7 @@ private:
     void monitorInverter(Thing *thing);
     void monitorEvCharger(Thing *thing);
     void monitorChargingSession(Thing *thing);
-    //void monitorConEMSState();
-
+    void monitorUserConfig();
 
     void pluggedInEventHandling(Thing *thing);
 
@@ -164,6 +172,9 @@ private slots:
     void evaluateAvailableUseCases();
 
 
+    void loadUserConfiguration();
+    void saveUserConfigurationToSettings(const UserConfiguration &userConfiguration);
+    void removeUserConfigurationFromSettings();
 
     void loadHeatingConfiguration(const ThingId &heatPumpThingId);
     void saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration);
@@ -180,10 +191,6 @@ private slots:
     void loadPvConfiguration(const ThingId &pvThingId);
     void savePvConfigurationToSettings(const PvConfiguration &pvConfiguration);
     void removePvConfigurationFromSettings(const ThingId &pvThingId);
-
-//    void loadConEMSState(const QUuid &conEMSStateID);
-//    void saveConEMSStateToSettings(const ConEMSState &conEMSState);
-//    void removeConEMSStateFromSettings(const QUuid &conEMSStateID);
 
 };
 
