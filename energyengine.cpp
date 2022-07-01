@@ -291,14 +291,13 @@ EnergyEngine::HemsError EnergyEngine::setUserConfiguration(const UserConfigurati
         return HemsErrorInvalidThing;
     }
 
-    qCWarning(dcConsolinnoEnergy()) << "User configuration: " << userConfiguration;
+    qCDebug(dcConsolinnoEnergy()) << "setUser configuration: " << userConfiguration;
 
-    qCWarning(dcConsolinnoEnergy()) << "User m_userConfigurations " << m_userConfigurations.value(userConfiguration.userConfigID());
 
      if (m_userConfigurations.value(userConfiguration.userConfigID()) != userConfiguration) {
 
         m_userConfigurations[userConfiguration.userConfigID()] = userConfiguration;
-        qCWarning(dcConsolinnoEnergy()) << "User configuration changed" << userConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "User configuration changed" << userConfiguration;
         saveUserConfigurationToSettings(userConfiguration);
         emit userConfigurationChanged(userConfiguration);
 
@@ -679,7 +678,7 @@ void EnergyEngine::loadUserConfiguration()
 
 void EnergyEngine::saveUserConfigurationToSettings(const UserConfiguration &userConfiguration)
 {
-    qCWarning(dcConsolinnoEnergy()) << "saveUserConfiguration" << userConfiguration;
+    qCDebug(dcConsolinnoEnergy()) << "saveUserConfiguration" << userConfiguration;
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("UserConfigurations");
     settings.beginGroup(userConfiguration.userConfigID().toString());
