@@ -14,6 +14,7 @@ gcc {
 }
 
 HEADERS += \
+    configurations/batteryconfiguration.h \
     configurations/chargingconfiguration.h \
     configurations/chargingsessionconfiguration.h \
     configurations/conemsstate.h \
@@ -25,6 +26,7 @@ HEADERS += \
     energypluginconsolinno.h
 
 SOURCES += \
+    configurations/batteryconfiguration.cpp \
     configurations/chargingconfiguration.cpp \
     configurations/chargingsessionconfiguration.cpp \
     configurations/conemsstate.cpp \

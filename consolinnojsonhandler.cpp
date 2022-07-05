@@ -52,6 +52,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     registerObject<PvConfiguration>();
     registerObject<ConEMSState>();
     registerObject<UserConfiguration>();
+    registerObject<BatteryConfiguration>();
 
     QVariantMap params, returns;
     QString description;
@@ -135,6 +136,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetChargingSessionConfiguration", description, params, returns);
 
+    // charging
     params.clear(); returns.clear();
     description = "Get the list of available charging configurations from the energy engine.";
     returns.insert("chargingConfigurations", QVariantList() << objectRef<ChargingConfiguration>());
@@ -145,6 +147,18 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     params.insert("chargingConfiguration", objectRef<ChargingConfiguration>());
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetChargingConfiguration", description, params, returns);
+
+    // battery
+    params.clear(); returns.clear();
+    description = "Get the list of available battery configurations from the energy engine.";
+    returns.insert("batteryConfigurations", QVariantList() << objectRef<BatteryConfiguration>());
+    registerMethod("GetBatteryConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a battery configuration to the given battery configuration. The battery thing ID will be used as an identifier.";
+    params.insert("batteryConfiguration", objectRef<BatteryConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetBatteryConfiguration", description, params, returns);
 
 
     // Notifications
@@ -256,10 +270,28 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     params.insert("chargingConfiguration", objectRef<ChargingConfiguration>());
     registerNotification("ChargingConfigurationChanged", description, params);
 
+    // Battery
+    params.clear();
+    description = "Emitted whenever a new battery configuration has been added to the energy engine.";
+    params.insert("batteryConfiguration", objectRef<BatteryConfiguration>());
+    registerNotification("BatteryConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a battery configuration has been removed from the energy engine with the given battery thing ID.";
+    params.insert("batteryThingId", enumValueName(Uuid));
+    registerNotification("BatteryConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a battery configuration has changed in the energy engine.";
+    params.insert("batteryConfiguration", objectRef<BatteryConfiguration>());
+    registerNotification("BatteryConfigurationChanged", description, params);
+
+    // plugged in event
     params.clear();
     description = "Emitted whenever the EvCharger state pluggedIn changes";
     params.insert("pluggedIn", enumValueName(Bool));
     registerNotification("PluggedInChanged", description, params);
+
 
     // Connections for the notification
 /*  // not needed for now but can be interesting if the app needs to act and not the plugin
@@ -400,6 +432,25 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         params.insert("chargingConfiguration", pack(chargingConfiguration));
         emit ChargingConfigurationChanged(params);
     });
+
+    connect(m_energyEngine, &EnergyEngine::batteryConfigurationAdded, this, [=](const BatteryConfiguration &batteryConfiguration){
+        QVariantMap params;
+        params.insert("batteryConfiguration", pack(batteryConfiguration));
+        emit BatteryConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::batteryConfigurationRemoved, this, [=](const ThingId &batteryThingId){
+        QVariantMap params;
+        params.insert("batteryThingId", batteryThingId);
+        emit BatteryConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::batteryConfigurationChanged, this, [=](const BatteryConfiguration &batteryConfiguration){
+        QVariantMap params;
+        params.insert("batteryConfiguration", pack(batteryConfiguration));
+        emit BatteryConfigurationChanged(params);
+    });
+
 }
 
 QString ConsolinnoJsonHandler::name() const
@@ -545,6 +596,30 @@ JsonReply *ConsolinnoJsonHandler::SetChargingConfiguration(const QVariantMap &pa
 {
     qCDebug(dcConsolinnoEnergy()) << params;
     EnergyEngine::HemsError error = m_energyEngine->setChargingConfiguration(unpack<ChargingConfiguration>(params.value("chargingConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
+
+JsonReply *ConsolinnoJsonHandler::GetBatteryConfigurations(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const BatteryConfiguration &batteryConfig, m_energyEngine->batteryConfigurations()) {
+        configurations << pack(batteryConfig);
+    }
+    returns.insert("batteryConfigurations", configurations);
+
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetBatteryConfiguration(const QVariantMap &params)
+{
+    qCDebug(dcConsolinnoEnergy()) << params;
+    EnergyEngine::HemsError error = m_energyEngine->setBatteryConfiguration(unpack<BatteryConfiguration>(params.value("batteryConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));
     return createReply(returns);
