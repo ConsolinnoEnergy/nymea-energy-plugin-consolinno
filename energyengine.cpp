@@ -220,6 +220,32 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
 }
 
 
+QList<BatteryConfiguration> EnergyEngine::batteryConfigurations() const
+{
+    return m_batteryConfigurations.values();
+}
+
+EnergyEngine::HemsError EnergyEngine::setBatteryConfiguration(const BatteryConfiguration &batteryConfiguration)
+{
+
+    if (!m_batteryConfigurations.contains(batteryConfiguration.batteryThingId())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set battery configuration. The given battery thing id does not exist." << batteryConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+
+     if (m_batteryConfigurations.value(batteryConfiguration.batteryThingId()) != batteryConfiguration) {
+
+        m_batteryConfigurations[batteryConfiguration.batteryThingId()] = batteryConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Battery configuration changed" << batteryConfiguration;
+        saveBatteryConfigurationToSettings(batteryConfiguration);
+        emit batteryConfigurationChanged(batteryConfiguration);
+
+    }
+
+    return HemsErrorNoError;
+}
+
 
 QList<PvConfiguration> EnergyEngine::pvConfigurations() const
 {
@@ -306,12 +332,19 @@ EnergyEngine::HemsError EnergyEngine::setUserConfiguration(const UserConfigurati
     return HemsErrorNoError;
 }
 
+// monitor Things
 void EnergyEngine::monitorUserConfig()
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring UserConfig";
     loadUserConfiguration();
 }
 
+void EnergyEngine::monitorBattery(Thing *thing)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring Battery" << thing;
+    m_batteries.insert(thing->id(),thing);
+    loadBatteryConfiguration(thing->id());
+}
 
 void EnergyEngine::monitorHeatPump(Thing *thing)
 {
@@ -381,10 +414,29 @@ void EnergyEngine::onThingAdded(Thing *thing)
         monitorChargingSession(thing);
     }
 
+    if (thing->thingClass().interfaces().contains("battery")) {
+        monitorBattery(thing);
+    }
+
 }
 
 void EnergyEngine::onThingRemoved(const ThingId &thingId)
 {
+
+    // Battery
+    if (m_batteries.contains(thingId)) {
+        m_batteries.remove(thingId);
+        qCDebug(dcConsolinnoEnergy()) << "Removed battery from energy manager"  << thingId.toString();
+
+        if (m_batteryConfigurations.contains(thingId)) {
+            BatteryConfiguration batteryConfig = m_batteryConfigurations.take(thingId);
+            removeBatteryConfigurationFromSettings(thingId);
+            emit batteryConfigurationRemoved(thingId);
+            qCDebug(dcConsolinnoEnergy()) << "Removed battery configuration" << batteryConfig;
+        }
+
+    }
+
     // Inverter
     if (m_inverters.contains(thingId)) {
         m_inverters.remove(thingId);
@@ -699,6 +751,56 @@ void EnergyEngine::removeUserConfigurationFromSettings()
     settings.endGroup();
 }
 
+
+void EnergyEngine::loadBatteryConfiguration(const ThingId &batteryThingId)
+{
+
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("BatteryConfigurations");
+    if (settings.childGroups().contains(batteryThingId.toString())) {
+        settings.beginGroup(batteryThingId.toString());
+
+        BatteryConfiguration configuration;
+        configuration.setBatteryThingId(batteryThingId);
+        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        settings.endGroup();
+
+        m_batteryConfigurations.insert(batteryThingId, configuration);
+        emit batteryConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // Battery usecase is available and this battery has no configuration yet, lets add one
+        BatteryConfiguration configuration;
+        configuration.setBatteryThingId(batteryThingId);
+        m_batteryConfigurations.insert(batteryThingId, configuration);
+        emit batteryConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveBatteryConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // BatteryConfigurations
+}
+
+void EnergyEngine::saveBatteryConfigurationToSettings(const BatteryConfiguration &batteryConfiguration)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("BatteryConfigurations");
+    settings.beginGroup(batteryConfiguration.batteryThingId().toString());
+    settings.setValue("optimizationEnabled", batteryConfiguration.optimizationEnabled());
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::removeBatteryConfigurationFromSettings(const ThingId &batteryThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("BatteryConfigurations");
+    settings.beginGroup(batteryThingId.toString());
+    settings.remove("");
+    settings.endGroup();
+    settings.endGroup();
+}
 
 
 void EnergyEngine::loadChargingConfiguration(const ThingId &evChargerThingId)
