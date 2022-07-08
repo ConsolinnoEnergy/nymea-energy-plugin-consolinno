@@ -711,6 +711,11 @@ void EnergyEngine::loadUserConfiguration()
         UserConfiguration configuration;
         configuration.setLastSelectedCar(settings.value("lastSelectedCar").toUuid());
         configuration.setDefaultChargingMode(settings.value("defaultChargingMode").toInt());
+        configuration.setInstallerName(settings.value("installerName").toString());
+        configuration.setInstallerEmail(settings.value("installerEmail").toString());
+        configuration.setInstallerPhoneNr(settings.value("installerPhoneNr").toString());
+        configuration.setInstallerWorkplace(settings.value("installerWorkplace").toString());
+
         settings.endGroup(); // ThingId
 
         m_userConfigurations.insert(userConfigID, configuration);
@@ -736,6 +741,11 @@ void EnergyEngine::saveUserConfigurationToSettings(const UserConfiguration &user
     settings.beginGroup(userConfiguration.userConfigID().toString());
     settings.setValue("lastSelectedCar", userConfiguration.lastSelectedCar());
     settings.setValue("defaultChargingMode", userConfiguration.defaultChargingMode());
+    settings.setValue("installerName", userConfiguration.installerName());
+    settings.setValue("installerEmail", userConfiguration.installerEmail());
+    settings.setValue("installerPhoneNr", userConfiguration.installerPhoneNr());
+    settings.setValue("installerWorkplace", userConfiguration.installerWorkplace());
+
     settings.endGroup();
     settings.endGroup();
 }
