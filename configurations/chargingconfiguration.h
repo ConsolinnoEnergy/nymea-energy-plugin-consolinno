@@ -87,11 +87,11 @@ public:
 private:
     ThingId m_evChargerThingId;
     bool m_optimizationEnabled = false;
-    ThingId m_carThingId;
-    QString m_endTime = "12:30:00";
+    ThingId m_carThingId = ThingId();
+    QString m_endTime = "00:00:00";
     uint m_targetPercentage = 100;
-    int m_optimizationMode;
-    QUuid m_uniqueIdentifier;
+    int m_optimizationMode = 0;
+    QUuid m_uniqueIdentifier = "2e2d25c5-57c7-419a-b294-881f11ed01c4";
 };
 
 QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig);
