@@ -31,7 +31,6 @@ build:buster:
 build:focal:
   extends: .snapshot
   image: registry.consolinno-it.de/leafletfirmware/nymea/dockcross-nymea:dc-amd64-nymea-focal-latest
-  needs: ["build:bullseye"]
   stage: build
   script:
     - apt-get update
