@@ -13,12 +13,11 @@ stages:
   - DEBIAN_FRONTEND=noninteractive apt-get install -y git
   - git clone --branch add-other-distro-support https://$GL_UPLOADER_USER:$GL_UPLOADER_PASSWORD@gitlab.consolinno-it.de/leafletfirmware/package-upload.git
   - ./package-upload/debupload.sh snapshot buster $PWD/build/buster/*.deb
-  - ./package-upload/debupload.sh snapshot bullseye $PWD/build/bullseye/*.deb
   - ./package-upload/debupload.sh snapshot focal $PWD/build/focal/*.deb
 
 build:buster:
   extends: .snapshot
-  image: lheiz/dc-armv7-nymea-d10
+  image: registry.consolinno-it.de/leafletfirmware/nymea/dockcross-nymea:dc-armv7-nymea-d10-latest
   stage: build
   script:
     - apt-get update
@@ -29,25 +28,9 @@ build:buster:
     paths:
       - build/buster/*.deb
 
-
-build:bullseye:
-  extends: .snapshot
-  image: lheiz/dc-amd64-nymea-d10
-  needs: ["build:buster"]
-  stage: build
-  script:
-    - apt-get update
-    - apt-get install -y git-buildpackage
-    - gbp dch -S -a --snapshot-number=`date +"%s"` --ignore-branch
-    - gosu root dpkg-buildpackage -b  && mkdir -p build/bullseye && gosu root mv ../*.deb build/bullseye/
-  artifacts:
-    paths:
-      - build/bullseye/*.deb
-
-
 build:focal:
   extends: .snapshot
-  image: lheiz/dc-amd64-nymea-focal
+  image: registry.consolinno-it.de/leafletfirmware/nymea/dockcross-nymea:dc-amd64-nymea-focal-latest
   needs: ["build:bullseye"]
   stage: build
   script:
