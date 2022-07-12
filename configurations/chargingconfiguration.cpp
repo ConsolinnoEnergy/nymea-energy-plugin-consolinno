@@ -32,8 +32,8 @@
 
 ChargingConfiguration::ChargingConfiguration()
 {
-    QUuid carThingId;
-    m_carThingId = carThingId.createUuid();
+//    QUuid carThingId;
+//    m_carThingId = carThingId.createUuid();
 
 }
 
