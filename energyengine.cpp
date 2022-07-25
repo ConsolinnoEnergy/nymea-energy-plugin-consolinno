@@ -414,7 +414,7 @@ void EnergyEngine::onThingAdded(Thing *thing)
         monitorChargingSession(thing);
     }
 
-    if (thing->thingClass().interfaces().contains("battery")) {
+    if (thing->thingClass().interfaces().contains("energystorage")) {
         monitorBattery(thing);
     }
 
