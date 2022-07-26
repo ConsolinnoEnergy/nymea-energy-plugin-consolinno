@@ -343,6 +343,7 @@ void EnergyEngine::monitorBattery(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring Battery" << thing;
     m_batteries.insert(thing->id(),thing);
+    evaluateAvailableUseCases();
     loadBatteryConfiguration(thing->id());
 }
 
