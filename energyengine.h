@@ -65,6 +65,7 @@ public:
         HemsUseCaseHeating = 0x02,
         HemsUseCaseCharging = 0x04,
         HemsUseCasePv = 0x08,
+        HemsUseCaseBattery = 0x10
     };
     Q_ENUM(HemsUseCase)
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)

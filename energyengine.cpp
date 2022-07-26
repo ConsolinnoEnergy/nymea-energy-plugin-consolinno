@@ -615,10 +615,18 @@ void EnergyEngine::evaluateAvailableUseCases()
         availableUseCases = availableUseCases.setFlag(HemsUseCaseCharging);
     }
 
+    // PV
     if (m_energyManager->rootMeter() && !m_inverters.isEmpty()){
         //we need atleast a root meter and an inverter to read pv data
         availableUseCases = availableUseCases.setFlag(HemsUseCasePv);
     }
+
+    // Battery
+    if (m_energyManager->rootMeter() && !m_batteries.isEmpty()){
+        //we need atleast a root meter and an inverter to read pv data
+        availableUseCases = availableUseCases.setFlag(HemsUseCaseBattery);
+    }
+
 
     if (m_availableUseCases != availableUseCases) {
         qCDebug(dcConsolinnoEnergy()) << "Available use cases changed from" << availableUseCases;
