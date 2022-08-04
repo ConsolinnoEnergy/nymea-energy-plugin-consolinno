@@ -39,6 +39,7 @@
 #include <energymanager.h>
 
 #include "configurations/chargingconfiguration.h"
+#include "configurations/chargingoptimizationconfiguration.h"
 #include "configurations/chargingsessionconfiguration.h"
 #include "configurations/heatingconfiguration.h"
 #include "configurations/pvconfiguration.h"
@@ -90,6 +91,10 @@ public:
     QList<ChargingConfiguration> chargingConfigurations() const;
     EnergyEngine::HemsError setChargingConfiguration(const ChargingConfiguration &chargingConfiguration);
 
+    // Charging optimization configurations
+    QList<ChargingOptimizationConfiguration> chargingOptimizationConfigurations() const;
+    EnergyEngine::HemsError setChargingOptimizationConfiguration(const ChargingOptimizationConfiguration &chargingOptimizationConfiguration);
+
     // Battery configurations
     QList<BatteryConfiguration> batteryConfigurations() const;
     EnergyEngine::HemsError setBatteryConfiguration(const BatteryConfiguration &batteryConfiguration);
@@ -125,6 +130,10 @@ signals:
     void chargingConfigurationChanged(const ChargingConfiguration &chargingConfiguration);
     void chargingConfigurationRemoved(const ThingId &evChargerThingId);
 
+    void chargingOptimizationConfigurationAdded(const ChargingOptimizationConfiguration &chargingOptimizationConfiguration);
+    void chargingOptimizationConfigurationChanged(const ChargingOptimizationConfiguration &chargingOptimizationConfiguration);
+    void chargingOptimizationConfigurationRemoved(const ThingId &evChargerThingId);
+
     void batteryConfigurationAdded(const BatteryConfiguration &batteryConfiguration);
     void batteryConfigurationChanged(const BatteryConfiguration &batteryConfiguration);
     void batteryConfigurationRemoved(const ThingId &batteryThingId);
@@ -152,6 +161,7 @@ private:
     double m_housholdPowerLimit = m_housholdPhaseCount * m_housholdPhaseLimit;
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
+    QHash<ThingId, ChargingOptimizationConfiguration> m_chargingOptimizationConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
     QHash<ThingId, BatteryConfiguration> m_batteryConfigurations;
     QHash<ThingId, PvConfiguration> m_pvConfigurations;
@@ -196,6 +206,10 @@ private slots:
     void loadChargingConfiguration(const ThingId &evChargerThingId);
     void saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration);
     void removeChargingConfigurationFromSettings(const ThingId &evChargerThingId);
+
+    void loadChargingOptimizationConfiguration(const ThingId &evChargerThingId);
+    void saveChargingOptimizationConfigurationToSettings(const ChargingOptimizationConfiguration &chargingOptimizationConfiguration);
+    void removeChargingOptimizationConfigurationFromSettings(const ThingId &evChargerThingId);
 
     void loadBatteryConfiguration(const ThingId &batteryThingId);
     void saveBatteryConfigurationToSettings(const BatteryConfiguration &batteryConfiguration);

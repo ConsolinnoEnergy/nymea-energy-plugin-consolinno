@@ -16,6 +16,7 @@ gcc {
 HEADERS += \
     configurations/batteryconfiguration.h \
     configurations/chargingconfiguration.h \
+    configurations/chargingoptimizationconfiguration.h \
     configurations/chargingsessionconfiguration.h \
     configurations/conemsstate.h \
     configurations/heatingconfiguration.h \
@@ -28,6 +29,7 @@ HEADERS += \
 SOURCES += \
     configurations/batteryconfiguration.cpp \
     configurations/chargingconfiguration.cpp \
+    configurations/chargingoptimizationconfiguration.cpp \
     configurations/chargingsessionconfiguration.cpp \
     configurations/conemsstate.cpp \
     configurations/heatingconfiguration.cpp \

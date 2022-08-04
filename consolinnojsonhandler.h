@@ -64,6 +64,9 @@ public:
     Q_INVOKABLE JsonReply* GetChargingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetChargingConfiguration(const QVariantMap &params);
 
+    Q_INVOKABLE JsonReply* GetChargingOptimizationConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetChargingOptimizationConfiguration(const QVariantMap &params);
+
     Q_INVOKABLE JsonReply* GetBatteryConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetBatteryConfiguration(const QVariantMap &params);
 
@@ -88,6 +91,10 @@ signals:
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);
     void ChargingConfigurationChanged(const QVariantMap &params);
+
+    void ChargingOptimizationConfigurationAdded(const QVariantMap &params);
+    void ChargingOptimizationConfigurationRemoved(const QVariantMap &params);
+    void ChargingOptimizationConfigurationChanged(const QVariantMap &params);
 
     void BatteryConfigurationAdded(const QVariantMap &params);
     void BatteryConfigurationRemoved(const QVariantMap &params);
