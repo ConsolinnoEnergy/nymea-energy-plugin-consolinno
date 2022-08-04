@@ -48,6 +48,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     // Types
     registerObject<HeatingConfiguration>();
     registerObject<ChargingConfiguration>();
+    registerObject<ChargingOptimizationConfiguration>();
     registerObject<ChargingSessionConfiguration>();
     registerObject<PvConfiguration>();
     registerObject<ConEMSState>();
@@ -138,15 +139,29 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     // charging
     params.clear(); returns.clear();
-    description = "Get the list of available charging configurations from the energy engine.";
+    description = "Get the list of available charging optimizaton configurations from the energy engine.";
     returns.insert("chargingConfigurations", QVariantList() << objectRef<ChargingConfiguration>());
     registerMethod("GetChargingConfigurations", description, params, returns);
 
     params.clear(); returns.clear();
-    description = "Update a charging configuration to the given charging configuration. The ev charger thing ID will be used as an identifier.";
+    description = "Update a charging configuration to the given charging optimization configuration. The ev charger thing ID will be used as an identifier.";
     params.insert("chargingConfiguration", objectRef<ChargingConfiguration>());
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetChargingConfiguration", description, params, returns);
+
+
+    // charging optimization
+    params.clear(); returns.clear();
+    description = "Get the list of available charging configurations from the energy engine.";
+    returns.insert("chargingOptimizationConfigurations", QVariantList() << objectRef<ChargingOptimizationConfiguration>());
+    registerMethod("GetChargingOptimizationConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a charging configuration to the given charging configuration. The ev charger thing ID will be used as an identifier.";
+    params.insert("chargingOptimizationConfiguration", objectRef<ChargingOptimizationConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetChargingOptimizationConfiguration", description, params, returns);
+
 
     // battery
     params.clear(); returns.clear();
@@ -269,6 +284,24 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     description = "Emitted whenever a charging configuration has changed in the energy engine.";
     params.insert("chargingConfiguration", objectRef<ChargingConfiguration>());
     registerNotification("ChargingConfigurationChanged", description, params);
+
+    // Charging optimization
+    params.clear();
+    description = "Emitted whenever a new charging Optimization configuration has been added to the energy engine.";
+    params.insert("chargingOptimizationConfiguration", objectRef<ChargingOptimizationConfiguration>());
+    registerNotification("ChargingOptimizationConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a charging Optimization configuration has been removed from the energy engine with the given ev charger thing ID.";
+    params.insert("evChargerThingId", enumValueName(Uuid));
+    registerNotification("ChargingOptimizationConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a charging Optimization configuration has changed in the energy engine.";
+    params.insert("chargingOptimizationConfiguration", objectRef<ChargingOptimizationConfiguration>());
+    registerNotification("ChargingOptimizationConfigurationChanged", description, params);
+
+
 
     // Battery
     params.clear();
@@ -414,7 +447,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         emit ChargingSessionConfigurationChanged(params);
     });
 
-
+    // Charging connections
     connect(m_energyEngine, &EnergyEngine::chargingConfigurationAdded, this, [=](const ChargingConfiguration &chargingConfiguration){
         QVariantMap params;
         params.insert("chargingConfiguration", pack(chargingConfiguration));
@@ -432,6 +465,26 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         params.insert("chargingConfiguration", pack(chargingConfiguration));
         emit ChargingConfigurationChanged(params);
     });
+
+    // Charging optimization connections
+    connect(m_energyEngine, &EnergyEngine::chargingOptimizationConfigurationAdded, this, [=](const ChargingOptimizationConfiguration &chargingOptimizationConfiguration){
+        QVariantMap params;
+        params.insert("chargingOptimizationConfiguration", pack(chargingOptimizationConfiguration));
+        emit ChargingOptimizationConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::chargingOptimizationConfigurationRemoved, this, [=](const ThingId &evChargerThingId){
+        QVariantMap params;
+        params.insert("evChargerThingId", evChargerThingId);
+        emit ChargingOptimizationConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::chargingOptimizationConfigurationChanged, this, [=](const ChargingOptimizationConfiguration &chargingOptimizationConfiguration){
+        QVariantMap params;
+        params.insert("chargingOptimizationConfiguration", pack(chargingOptimizationConfiguration));
+        emit ChargingOptimizationConfigurationChanged(params);
+    });
+
 
     connect(m_energyEngine, &EnergyEngine::batteryConfigurationAdded, this, [=](const BatteryConfiguration &batteryConfiguration){
         QVariantMap params;
@@ -600,6 +653,31 @@ JsonReply *ConsolinnoJsonHandler::SetChargingConfiguration(const QVariantMap &pa
     returns.insert("hemsError", enumValueName(error));
     return createReply(returns);
 }
+
+
+JsonReply *ConsolinnoJsonHandler::GetChargingOptimizationConfigurations(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const ChargingOptimizationConfiguration &chargingOptimizationConfig, m_energyEngine->chargingOptimizationConfigurations()) {
+        configurations << pack(chargingOptimizationConfig);
+    }
+    returns.insert("chargingOptimizationConfigurations", configurations);
+
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetChargingOptimizationConfiguration(const QVariantMap &params)
+{
+    qCDebug(dcConsolinnoEnergy()) << params;
+    EnergyEngine::HemsError error = m_energyEngine->setChargingOptimizationConfiguration(unpack<ChargingOptimizationConfiguration>(params.value("chargingOptimizationConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
 
 
 JsonReply *ConsolinnoJsonHandler::GetBatteryConfigurations(const QVariantMap &params)
