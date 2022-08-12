@@ -931,6 +931,11 @@ void EnergyEngine::loadChargingOptimizationConfiguration(const ThingId &evCharge
         ChargingOptimizationConfiguration configuration;
         configuration.setEvChargerThingId(evChargerThingId);
         configuration.setReenableChargepoint(settings.value("reenableChargepoint").toBool());
+        configuration.setP_value(settings.value("p_value").toFloat());
+        configuration.setI_value(settings.value("i_value").toFloat());
+        configuration.setD_value(settings.value("d_value").toFloat());
+        configuration.setSetpoint(settings.value("setpoint").toFloat());
+
         settings.endGroup();
 
         m_chargingOptimizationConfigurations.insert(evChargerThingId, configuration);
@@ -956,6 +961,10 @@ void EnergyEngine::saveChargingOptimizationConfigurationToSettings(const Chargin
     settings.beginGroup("ChargingOptimizationConfigurations");
     settings.beginGroup(chargingOptimizationConfiguration.evChargerThingId().toString());
     settings.setValue("reenableChargepoint", chargingOptimizationConfiguration.reenableChargepoint());
+    settings.setValue("p_value", chargingOptimizationConfiguration.p_value());
+    settings.setValue("i_value", chargingOptimizationConfiguration.i_value());
+    settings.setValue("d_value", chargingOptimizationConfiguration.d_value());
+    settings.setValue("setpoint", chargingOptimizationConfiguration.setpoint());
 
     settings.endGroup();
     settings.endGroup();
