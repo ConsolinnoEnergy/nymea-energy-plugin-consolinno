@@ -49,9 +49,9 @@ private:
     ThingId m_pvThingId;
     float m_latitude = 0;
     float m_longitude = 0;
-    int m_roofPitch = 0;
-    int m_alignment = 0;
-    float m_kwPeak = 0;
+    int m_roofPitch = 42;
+    int m_alignment = 5;
+    float m_kwPeak = 8;
 
 
 
