@@ -612,10 +612,9 @@ void EnergyEngine::evaluate()
         // Note: iterate all chargers, not just the one we are optimizing
         foreach (Thing *thing, m_evChargers) {
             State maxChargingCurrentState = thing->state("maxChargingCurrent");
-            Action action(maxChargingCurrentState.stateTypeId(), thing->id(), Action::TriggeredByRule);
-            action.setParams(ParamList() << Param(maxChargingCurrentState.stateTypeId(), maxChargingCurrentState.minValue()));
+            thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), maxChargingCurrentState.minValue());
+            qCDebug(dcConsolinnoEnergy()) << "Ajdusted minimum state value to " <<  maxChargingCurrentState.minValue() << "A";
             qCInfo(dcConsolinnoEnergy()) << "Adjusting charging on" << thing->name() << "to minimum of" << maxChargingCurrentState.minValue() << "A";
-            m_thingManager->executeAction(action);
         }
     }
 }
