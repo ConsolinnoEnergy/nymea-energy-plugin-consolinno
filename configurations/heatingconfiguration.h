@@ -100,10 +100,10 @@ public:
 private:
     ThingId m_heatPumpThingId;
     bool m_optimizationEnabled = false;
-    double m_maxElectricalPower = 0;
-    double m_maxThermalEnergy = 0;
+    double m_maxElectricalPower = 5;
+    double m_maxThermalEnergy = 5;
     HouseType m_houseType = HouseTypeSince1984;
-    double m_floorHeatingArea = 0;
+    double m_floorHeatingArea = 70;
     ThingId m_heatMeterThingId;
 
 };
