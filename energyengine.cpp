@@ -682,8 +682,6 @@ void EnergyEngine::pluggedInEventHandling(Thing *thing)
     configuration.setOptimizationEnabled(false);
     setChargingConfiguration(configuration);
     saveChargingConfigurationToSettings(configuration);
-    emit chargingConfigurationChanged(configuration);
-
 }
 
 
