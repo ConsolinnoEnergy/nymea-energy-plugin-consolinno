@@ -100,12 +100,11 @@ public:
 private:
     ThingId m_heatPumpThingId;
     bool m_optimizationEnabled = false;
-    double m_maxElectricalPower = 5;
+    double m_maxElectricalPower = 9;
     double m_maxThermalEnergy = 5;
     HouseType m_houseType = HouseTypeSince1984;
-    double m_floorHeatingArea = 70;
+    double m_floorHeatingArea = 100;
     ThingId m_heatMeterThingId;
-
 };
 
 QDebug operator<<(QDebug debug, const HeatingConfiguration &heatingConfig);
