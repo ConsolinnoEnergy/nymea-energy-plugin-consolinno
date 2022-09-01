@@ -680,6 +680,7 @@ void EnergyEngine::pluggedInEventHandling(Thing *thing)
     qCDebug(dcConsolinnoEnergy()) << "pluggedIn Changed from true to false";
     ChargingConfiguration configuration = m_chargingConfigurations.value(thing->id());
     configuration.setOptimizationEnabled(false);
+    setChargingConfiguration(configuration);
     saveChargingConfigurationToSettings(configuration);
     emit chargingConfigurationChanged(configuration);
 
