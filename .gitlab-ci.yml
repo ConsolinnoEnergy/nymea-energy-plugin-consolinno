@@ -6,7 +6,7 @@ stages:
 ##### Development snapshots #####
 .snapshot:
   only:
-   - develop
+   - main
 
 .deploy_template: &deploy_script_templ
   - apt update
