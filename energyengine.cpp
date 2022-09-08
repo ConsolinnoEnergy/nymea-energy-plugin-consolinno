@@ -591,33 +591,42 @@ void EnergyEngine::evaluate()
     bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit;
     double overshotPower = 0;
+    double marginPower = 230 * m_housholdPhaseLimit;
     double currMax = 0;
+    double overshotCurrent = 0;
     double absMax = 0;
+    double absMin = 0;
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
     foreach (const QString &phase, currentPhaseConsumption.keys()) {
         if (currentPhaseConsumption.value(phase) > phasePowerLimit) {
-            qCDebug(dcConsolinnoEnergy()) << "Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
+            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
             if (phaseOvershotPower > overshotPower) {
                 overshotPower = phaseOvershotPower;
             }
         } else {
+            double phaseMarginPower = phasePowerLimit - currentPhaseConsumption.value(phase);
+            if (phaseMarginPower < marginPower) {
+                marginPower = phaseMarginPower;
+            }
         }
     }
+        qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Maximum available power: " << marginPower << "W";
 
         foreach (Thing *thing, m_evChargers) {
-            State maxChargingCurrentState = thing->state("maxChargingCurrent");
             absMax = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
-            currMax = maxChargingCurrentState.maxValue().toFloat();
+            absMin = thing->thingClass().stateTypes().findByName("maxChargingCurrent").minValue().toFloat();
+            currMax = thing->state("maxChargingCurrent").maxValue().toFloat();
+            overshotCurrent = qRound(overshotPower / 230);
             if (limitExceeded) {
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << overshotPower  << "W to much. Adjusting the evChargers...";
-                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), currMax - 1);
-                qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  maxChargingCurrentState.maxValue() << "A";
+                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), currMax - overshotCurrent - 1);
+                qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             }else{
-                if(currMax != absMax) {
+                if(currMax != absMax && marginPower > 250) {
                     thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMax, currMax + 1));
-                    qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  maxChargingCurrentState.maxValue() << "A";
+                    qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
                 }
         }
 
