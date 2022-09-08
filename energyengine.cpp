@@ -603,15 +603,9 @@ void EnergyEngine::evaluate()
                 overshotPower = phaseOvershotPower;
             }
         } else {
-            //qCInfo(dcConsolinnoEnergy()) << "= Phase" << phase << "at" << currentPhaseConsumption.value(phase) << "W from maximal" << phasePowerLimit << "W ->" << currentPhaseConsumption.value(phase) * 100.0 / phasePowerLimit << "%";
         }
     }
 
-    // TODO: limit the consumption depending on a hirarchy and check calculate the amout of energy we can actually adjust down * 1.2 or something
-
-
-
-        // Note: iterate all chargers, not just the one we are optimizing
         foreach (Thing *thing, m_evChargers) {
             State maxChargingCurrentState = thing->state("maxChargingCurrent");
             absMax = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
@@ -625,7 +619,6 @@ void EnergyEngine::evaluate()
                     thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMax, currMax + 1));
                     qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  maxChargingCurrentState.maxValue() << "A";
                 }
-
         }
 
     }
