@@ -51,6 +51,10 @@ Depends: ${shlibs:Depends},
          nymea-plugin-sunspec,
          nymea-plugin-wallbe,
          nymea-plugin-webasto,
+         nymea-zeroconf-plugin-avahi,
+         nymea-system-plugin-systemd,
+
+
 Description: Consolinno Home Energy Management System
  Meta package for everything required to install a consolinno
  HEMS system.
