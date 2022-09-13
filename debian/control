@@ -42,7 +42,7 @@ Depends: ${shlibs:Depends},
          ${misc:Depends},
          consolinno-hems-updater,
          nymea,
-         nymea-energy-plugin-consolinno
+         nymea-energy-plugin-consolinno,
          conems,
          authentication-button,
          statusledcontroller,
