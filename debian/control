@@ -72,3 +72,15 @@ Description: Dev tools for Consolinno Home Energy Management System
  Meta package for dev tools for a consolinno
  HEMS system.
 
+
+Package: consolinno-hems-updater
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems,
+Description: Script to update consolinno-hems packages
+ This packages provides a script which updates only packages from the 
+ consolinno-hems Meta package.
+
