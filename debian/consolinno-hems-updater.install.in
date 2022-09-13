@@ -1,1 +1,1 @@
-scripts/update-consolinno-hems.sh /usr/bin/update-consolinno-hems
+scripts/update-consolinno-hems usr/bin/

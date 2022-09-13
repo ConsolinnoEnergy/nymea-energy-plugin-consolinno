@@ -23,12 +23,24 @@ Description: consolinno energy plugin for the nymea energy experience
  This consolinno energy plugin adds the HEMS optimization functionality to the 
  nymea energy experience.
 
+Package: consolinno-hems-updater
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+Description: Script to update consolinno-hems packages
+ This packages provides a script which updates only packages from the 
+ consolinno-hems Meta package.
+
+
 Package: consolinno-hems
 Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
+         consolinno-hems-updater,
          nymea,
          conems,
          authentication-button,
@@ -71,16 +83,4 @@ Depends: ${shlibs:Depends},
 Description: Dev tools for Consolinno Home Energy Management System
  Meta package for dev tools for a consolinno
  HEMS system.
-
-
-Package: consolinno-hems-updater
-Section: libs
-Architecture: any
-Multi-Arch: same
-Depends: ${shlibs:Depends},
-         ${misc:Depends},
-         consolinno-hems,
-Description: Script to update consolinno-hems packages
- This packages provides a script which updates only packages from the 
- consolinno-hems Meta package.
 
