@@ -53,7 +53,7 @@ Depends: ${shlibs:Depends},
          nymea-plugin-delta,
          nymea-plugin-e3dc,
          nymea-plugin-fronius,
-         nymea-plugin-generic-car
+         nymea-plugin-generic-car,
          nymea-plugin-huawei,
          nymea-plugin-idm,
          nymea-plugin-kaco,
