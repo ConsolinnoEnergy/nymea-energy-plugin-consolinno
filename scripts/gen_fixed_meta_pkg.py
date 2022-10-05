@@ -23,7 +23,7 @@ for dep in latest_entry['Depends'].split("\n"):
 
 new_entry = latest_entry
 new_entry['Package'] = "consolinno-hems"
-new_entry['Depends'] = " \n         ".join(new_deps)
+new_entry['Depends'] = ",\n         ".join(new_deps)
 
 print("\n\n")
 print(new_entry)
