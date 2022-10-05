@@ -34,7 +34,7 @@ Description: Script to update consolinno-hems packages
  consolinno-hems Meta package.
 
 
-Package: consolinno-hems
+Package: consolinno-hems-latest
 Section: libs
 Architecture: any
 Multi-Arch: same
