@@ -30,9 +30,9 @@ for dep in latest_entry['Depends'].split("\n"):
         else:
             pkg_name = dep
         try:
-            new_deps.append(dep + " (= " + cache[pkg_name].candidate.version + ")")
+            new_deps.append(dep + " (>= " + cache[pkg_name].candidate.version + ")")
         except KeyError:
-            new_deps.append(dep + " (= " + cache[dep + ":all"].candidate.version + ")")
+            new_deps.append(dep + " (>= " + cache[dep + ":all"].candidate.version + ")")
 
     else:
         new_deps.append(dep)
