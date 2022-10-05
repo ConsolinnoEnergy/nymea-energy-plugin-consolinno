@@ -29,7 +29,11 @@ for dep in latest_entry['Depends'].split("\n"):
             pkg_name = dep + ":" + arch
         else:
             pkg_name = dep
-        new_deps.append(dep + " (= " + cache[pkg_name].candidate.version + ")")
+        try:
+            new_deps.append(dep + " (= " + cache[pkg_name].candidate.version + ")")
+        except KeyError:
+            new_deps.append(dep + " (= " + cache[dep + ":all"].candidate.version + ")")
+
     else:
         new_deps.append(dep)
 
