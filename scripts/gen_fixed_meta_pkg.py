@@ -17,7 +17,7 @@ new_deps = []
 for dep in latest_entry['Depends'].split("\n"):
     dep = dep.strip().strip(",")
     if not dep.startswith("$"):
-        new_deps.append(dep + "=" + cache[dep].candidate.version)
+        new_deps.append(dep + " (= " + cache[dep].candidate.version + ")") 
     else:
         new_deps.append(dep)
 
