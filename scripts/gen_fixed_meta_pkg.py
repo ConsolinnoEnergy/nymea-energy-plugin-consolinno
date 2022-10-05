@@ -6,8 +6,16 @@ repository
 """
 from debian import deb822
 import apt
+import sys
+
+try:
+    arch = sys.argv[1]
+except:
+    arch = None
+
 
 cache = apt.cache.Cache()
+
 
 for el in deb822.Deb822.iter_paragraphs(open("../debian/control")):
     if el.get('Package', None) == "consolinno-hems-latest":
@@ -17,7 +25,11 @@ new_deps = []
 for dep in latest_entry['Depends'].split("\n"):
     dep = dep.strip().strip(",")
     if not dep.startswith("$"):
-        new_deps.append(dep + " (= " + cache[dep].candidate.version + ")") 
+        if arch:
+            pkg_name = dep + ":" + arch
+        else:
+            pkg_name = dep
+        new_deps.append(dep + " (= " + cache[pkg_name].candidate.version + ")")
     else:
         new_deps.append(dep)
 
