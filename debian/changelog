@@ -1,4 +1,4 @@
-nymea-energy-plugin-consolinno (0.1) UNRELEASED; urgency=medium
+nymea-energy-plugin-consolinno (0.1.2-1) qa; urgency=medium
+  * Initial release
 
-
- -- Simon Stürz <simon.stuerz@nymea.io>  Tue, 09 Nov 2021 12:15:52 +0100
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Tue, 14 Oct 2022 10:15:52 +0100

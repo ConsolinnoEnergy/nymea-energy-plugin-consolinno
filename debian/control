@@ -23,22 +23,68 @@ Description: consolinno energy plugin for the nymea energy experience
  This consolinno energy plugin adds the HEMS optimization functionality to the 
  nymea energy experience.
 
-Package: consolinno-hems
+Package: consolinno-hems-updater
 Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
+Description: Script to update consolinno-hems packages
+ This packages provides a script which updates only packages from the 
+ consolinno-hems Meta package.
+
+
+Package: consolinno-hems-latest
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-updater,
          nymea,
+         nymea-data,
          nymea-energy-plugin-consolinno,
-         nymea-plugin-keba,
+         conems,
+         authentication-button,
+         statusledcontroller,
+         nymea-plugin-alphainnotec,
+         nymea-plugin-bgetech,
+         nymea-plugin-bgetech-inverter,
+         nymea-plugin-delta,
+         nymea-plugin-e3dc,
+         nymea-plugin-fronius,
+         nymea-plugin-generic-car,
+         nymea-plugin-goecharger,
+         nymea-plugin-huawei,
          nymea-plugin-idm,
-         nymea-plugin-energymeters,
-         nymea-plugin-mypv,
-         nymea-plugin-mtec,
+         nymea-plugin-kaco,
+         nymea-plugin-keba,
+         nymea-plugin-schneider-iem,
+         nymea-plugin-sgready,
+         nymea-plugin-shelly,
+         nymea-plugin-sma,
          nymea-plugin-sunspec,
-         nymea-plugin-wallbe,
+         nymea-plugin-stiebeleltron,
+         nymea-plugin-phoenixconnect,
          nymea-plugin-webasto,
+         nymea-zeroconf-plugin-avahi,
+         nymea-system-plugin-systemd,
 Description: Consolinno Home Energy Management System
  Meta package for everything required to install a consolinno
  HEMS system.
+
+
+Package: consolinno-hems-devtools
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems,
+         vim,
+         byobu,
+         nymea-plugin-energy-simulation,
+Description: Dev tools for Consolinno Home Energy Management System
+ Meta package for dev tools for a consolinno
+ HEMS system.
+
