@@ -1,6 +1,9 @@
 nymea-energy-plugin-consolinno (1.5.120-1) qa; urgency=medium
   * Bumps version number to be in sync with nymea core version: 1.5.1
   * Limit debug output of Blackout protection
+  * Reintroduced consolinno-hems meta package (-latest will be removed eventually)
+  * Added mennekes integration to consolinno-hems meta package
+  * Added simplesmartconsumer to consolinno-hems meta package
 
  -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 14 Dec 2022 10:43:41 +0100
 
