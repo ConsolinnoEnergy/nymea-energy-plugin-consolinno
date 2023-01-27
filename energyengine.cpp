@@ -587,7 +587,7 @@ void EnergyEngine::evaluate()
             }
         }
     }
-        qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Maximum available power: " << marginPower << "W";
+        qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Maximum available power: " << marginPower << "W";
 
         foreach (Thing *thing, m_evChargers) {
             absMax = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
