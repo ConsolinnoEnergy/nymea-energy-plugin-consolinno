@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: nymea-energy-plugin-consolinno 
+Source: https://consolinno.de 
+
+Files: *
+Copyright: 2022 Leonhard Heizinger <l.heizinger@consolinno.de>
+License: Proprietary 
+ Copyright (C) Consolinno Energy GmbH - All Rights Reserved
+ Unauthorized copying of this file, via any medium is strictly prohibited.
+ Proprietary and confidential

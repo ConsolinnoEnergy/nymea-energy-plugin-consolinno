@@ -1,0 +1,4 @@
+ #!/bin/bash
+ apt update
+ #apt -y install consolinno-hems && apt install $(LANG=empty apt depends consolinno-hems | awk '{print $2}')
+ apt install --only-upgrade -y $(grep ^Package /var/lib/apt/lists/packages.services.consolinno.de* | awk '{print $2}' | sort | uniq)

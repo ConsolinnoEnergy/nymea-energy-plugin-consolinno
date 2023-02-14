@@ -1,32 +1,7 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*
-* Copyright 2013 - 2021, nymea GmbH
-* Contact: contact@nymea.io
-*
-* This file is part of nymea.
-* This project including source code and documentation is protected by
-* copyright law, and remains the property of nymea GmbH. All rights, including
-* reproduction, publication, editing and translation, are reserved. The use of
-* this project is subject to the terms of a license agreement to be concluded
-* with nymea GmbH in accordance with the terms of use of nymea GmbH, available
-* under https://nymea.io/license
-*
-* GNU General Public License Usage
-* Alternatively, this project may be redistributed and/or modified under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation, GNU version 3. This project is distributed in the hope that it
-* will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-* of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
-* Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* this project. If not, see <https://www.gnu.org/licenses/>.
-*
-* For any further details and any questions please contact us under
-* contact@nymea.io or see our FAQ/Licensing Information on
-* https://nymea.io/license/faq
-*
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Copyright (C) Consolinno Energy GmbH - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
 
 #include "energyengine.h"
 #include "nymeasettings.h"
@@ -591,32 +566,45 @@ void EnergyEngine::evaluate()
     bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit;
     double overshotPower = 0;
+    double marginPower = 230 * m_housholdPhaseLimit;
+    double currMax = 0;
+    double overshotCurrent = 0;
+    double absMax = 0;
+    double absMin = 0;
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
     foreach (const QString &phase, currentPhaseConsumption.keys()) {
         if (currentPhaseConsumption.value(phase) > phasePowerLimit) {
-            qCDebug(dcConsolinnoEnergy()) << "Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
+            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
             if (phaseOvershotPower > overshotPower) {
                 overshotPower = phaseOvershotPower;
             }
         } else {
-            //qCInfo(dcConsolinnoEnergy()) << "= Phase" << phase << "at" << currentPhaseConsumption.value(phase) << "W from maximal" << phasePowerLimit << "W ->" << currentPhaseConsumption.value(phase) * 100.0 / phasePowerLimit << "%";
+            double phaseMarginPower = phasePowerLimit - currentPhaseConsumption.value(phase);
+            if (phaseMarginPower < marginPower) {
+                marginPower = phaseMarginPower;
+            }
         }
     }
+        qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Maximum available power: " << marginPower << "W";
 
-    // TODO: limit the consumption depending on a hirarchy and check calculate the amout of energy we can actually adjust down * 1.2 or something
-
-    if (limitExceeded) {
-        qCInfo(dcConsolinnoEnergy()) << "Using at least" << overshotPower  << "W to much. Start adjusting the evChargers...";
-        // Note: iterate all chargers, not just the one we are optimizing
         foreach (Thing *thing, m_evChargers) {
-            State maxChargingCurrentState = thing->state("maxChargingCurrent");
-            Action action(maxChargingCurrentState.stateTypeId(), thing->id(), Action::TriggeredByRule);
-            action.setParams(ParamList() << Param(maxChargingCurrentState.stateTypeId(), maxChargingCurrentState.minValue()));
-            qCInfo(dcConsolinnoEnergy()) << "Adjusting charging on" << thing->name() << "to minimum of" << maxChargingCurrentState.minValue() << "A";
-            m_thingManager->executeAction(action);
+            absMax = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
+            absMin = thing->thingClass().stateTypes().findByName("maxChargingCurrent").minValue().toFloat();
+            currMax = thing->state("maxChargingCurrent").maxValue().toFloat();
+            overshotCurrent = qRound(overshotPower / 230);
+            if (limitExceeded) {
+                qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << overshotPower  << "W to much. Adjusting the evChargers...";
+                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), currMax - overshotCurrent - 1);
+                qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
+            }else{
+                if(currMax != absMax && marginPower > 250) {
+                    thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMax, currMax + 1));
+                    qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
+                }
         }
+
     }
 }
 
