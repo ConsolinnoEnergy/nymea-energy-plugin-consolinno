@@ -1,3 +1,7 @@
+nymea-energy-plugin-consolinno (1.5.122) qa; urgency=medium
+  * Removed Kaco legacy plugin
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 3 Mar 2022 10:43:41 +0100
+
 nymea-energy-plugin-consolinno (1.5.121) qa; urgency=medium
   * Changes to support future release of simple pv charging mode
   * Added Sungrow and Kostal inverters to meta package
