@@ -599,7 +599,7 @@ void EnergyEngine::evaluate()
             if (limitExceeded) 
             {
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << overshotPower  << "W to much. Adjusting the evChargers...";
-                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), currMax - overshotCurrent - 1);
+                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::max(absMin, currMax - overshotCurrent - 1));
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             }else{
                 if(currMax != absMax && marginPower > 250) {
