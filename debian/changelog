@@ -1,5 +1,6 @@
 nymea-energy-plugin-consolinno (1.5.122) qa; urgency=medium
   * Removed Kaco legacy plugin
+  * Limit lower bound of blackout protection and improve debug output
  -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 3 Mar 2022 10:43:41 +0100
 
 nymea-energy-plugin-consolinno (1.5.121) qa; urgency=medium
