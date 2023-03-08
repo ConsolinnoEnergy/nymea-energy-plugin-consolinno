@@ -590,13 +590,16 @@ void EnergyEngine::evaluate()
         qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Maximum available power: " << marginPower << "W";
 
         foreach (Thing *thing, m_evChargers) {
+            qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Checking EV charger thing " << thing->name();
             absMax = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
             absMin = thing->thingClass().stateTypes().findByName("maxChargingCurrent").minValue().toFloat();
+            qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Absolute limits are min. " << absMin << "A and max. " << absMax << "A.";
             currMax = thing->state("maxChargingCurrent").maxValue().toFloat();
             overshotCurrent = qRound(overshotPower / 230);
-            if (limitExceeded) {
+            if (limitExceeded) 
+            {
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << overshotPower  << "W to much. Adjusting the evChargers...";
-                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), currMax - overshotCurrent - 1);
+                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::max(absMin, currMax - overshotCurrent - 1));
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             }else{
                 if(currMax != absMax && marginPower > 250) {
@@ -667,7 +670,9 @@ void EnergyEngine::pluggedInEventHandling(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "pluggedIn Changed from true to false";
     ChargingConfiguration configuration = m_chargingConfigurations.value(thing->id());
-    configuration.setOptimizationEnabled(false);
+    if (!(configuration.optimizationMode() >= 3000 && configuration.optimizationMode() < 4000)) {
+        configuration.setOptimizationEnabled(false);
+    }
     setChargingConfiguration(configuration);
     saveChargingConfigurationToSettings(configuration);
 }
