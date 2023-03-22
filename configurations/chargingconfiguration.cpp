@@ -5,121 +5,115 @@
 
 #include "chargingconfiguration.h"
 
-ChargingConfiguration::ChargingConfiguration()
-{
+ChargingConfiguration::ChargingConfiguration() {}
 
+ThingId ChargingConfiguration::evChargerThingId() const {
+  return m_evChargerThingId;
 }
 
-ThingId ChargingConfiguration::evChargerThingId() const
-{
-    return m_evChargerThingId;
+void ChargingConfiguration::setEvChargerThingId(
+    const ThingId &evChargerThingId) {
+  m_evChargerThingId = evChargerThingId;
 }
 
-void ChargingConfiguration::setEvChargerThingId(const ThingId &evChargerThingId)
-{
-    m_evChargerThingId = evChargerThingId;
+int ChargingConfiguration::optimizationMode() const {
+  return m_optimizationMode;
 }
 
-int ChargingConfiguration::optimizationMode() const
-{
-    return m_optimizationMode;
+void ChargingConfiguration::setOptimizationMode(int optimizationMode) {
+  m_optimizationMode = optimizationMode;
 }
 
-void ChargingConfiguration::setOptimizationMode(int optimizationMode)
-{
-    m_optimizationMode = optimizationMode;
+int ChargingConfiguration::optimizationModeBase() {
+  if (optimizationMode() < 1000) {
+    return 1;
+  }
+  if (optimizationMode() >= 1000 && optimizationMode() < 2000) {
+    return 2;
+  }
+  if (optimizationMode() >= 2000 && optimizationMode() < 3000) {
+    return 3;
+  }
+  if (optimizationMode() >= 3000 && optimizationMode() < 4000) {
+    return 4;
+  }
+  return 0;
 }
 
-
-
-bool ChargingConfiguration::optimizationEnabled() const
-{
-    return m_optimizationEnabled;
+bool ChargingConfiguration::optimizationEnabled() const {
+  return m_optimizationEnabled;
 }
 
-void ChargingConfiguration::setOptimizationEnabled(bool optimizationEnabled)
-{
-    m_optimizationEnabled = optimizationEnabled;
+void ChargingConfiguration::setOptimizationEnabled(bool optimizationEnabled) {
+  m_optimizationEnabled = optimizationEnabled;
 }
 
-ThingId ChargingConfiguration::carThingId() const
-{
-    return m_carThingId;
+ThingId ChargingConfiguration::carThingId() const { return m_carThingId; }
+
+void ChargingConfiguration::setCarThingId(const ThingId &carThingId) {
+  m_carThingId = carThingId;
 }
 
-void ChargingConfiguration::setCarThingId(const ThingId &carThingId)
-{
-    m_carThingId = carThingId;
+QString ChargingConfiguration::endTime() const { return m_endTime; }
+
+void ChargingConfiguration::setEndTime(const QString &endTime) {
+  m_endTime = endTime;
 }
 
-QString ChargingConfiguration::endTime() const
-{
-    return m_endTime;
+uint ChargingConfiguration::targetPercentage() const {
+  return m_targetPercentage;
 }
 
-void ChargingConfiguration::setEndTime(const QString &endTime)
-{
-    m_endTime = endTime;
+void ChargingConfiguration::setTargetPercentage(uint targetPercentage) {
+  m_targetPercentage = targetPercentage;
 }
 
-uint ChargingConfiguration::targetPercentage() const
-{
-    return m_targetPercentage;
+QUuid ChargingConfiguration::uniqueIdentifier() const {
+  return m_uniqueIdentifier;
 }
 
-void ChargingConfiguration::setTargetPercentage(uint targetPercentage)
-{
-    m_targetPercentage = targetPercentage;
+void ChargingConfiguration::setUniqueIdentifier(QUuid uniqueIdentifier) {
+  m_uniqueIdentifier = uniqueIdentifier;
 }
 
-QUuid ChargingConfiguration::uniqueIdentifier() const
-{
-    return m_uniqueIdentifier;
+bool ChargingConfiguration::isValid() const {
+  return !m_evChargerThingId.isNull() && !m_carThingId.isNull();
 }
 
-void ChargingConfiguration::setUniqueIdentifier(QUuid uniqueIdentifier)
-{
-    m_uniqueIdentifier = uniqueIdentifier;
+bool ChargingConfiguration::operator==(
+    const ChargingConfiguration &other) const {
+  return m_evChargerThingId == other.evChargerThingId() &&
+         m_optimizationEnabled == other.optimizationEnabled() &&
+         m_optimizationMode == other.optimizationMode() &&
+         m_carThingId == other.carThingId() && m_endTime == other.endTime() &&
+         m_uniqueIdentifier == other.uniqueIdentifier() &&
+         m_targetPercentage == other.targetPercentage();
 }
 
-
-
-
-
-bool ChargingConfiguration::isValid() const
-{
-    return !m_evChargerThingId.isNull() && !m_carThingId.isNull();
+bool ChargingConfiguration::operator!=(
+    const ChargingConfiguration &other) const {
+  return !(*this == other);
 }
 
-bool ChargingConfiguration::operator==(const ChargingConfiguration &other) const
-{
-    return m_evChargerThingId == other.evChargerThingId() &&
-            m_optimizationEnabled == other.optimizationEnabled() &&
-            m_optimizationMode == other.optimizationMode() &&
-            m_carThingId == other.carThingId() &&
-            m_endTime == other.endTime() &&
-            m_uniqueIdentifier == other.uniqueIdentifier() &&
-            m_targetPercentage == other.targetPercentage();
-}
-
-bool ChargingConfiguration::operator!=(const ChargingConfiguration &other) const
-{
-    return !(*this == other);
-}
-
-QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig)
-{
-    debug.nospace() << "ChargingConfiguration(" << chargingConfig.evChargerThingId().toString();
-    debug.nospace() << "unique Identifier: " << chargingConfig.uniqueIdentifier().toString();
-    debug.nospace() << "optimization: " << (chargingConfig.optimizationEnabled() ? "enabled" : "disabled");
-    if (!chargingConfig.carThingId().isNull()) {
-        debug.nospace() << ", assigned car: " << chargingConfig.carThingId().toString();
-    } else {
-        debug.nospace() << ", no car assigned";
-    }
-    debug.nospace() << ", optimization Mode: " << chargingConfig.optimizationMode();
-    debug.nospace() << ", target percentage: " << chargingConfig.targetPercentage() << "%";
-    debug.nospace() << ", target time: " << chargingConfig.endTime();
-    debug.nospace() << ")";
-    return debug.maybeSpace();
+QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig) {
+  debug.nospace() << "ChargingConfiguration("
+                  << chargingConfig.evChargerThingId().toString();
+  debug.nospace() << "unique Identifier: "
+                  << chargingConfig.uniqueIdentifier().toString();
+  debug.nospace() << "optimization: "
+                  << (chargingConfig.optimizationEnabled() ? "enabled"
+                                                           : "disabled");
+  if (!chargingConfig.carThingId().isNull()) {
+    debug.nospace() << ", assigned car: "
+                    << chargingConfig.carThingId().toString();
+  } else {
+    debug.nospace() << ", no car assigned";
+  }
+  debug.nospace() << ", optimization Mode: "
+                  << chargingConfig.optimizationMode();
+  debug.nospace() << ", target percentage: "
+                  << chargingConfig.targetPercentage() << "%";
+  debug.nospace() << ", target time: " << chargingConfig.endTime();
+  debug.nospace() << ")";
+  return debug.maybeSpace();
 }

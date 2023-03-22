@@ -670,8 +670,10 @@ void EnergyEngine::pluggedInEventHandling(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "pluggedIn Changed from true to false";
     ChargingConfiguration configuration = m_chargingConfigurations.value(thing->id());
-    if (!(configuration.optimizationMode() >= 3000 && configuration.optimizationMode() < 4000)) {
+    // Disable optimization when car is unplugged for all modes except NO_OPTIMIZATION and SIMPLE_PV_EXCESS
+    if (!(configuration.optimizationModeBase() == NO_OPTIMIZATION || configuration.optimizationModeBase() == SIMPLE_PV_EXCESS)) {
         configuration.setOptimizationEnabled(false);
+        qCDebug(dcConsolinnoEnergy()) << "Setting OptimizationEnabled to false";
     }
     setChargingConfiguration(configuration);
     saveChargingConfigurationToSettings(configuration);
