@@ -153,7 +153,7 @@ QList<ChargingConfiguration> EnergyEngine::chargingConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingConfiguration &chargingConfiguration)
 {
-    qCDebug(dcConsolinnoEnergy()) << "Set charging configuration called" << chargingConfiguration;
+    //qCDebug(dcConsolinnoEnergy()) << "Set charging configuration called" << chargingConfiguration;
     if (!m_chargingConfigurations.contains(chargingConfiguration.evChargerThingId())) {
         qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The given ev charger thing id does not exist." << chargingConfiguration;
         return HemsErrorInvalidThing;
@@ -295,7 +295,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingSessionConfiguration(const Char
 
         m_chargingSessionConfigurations[chargingSessionConfiguration.evChargerThingId()] = chargingSessionConfiguration;
 
-        qCDebug(dcConsolinnoEnergy()) << "ChargingSession configuration changed" << chargingSessionConfiguration;
+        //qCDebug(dcConsolinnoEnergy()) << "ChargingSession configuration changed" << chargingSessionConfiguration;
         // save changes in ChargingSessionConfig
         saveChargingSessionConfigurationToSettings(chargingSessionConfiguration);
         // send Signal that the chargingSessionConfig has changed
@@ -1045,7 +1045,7 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
 {
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingSessionConfigurations");
-    qCDebug(dcConsolinnoEnergy()) << "Charging Session settings: " << settings.childGroups();
+    //qCDebug(dcConsolinnoEnergy()) << "Charging Session settings: " << settings.childGroups();
     if (settings.childGroups().contains(evChargerThingId.toString())) {
         settings.beginGroup(evChargerThingId.toString());
 
@@ -1070,7 +1070,7 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
         m_chargingSessionConfigurations.insert(evChargerThingId, configuration);
         emit chargingSessionConfigurationAdded(configuration);
 
-        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+        //qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     } else {
         // Charging usecase is available and this ev charger has no configuration yet, lets add one
         ChargingSessionConfiguration configuration;
@@ -1078,7 +1078,7 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
         m_chargingSessionConfigurations.insert(evChargerThingId, configuration);
         emit chargingSessionConfigurationAdded(configuration);
 
-        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        //qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
         saveChargingSessionConfigurationToSettings(configuration);
     }
     settings.endGroup(); // ChargingSessionConfigurations
@@ -1086,7 +1086,7 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId &evChargerThin
 
 void EnergyEngine::saveChargingSessionConfigurationToSettings(const ChargingSessionConfiguration &chargingSessionConfiguration)
 {
-    qCDebug(dcConsolinnoEnergy() ) << " saving ChargingSessionConfiguration" ;
+    //qCDebug(dcConsolinnoEnergy() ) << " saving ChargingSessionConfiguration" ;
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingSessionConfigurations");
     settings.beginGroup(chargingSessionConfiguration.evChargerThingId().toString());

@@ -26,18 +26,18 @@ void ChargingConfiguration::setOptimizationMode(int optimizationMode) {
 
 int ChargingConfiguration::optimizationModeBase() {
   if (optimizationMode() < 1000) {
-    return 1;
+    return 0;
   }
   if (optimizationMode() >= 1000 && optimizationMode() < 2000) {
-    return 2;
+    return 1;
   }
   if (optimizationMode() >= 2000 && optimizationMode() < 3000) {
-    return 3;
+    return 2;
   }
   if (optimizationMode() >= 3000 && optimizationMode() < 4000) {
-    return 4;
+    return 3;
   }
-  return 0;
+  return -1;
 }
 
 bool ChargingConfiguration::optimizationEnabled() const {
