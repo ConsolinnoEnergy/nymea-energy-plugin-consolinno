@@ -1,3 +1,18 @@
+nymea-energy-plugin-consolinno (1.5.123) qa; urgency=medium
+  * Limit lower bound of blackout protection and improve debug output
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 6 Mar 2022 10:43:41 +0100
+
+nymea-energy-plugin-consolinno (1.5.122) qa; urgency=medium
+  * Removed Kaco legacy plugin
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 3 Mar 2022 10:43:41 +0100
+
+nymea-energy-plugin-consolinno (1.5.121) qa; urgency=medium
+  * Changes to support future release of simple pv charging mode
+  * Added Sungrow and Kostal inverters to meta package
+  * Added Schendier and Technivolt ev chargers to meta package
+
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 14 Dec 2022 10:43:41 +0100
+
 nymea-energy-plugin-consolinno (1.5.120-1) qa; urgency=medium
   * Bumps version number to be in sync with nymea core version: 1.5.1
   * Limit debug output of Blackout protection
