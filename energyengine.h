@@ -51,7 +51,7 @@ public:
         PV_EXCESS = 2,
         SIMPLE_PV_EXCESS = 3
     };
-    Q_ENUM(ChargingMode)
+    Q_ENUM(ChargingMode)   
 
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
     Q_FLAG(HemsUseCases)
@@ -142,6 +142,7 @@ private:
     HemsUseCases m_availableUseCases;
     uint m_housholdPhaseLimit = 25;
     uint m_housholdPhaseCount = 3;
+    float m_consumptionLimit = 0;
     double m_housholdPowerLimit = m_housholdPhaseCount * m_housholdPhaseLimit;
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
