@@ -174,6 +174,7 @@ private slots:
     void onThingRemoved(const ThingId &thingId);
 
     void onRootMeterChanged();
+    void onConsumptionLimitChanged(float consumptionLimit);
 
     void evaluate();
 

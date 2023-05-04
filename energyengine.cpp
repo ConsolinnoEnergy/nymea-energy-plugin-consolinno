@@ -46,8 +46,12 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     m_housholdPowerLimit = m_housholdPhaseLimit * m_housholdPhaseCount * 230;
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] using" << m_housholdPhaseCount << "phases: max power" << m_housholdPowerLimit << "[W]";
 
+    std::string sDbusService = "de.consolinno.fnnstb.iec61850";
+    std::string sDbusPath = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/1";
+    std::string sDbusInterface = "de.consolinno.fnnstb.iec61850.cls.actpow_ggio001";
+
     //Load current p-lim for consumption limit
-    QDBusInterface iface("de.consolinno.fnnstb.iec61850", "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/1", "de.consolinno.fnnstb.iec61850.cls.actpow_ggio001", QDBusConnection::systemBus());
+    QDBusInterface iface(sDbusService.c_str(), sDbusPath.c_str(), sDbusInterface.c_str(), QDBusConnection::systemBus());
     //Get DBUS Property anout in format (xtixx) / struct, with first x as float value of current consumption limit
     QVariant reply = iface.property("AnOut_mxVal_f");
     if (reply.isValid()) {
@@ -57,6 +61,9 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     } else {
         qCWarning(dcConsolinnoEnergy()) << "Error getting consumption limit from dbus";
     }
+
+    //Add signal handler for consumption limit with same name as property on iface
+    QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath.c_str(), sDbusInterface.c_str(), "AnOut_mxVal_f", this, SLOT(onConsumptionLimitChanged(float)));
 
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
 
@@ -553,6 +560,19 @@ void EnergyEngine::onRootMeterChanged()
                 evaluate();
             }
         });
+    } else {
+        qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
+    }
+
+    evaluateAvailableUseCases();
+}
+
+void EnergyEngine::onConsumptionLimitChanged(float consumptionLimit){
+    if (m_energyManager->rootMeter()) {
+        qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
+        //set new consumption limit 
+        m_consumptionLimit = consumptionLimit;
+        evaluate();
     } else {
         qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
     }
