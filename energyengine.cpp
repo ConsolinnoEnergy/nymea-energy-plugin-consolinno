@@ -580,7 +580,7 @@ void EnergyEngine::evaluate()
     bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit;
     double overshotPower = 0;
-    double marginPower = 0;
+    double marginPower = 230 * m_housholdPhaseLimit;
     double currMax = 0;
     double overshotCurrent = 0;
     double absMax = 0;
@@ -592,12 +592,12 @@ void EnergyEngine::evaluate()
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
             //If the value is negatve, the power usage is below the limit, compare to previous value and set the lowest value as overshotPower
-            if (phaseOvershotPower < 0 && phaseOvershotPower < overshotPower) {
+            if (phaseOvershotPower > overshotPower) {
                 overshotPower = phaseOvershotPower;
             }
         } else {
             double phaseMarginPower = phasePowerLimit - currentPhaseConsumption.value(phase);
-            if (phaseMarginPower > 0 && phaseMarginPower > marginPower) {
+            if (phaseMarginPower < marginPower) {
                 marginPower = phaseMarginPower;
             }
         }
