@@ -1,1 +1,13 @@
 *.pro.user
+.qmake.stash
+*.o
+*.so
+Makefile
+moc_*.cpp
+moc_*.h
+moc_*.o
+
+pvconfiguration.o
+userconfiguration.o
+.vscode/c_cpp_properties.json
+.vscode/settings.json
