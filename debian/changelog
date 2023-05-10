@@ -1,5 +1,6 @@
 nymea-energy-plugin-consolinno (1.5.124) qa; urgency=medium
   * Added Kaco legacy plugin to meta package
+  * Added Kaco sunspec plugin to meta package
  -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 3 May 2022 10:43:41 +0100
 
 nymea-energy-plugin-consolinno (1.5.123) qa; urgency=medium
