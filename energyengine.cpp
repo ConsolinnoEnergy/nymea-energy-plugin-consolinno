@@ -10,6 +10,8 @@
 #include <QNetworkReply>
 //Include qdbus
 #include <QtDBus>
+#include <QDBusConnection>
+
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
@@ -63,8 +65,14 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     }
 
     //Add signal handler for consumption limit with same name as property on iface
-    QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath.c_str(), sDbusInterface.c_str(), "AnOut_mxVal_f", this, SLOT(onConsumptionLimitChanged(float)));
-
+    qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: " << "sDbusService" << sDbusService.c_str() << "; "<< "sDbusPath" << sDbusPath.c_str() << "; " << "sDbusInterface" << sDbusInterface.c_str() << "AnOut_mxVal_f";
+    
+    if(!QDBusConnection::systemBus().connect("", sDbusPath.c_str(), sDbusInterface.c_str() ,"AnOut_mxVal_f", this, SLOT(onConsumptionLimitChanged(qlonglong)))){
+        qCWarning(dcConsolinnoEnergy()) << "Error subscribing to consumption limit signal";
+    }else{
+        qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal";
+    }
+    
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
 
 }
@@ -567,13 +575,17 @@ void EnergyEngine::onRootMeterChanged()
     evaluateAvailableUseCases();
 }
 
-void EnergyEngine::onConsumptionLimitChanged(float consumptionLimit){
+void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit){
+    //Echo to debug log, function "onConsumptionLimitChanged" is called
+    qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChanged called";
     if (m_energyManager->rootMeter()) {
+        qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChanged called and root meter is set";
         qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
         //set new consumption limit 
         m_consumptionLimit = consumptionLimit;
         evaluate();
     } else {
+        qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChanged called and root meter is not set";
         qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
     }
 

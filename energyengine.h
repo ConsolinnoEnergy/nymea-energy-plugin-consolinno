@@ -101,7 +101,6 @@ signals:
     void housholdPhaseLimitChanged(uint housholdPhaseLimit);
     void pluggedInChanged(QVariant pluggedIn);
 
-
     void userConfigurationAdded(const UserConfiguration &userConfiguration);
     void userConfigurationChanged(const UserConfiguration &userConfiguration);
     void userConfigurationRemoved(const QUuid &userConfigID);
@@ -169,12 +168,14 @@ private:
 
     void pluggedInEventHandling(Thing *thing);
 
+public slots:
+    void onConsumptionLimitChanged(qlonglong consumptionLimit);
+
 private slots:
     void onThingAdded(Thing *thing);
     void onThingRemoved(const ThingId &thingId);
 
     void onRootMeterChanged();
-    void onConsumptionLimitChanged(float consumptionLimit);
 
     void evaluate();
 
