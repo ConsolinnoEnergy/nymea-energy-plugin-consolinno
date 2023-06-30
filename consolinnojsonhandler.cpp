@@ -622,7 +622,7 @@ JsonReply *ConsolinnoJsonHandler::GetChargingConfigurations(const QVariantMap &p
 
 JsonReply *ConsolinnoJsonHandler::SetChargingConfiguration(const QVariantMap &params)
 {
-    qCDebug(dcConsolinnoEnergy()) << params;
+    //qCDebug(dcConsolinnoEnergy()) << params;
     EnergyEngine::HemsError error = m_energyEngine->setChargingConfiguration(unpack<ChargingConfiguration>(params.value("chargingConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));
@@ -695,7 +695,7 @@ JsonReply *ConsolinnoJsonHandler::GetChargingSessionConfigurations(const QVarian
 
 JsonReply *ConsolinnoJsonHandler::SetChargingSessionConfiguration(const QVariantMap &params)
 {
-    qCDebug(dcConsolinnoEnergy()) << params;
+    //qCDebug(dcConsolinnoEnergy()) << params;
     EnergyEngine::HemsError error = m_energyEngine->setChargingSessionConfiguration(unpack<ChargingSessionConfiguration>(params.value("chargingSessionConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));

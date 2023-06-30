@@ -1,3 +1,8 @@
+nymea-energy-plugin-consolinno (1.5.125) qa; urgency=medium
+  * Added features for simple pv charging mode
+  * Added Azurro plugin
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 26 Jun 2022 10:28:48 +0100
+
 nymea-energy-plugin-consolinno (1.5.124) qa; urgency=medium
   * Added Kaco legacy plugin to meta package
   * Added Kaco sunspec plugin to meta package
