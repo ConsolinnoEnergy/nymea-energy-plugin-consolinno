@@ -142,6 +142,7 @@ private:
     uint m_housholdPhaseLimit = 25;
     uint m_housholdPhaseCount = 3;
     float m_consumptionLimit = 0;
+    float m_consumptionLimitOPC = 0;
     double m_housholdPowerLimit = m_housholdPhaseCount * m_housholdPhaseLimit;
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
@@ -170,6 +171,7 @@ private:
 
 public slots:
     void onConsumptionLimitChanged(qlonglong consumptionLimit);
+    void onConsumptionLimitChangedOPC(qlonglong consumptionLimit);
 
 private slots:
     void onThingAdded(Thing *thing);

@@ -52,7 +52,11 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     std::string sDbusPath = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/1";
     std::string sDbusInterface = "de.consolinno.fnnstb.iec61850.cls.actpow_ggio001";
 
-    //Load current p-lim for consumption limit
+    std::string sDbusOPCService = "de.consolinno.fnnstb.opcua";
+    std::string sDbusOPCPath = "/de/consolinno/fnnstb/opcua/cls/actpow_ggio001/1";
+    std::string sDbusOPCInterface = "de.consolinno.fnnstb.opcua.cls.actpow_ggio001";
+
+    //Load current p-lim for consumption limit from iec server / only on hems with integrated iec server
     QDBusInterface iface(sDbusService.c_str(), sDbusPath.c_str(), sDbusInterface.c_str(), QDBusConnection::systemBus());
     //Get DBUS Property anout in format (xtixx) / struct, with first x as float value of current consumption limit
     QVariant reply = iface.property("AnOut_mxVal_f");
@@ -68,9 +72,30 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: " << "sDbusService" << sDbusService.c_str() << "; "<< "sDbusPath" << sDbusPath.c_str() << "; " << "sDbusInterface" << sDbusInterface.c_str() << "AnOut_mxVal_f";
     
     if(!QDBusConnection::systemBus().connect("", sDbusPath.c_str(), sDbusInterface.c_str() ,"AnOut_mxVal_f", this, SLOT(onConsumptionLimitChanged(qlonglong)))){
-        qCWarning(dcConsolinnoEnergy()) << "Error subscribing to consumption limit signal";
+        qCWarning(dcConsolinnoEnergy()) << "Error subscribing to consumption limit signal from iec server";
     }else{
         qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal";
+    }
+
+    //Load current p-lim for consumption limit from opc-ua client / only on hems with integrated opc-ua client
+    QDBusInterface ifaceOPC(sDbusOPCService.c_str(), sDbusOPCPath.c_str(), sDbusOPCInterface.c_str(), QDBusConnection::systemBus());
+    //Get DBUS Property anout in format (xtixx) / struct, with first x as float value of current consumption limit
+    QVariant replyOPC = ifaceOPC.property("AnOut_mxVal_f");
+    if (replyOPC.isValid()) {
+        //Got power limit from dbus
+        qCDebug(dcConsolinnoEnergy()) << "Reply: " << replyOPC.toFloat();
+        m_consumptionLimit = replyOPC.toFloat();
+    } else {
+        qCWarning(dcConsolinnoEnergy()) << "Error getting consumption limit from dbus over opc-ua client";
+    }
+
+    //Add signal handler for consumption limit with same name as property on iface for opc-ua client
+    qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: " << "sDbusOPCService" << sDbusOPCService.c_str() << "; "<< "sDbusOPCPath" << sDbusOPCPath.c_str() << "; " << "sDbusOPCInterface" << sDbusOPCInterface.c_str() << "AnOut_mxVal_f";
+    
+    if(!QDBusConnection::systemBus().connect("", sDbusOPCPath.c_str(), sDbusOPCInterface.c_str() ,"AnOut_mxVal_f", this, SLOT(onConsumptionLimitChangedOPC(qlonglong)))){
+        qCWarning(dcConsolinnoEnergy()) << "Error subscribing to consumption limit signal from opc-ua client";
+    }else{
+        qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal from opc-ua client";
     }
     
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
@@ -586,6 +611,23 @@ void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit){
         evaluate();
     } else {
         qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChanged called and root meter is not set";
+        qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
+    }
+
+    evaluateAvailableUseCases();
+}
+
+void EnergyEngine::onConsumptionLimitChangedOPC(qlonglong consumptionLimit){
+    //Echo to debug log, function "onConsumptionLimitChanged" is called
+    qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChangedOPC called";
+    if (m_energyManager->rootMeter()) {
+        qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChangedOPC called and root meter is set";
+        qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
+        //set new consumption limit 
+        m_consumptionLimit = consumptionLimit;
+        evaluate();
+    } else {
+        qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChangedOPC called and root meter is not set";
         qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
     }
 
