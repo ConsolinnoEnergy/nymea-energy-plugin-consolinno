@@ -44,6 +44,15 @@ public:
         HemsUseCaseBattery = 0x10
     };
     Q_ENUM(HemsUseCase)
+
+    enum ChargingMode {
+        NO_OPTIMIZATION = 0,
+        PV_OPTIMIZED = 1,
+        PV_EXCESS = 2,
+        SIMPLE_PV_EXCESS = 3
+    };
+    Q_ENUM(ChargingMode)
+
     Q_DECLARE_FLAGS(HemsUseCases, HemsUseCase)
     Q_FLAG(HemsUseCases)
 

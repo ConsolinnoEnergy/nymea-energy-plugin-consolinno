@@ -49,6 +49,7 @@ public:
     void setTargetPercentage(uint targetPercentage);
 
     int optimizationMode() const;
+    int optimizationModeBase();
     void setOptimizationMode(int optimizationMode);
 
     QUuid uniqueIdentifier() const;
