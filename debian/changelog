@@ -1,3 +1,7 @@
+nymea-energy-plugin-consolinno (1.5.126) qa; urgency=medium
+  * Added Goodwe integration
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 02 Aug 2022 10:28:48 +0100
+
 nymea-energy-plugin-consolinno (1.5.125) qa; urgency=medium
   * Added features for simple pv charging mode
   * Added Kaco legacy plugin
