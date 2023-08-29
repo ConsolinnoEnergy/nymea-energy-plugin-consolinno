@@ -5,6 +5,7 @@
 
 #include "energyengine.h"
 #include "nymeasettings.h"
+#include <integrations/integrationplugin.h>
 
 #include <QJsonDocument>
 #include <QNetworkReply>
@@ -28,6 +29,7 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
 
     }
 
+
     connect(thingManager, &ThingManager::thingAdded, this, &EnergyEngine::onThingAdded);
     connect(thingManager, &ThingManager::thingRemoved, this, &EnergyEngine::onThingRemoved);
 
@@ -41,10 +43,23 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
     m_housholdPhaseLimit = settings.value("housholdPhaseLimit", 25).toUInt();
     settings.endGroup();
 
+    settings.beginGroup("HybridSimulation");
+    m_hybridSimulationEnabled = settings.value("enabled", 0).toBool();
+    m_hybridSimIgnoreSimulated = settings.value("ignoreSimulated", "true").toBool();
+    m_hybridSimulationMap =  settings.value("mappings").toMap();
+    settings.endGroup();
+
     m_housholdPowerLimit = m_housholdPhaseLimit * m_housholdPhaseCount * 230;
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] using" << m_housholdPhaseCount << "phases: max power" << m_housholdPowerLimit << "[W]";
 
     qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized" << m_availableUseCases;
+
+    if(m_hybridSimulationEnabled) {
+        qCInfo(dcConsolinnoEnergy()) << "======> Hybrid simulation enabled";
+        qCDebug(dcConsolinnoEnergy()) << "======> Hybrid simulation mappings" << m_hybridSimulationMap;
+    } else {
+        qCDebug(dcConsolinnoEnergy()) << "======> Hybrid simulation disabled";
+    }
 
 }
 
@@ -376,6 +391,7 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
 
     // This signal tells us, which state has changed (can also tell us to which value)
     connect(thing, &Thing::stateValueChanged, this, [=](const StateTypeId &stateTypeId){
+
         StateType stateType = m_evChargers.value(thing->id())->thingClass().getStateType(stateTypeId);
         // use case: EvCharger gets unplugged, while an optimization is happening
         if (stateType.name() == "pluggedIn"){
@@ -388,8 +404,10 @@ void EnergyEngine::monitorEvCharger(Thing *thing)
         }else{
             qCDebug(dcConsolinnoEnergy()) << "The state: " << stateType.name()  << " changed";
         }
-
-
+        
+        if (stateType.name() == "currentPower"){
+            updateHybridSimulation(thing);
+        }
             });
 }
 
@@ -414,8 +432,33 @@ void EnergyEngine::onThingAdded(Thing *thing)
     }
 
     if (thing->thingClass().interfaces().contains("evcharger")) {
+        
         monitorEvCharger(thing);
         monitorChargingSession(thing);
+
+        // Handle Hybrid Simulation
+        // Add a linked simulated ev charger if the evcharger is not simulated itself
+        if (m_hybridSimulationEnabled)  {
+            if (thing->thingClass().id().toString() != "{21a48e6d-6152-407a-a303-3b46e29bbb94}" || !m_hybridSimIgnoreSimulated) { 
+                // This means thing is not a simulated evcharger; TODO: Better way than using uuids? 
+                qCDebug(dcConsolinnoEnergy()) << "Adding generic simulated consumer for " << thing;
+                // Define information for adding generic consumer
+                ThingClassId thingClassId("3e13b1aa-4ecd-4b48-80be-0dfcc0e5cbe4"); 
+                QString thingName = "Bridge (" + thing->name() + ")";
+                ParamList thingParams = ParamList();
+                ThingSetupInfo *info;
+                info = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
+                // Disable updating total energy consumption for linked simulated ev charger
+                info->thing()->setSettingValue("updateTotalEnergy", false);
+                // We keep track of the mapping using a QMap which is also persisted in consolinno.conf
+                m_hybridSimulationMap.insert(thing->id().toString(), info->thing()->id().toString());
+                qCDebug(dcConsolinnoEnergy()) << "Hybrid simulation map: " << m_hybridSimulationMap;
+                QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+                settings.beginGroup("HybridSimulation");
+                settings.setValue("mappings", QVariant(m_hybridSimulationMap));
+                settings.endGroup();
+            }
+        }
     }
 
     if (thing->thingClass().interfaces().contains("energystorage")) {
@@ -525,6 +568,18 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
         }
     }
 
+    if (m_hybridSimulationEnabled) {
+        if (m_hybridSimulationMap.contains(thingId.toString()))  {
+            ThingId linkedThingId = m_hybridSimulationMap.value(thingId.toString()).toUuid();
+            m_hybridSimulationMap.remove(thingId.toString());
+            QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+            settings.beginGroup("HybridSimulation");
+            settings.setValue("mappings", QVariant(m_hybridSimulationMap));
+            settings.endGroup();
+            m_thingManager->removeConfiguredThing(linkedThingId);
+        }
+    }
+
     evaluateAvailableUseCases();
 }
 
@@ -545,6 +600,52 @@ void EnergyEngine::onRootMeterChanged()
 
     evaluateAvailableUseCases();
 }
+
+
+void EnergyEngine::updateHybridSimulation(Thing *thing)
+{
+    if (!m_hybridSimulationEnabled) {
+        return;
+    }
+
+    // We need  root meter for this
+    if (!m_energyManager->rootMeter())
+        return;
+    // Only continue if root meter is simulated 
+    // TODO: Get the id by looking for the simulation plugin and get the smartMeter thingClassId
+    // Hardcoding the thingClassId is quicker for now but not robust
+    if (m_energyManager->rootMeter()->thingClass().id().toString() != "{d96c77e3-dbf1-4875-95a4-7ca85aa3ef8e}") {
+        qCWarning(dcConsolinnoEnergy()) << "Root meter is not simulated. Hybrid simulation is not available.";
+        return;
+    }
+    qCDebug(dcConsolinnoEnergy()) << "Updating hybrid simulation for thing" << thing->name();
+
+    if (!thing->thingClass().interfaces().contains("smartmeterconsumer")) {
+       qCWarning(dcConsolinnoEnergy()) << "Thing" << thing->name() << "is not a smartmeter consumer. Hybrid simulation is not available.";
+       return;
+    }
+    // This omits all things created by "nymea" vendor. 
+    // This is a workaround for the fact that the energy simulation already evaluates these things elsewhere (e.g. simulated ev charger)
+    // I couldn't find a better way to filter out these things yet.
+    if (thing->thingClass().vendorId().toString() == "{2062d64d-3232-433c-88bc-0d33c0ba2ba6}" && m_hybridSimIgnoreSimulated) {
+        qCDebug(dcConsolinnoEnergy()) << "Omitting thing " << thing->name() << " for hybrid simulation because it is a simulated device";
+        return;
+    }
+
+    ThingId linkedThingId = m_hybridSimulationMap.value(thing->id().toString()).toUuid();
+    qCDebug(dcConsolinnoEnergy()) << linkedThingId;
+    qCDebug(dcConsolinnoEnergy()) << m_hybridSimulationMap;
+    Thing* linkedSimulatedThing = m_thingManager->findConfiguredThing(linkedThingId);
+    if (!linkedSimulatedThing) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not find linked simulated thing for" << thing->name();
+        return;
+    }
+    qCDebug(dcConsolinnoEnergy()) << "Updating linked simulated thing " << linkedSimulatedThing->name();
+    linkedSimulatedThing->setSettingValue("maxPower", thing->stateValue("currentPower"));
+    linkedSimulatedThing->setStateValue("power", thing->stateValue("power"));
+}
+
+
 
 void EnergyEngine::evaluate()
 {

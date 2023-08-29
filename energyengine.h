@@ -11,6 +11,7 @@
 #include <QNetworkAccessManager>
 
 #include <integrations/thingmanager.h>
+#include <integrations/integrationplugin.h>
 #include <energymanager.h>
 
 #include "configurations/chargingconfiguration.h"
@@ -158,6 +159,10 @@ private:
     QHash<ThingId, Thing *> m_evChargers;
     QHash<ThingId, Thing *> m_batteries;
 
+    bool m_hybridSimulationEnabled = false;
+    QMap<QString, QVariant> m_hybridSimulationMap;
+    bool m_hybridSimIgnoreSimulated = true;
+
 
     void monitorHeatPump(Thing *thing);
     void monitorInverter(Thing *thing);
@@ -175,9 +180,9 @@ private slots:
     void onRootMeterChanged();
 
     void evaluate();
+    void updateHybridSimulation(Thing *thing);
 
     void evaluateAvailableUseCases();
-
 
     void loadUserConfiguration();
     void saveUserConfigurationToSettings(const UserConfiguration &userConfiguration);
