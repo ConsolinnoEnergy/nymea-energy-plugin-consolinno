@@ -8,6 +8,7 @@
 
 #include <QObject>
 #include "jsonrpc/jsonhandler.h"
+#include "energypluginconsolinno.h"
 
 class EnergyEngine;
 
@@ -15,10 +16,11 @@ class ConsolinnoJsonHandler : public JsonHandler
 {
     Q_OBJECT
 public:
-    explicit ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent = nullptr);
+    explicit ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVersionInfo versionInfo, QObject *parent = nullptr);
 
     QString name() const override;
 
+    Q_INVOKABLE JsonReply* GetHEMSVersion(const QVariantMap &params);
     Q_INVOKABLE JsonReply* GetAvailableUseCases(const QVariantMap &params);
 
     Q_INVOKABLE JsonReply* GetHousholdPhaseLimit(const QVariantMap &params);
@@ -90,6 +92,7 @@ signals:
 
 private:
     EnergyEngine *m_energyEngine = nullptr;
+    HEMSVersionInfo m_versionInfo;
 
 };
 

@@ -1,5 +1,6 @@
 nymea-energy-plugin-consolinno (1.7.001) dev; urgency=medium
   * Added hybrid simulation feature
+  * Added retrieving HEMS version info 
  -- Leonhard Heizinger <l.heizinger@consolinno.de>  Tue, 05 Sep 2023 10:28:48 +0100
 
 nymea-energy-plugin-consolinno (1.5.127-1) dev; urgency=medium

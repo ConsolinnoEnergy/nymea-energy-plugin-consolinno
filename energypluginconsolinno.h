@@ -12,6 +12,15 @@
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
+struct HEMSVersionInfo {
+    QString product;
+    QString version;
+    int major;
+    int minor;
+    int patch;
+    QString stage;
+};
+
 class EnergyPluginConsolinno: public EnergyPlugin
 {
     Q_OBJECT
@@ -22,6 +31,7 @@ public:
     EnergyPluginConsolinno();
 
     void init() override;
+    HEMSVersionInfo m_versionInfo;
 
 };
 
