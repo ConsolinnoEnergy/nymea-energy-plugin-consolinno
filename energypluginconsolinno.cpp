@@ -64,5 +64,5 @@ void EnergyPluginConsolinno::init()
     HEMSVersionInfo versionInfo;
     parseVersionFile("/etc/consolinno-release", versionInfo); 
     EnergyEngine *energyEngine = new EnergyEngine(thingManager(), energyManager(), this);
-    jsonRpcServer()->registerExperienceHandler(new ConsolinnoJsonHandler(energyEngine, versionInfo,  this), versionInfo.major, versionInfo.minor);
+    jsonRpcServer()->registerExperienceHandler(new ConsolinnoJsonHandler(energyEngine, versionInfo,  this), versionInfo.major, versionInfo.minor, versionInfo.patch);
 }
