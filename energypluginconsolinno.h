@@ -15,9 +15,9 @@ Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 struct HEMSVersionInfo {
     QString product;
     QString version;
-    int major;
-    int minor;
-    int patch;
+    int major = 0;
+    int minor = 0;
+    int patch = 0;
     QString stage;
 };
 
