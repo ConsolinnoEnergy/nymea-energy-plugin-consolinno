@@ -1,3 +1,9 @@
+nymea-energy-plugin-consolinno (1.7.001-1) buster focal jammy; urgency=medium
+
+* Adapt to new versioning schema
+
+ -- Florian Knab <f.knab@consolinno.de> Thu, 19 Sep 2023 7:50:53 +0200
+
 nymea-energy-plugin-consolinno (1.7.001) dev; urgency=medium
   * Added hybrid simulation feature
   * Added retrieving HEMS version info 
