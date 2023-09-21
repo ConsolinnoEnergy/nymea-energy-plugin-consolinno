@@ -798,6 +798,36 @@ void EnergyEngine::removeHeatingConfigurationFromSettings(const ThingId &heatPum
     settings.endGroup();
 }
 
+void EnergyEngine::loadHeatingRodConfiguration(const ThingId &heatingRodThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("HeatingRodConfigurations");
+    if (settings.childGroups().contains(heatingRodThingId.toString())) {
+        settings.beginGroup(heatingRodThingId.toString());
+
+        HeatingRodConfiguration configuration;
+        configuration.setHeatingRodThingId(heatingRodThingId);
+        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        configuration.setMaxElectricalPower(settings.value("maxElectricalPower").toDouble());
+        settings.endGroup(); // ThingId
+
+        m_heatingRodConfigurations.insert(heatingRodThingId, configuration);
+        emit heatingRodConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // HeatingRod usecase is available and this heat pump has no configuration yet, lets add one
+        HeatingRodConfiguration configuration;
+        configuration.setHeatingRodThingId(heatingRodThingId);
+        m_heatingRodConfigurations.insert(heatingRodThingId, configuration);
+        emit heatingRodConfigurationAdded(configuration);
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveHeatingRodConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // HeatingRodConfigurations
+}
+
+
 void EnergyEngine::saveHeatingRodConfigurationToSettings(const HeatingRodConfiguration &heatingRodConfiguration)
 {
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
