@@ -15,7 +15,7 @@ ThingId HeatingRodConfiguration::heatingRodThingId() const
     return m_heatingRodThingId;
 }
 
-void HeatingRodConfiguration::setHeatPumpThingId(const ThingId &heatingRodThingId)
+void HeatingRodConfiguration::setHeatingRodThingId(const ThingId &heatingRodThingId)
 {
     m_heatingRodThingId = heatingRodThingId;
 }
@@ -42,14 +42,14 @@ void HeatingRodConfiguration::setMaxElectricalPower(double maxElectricalPower)
 
 bool HeatingRodConfiguration::isValid() const
 {
-    return !m_heatingRodThingId.isNull() && m_maxElectricalPower != 0 && m_maxThermalEnergy != 0 && m_floorHeatingRodArea != 0;
+    return !m_heatingRodThingId.isNull() && m_maxElectricalPower != 0;
 }
 
 bool HeatingRodConfiguration::operator==(const HeatingRodConfiguration &other) const
 {
     return m_heatMeterThingId == other.heatingRodThingId() &&
             m_optimizationEnabled == other.optimizationEnabled() &&
-            m_maxElectricalPower == other.maxElectricalPower() 
+            m_maxElectricalPower == other.maxElectricalPower();
 }
 
 bool HeatingRodConfiguration::operator!=(const HeatingRodConfiguration &other) const
@@ -62,12 +62,6 @@ QDebug operator<<(QDebug debug, const HeatingRodConfiguration &heatingRodConfig)
     debug.nospace() << "HeatingRodConfiguration(" << heatingRodConfig.heatingRodThingId().toString();
     debug.nospace() << ", " << (heatingRodConfig.optimizationEnabled() ? "enabled" : "disabled");
     debug.nospace() << ", " << "max power: " << heatingRodConfig.maxElectricalPower() << "W";
-    debug.nospace() << ", " << "max thermal energy: " << heatingRodConfig.maxThermalEnergy() << "kWh";
-    debug.nospace() << ", " << heatingRodConfig.houseType();
-    debug.nospace() << ", area: " << heatingRodConfig.floorHeatingRodArea() << "m^2";
-    if (!heatingRodConfig.heatMeterThingId().isNull()) {
-        debug.nospace() << ", heat meter: " << heatingRodConfig.heatMeterThingId().toString();
-    }
     debug.nospace() << ")";
     return debug.maybeSpace();
 }

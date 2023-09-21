@@ -3,7 +3,7 @@
  * Proprietary and confidential
  */
 
-#ifndef HEATINGCRODONFIGURATION_H
+#ifndef HEATINGRODCONFIGURATION_H
 #define HEATINGRODCONFIGURATION_H
 
 #include <QObject>
@@ -17,19 +17,21 @@
 class HeatingRodConfiguration
 {
     Q_GADGET
-    Q_PROPERTY(QUuid heatingRodThingId READ heatingRodThingId WRIzzzled WRITE setOptimizationEnabled USER true)
+
+    Q_PROPERTY(QUuid heatingRodThingId READ heatingRodThingId WRITE setHeatingRodThingId)
+    Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
     Q_PROPERTY(double maxElectricalPower READ maxElectricalPower WRITE setMaxElectricalPower USER true)
 public:
     HeatingRodConfiguration();
 
    
     ThingId heatingRodThingId() const;
-    void setHeatPumpThingId(const ThingId &heatingRodThingId);
+    void setHeatingRodThingId(const ThingId &heatingRodThingId);
 
     bool optimizationEnabled() const;
     void setOptimizationEnabled(bool optimizationEnabled);
 
-    // The maximal electric power in W the heat pump can consume
+    // The maximal electric power in W the heating rod can consume
     double maxElectricalPower() const;
     void setMaxElectricalPower(double maxElectricalPower);
 
@@ -47,4 +49,4 @@ private:
 
 QDebug operator<<(QDebug debug, const HeatingRodConfiguration &heatingConfig);
 
-#endif // HEATINGCONFIGURATION_H
+#endif // HEATINGRODCONFIGURATION_H
