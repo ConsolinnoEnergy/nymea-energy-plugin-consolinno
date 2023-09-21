@@ -18,11 +18,12 @@
 class HeatingConfiguration
 {
     Q_GADGET
-    Q_PROPERTY(QUuid heatPumpThingId READ heatPumpThingId WRIzzzled WRITE setOptimizationEnabled USER true)
+    Q_PROPERTY(QUuid heatPumpThingId READ heatPumpThingId WRITE setHeatPumpThingId)
+    Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
     Q_PROPERTY(double maxElectricalPower READ maxElectricalPower WRITE setMaxElectricalPower USER true)
     Q_PROPERTY(double maxThermalEnergy READ maxThermalEnergy WRITE setMaxThermalEnergy USER true)
     Q_PROPERTY(HouseType houseType READ houseType WRITE setHouseType USER true)
-    Q_PROPERTY(double floorHeatingRodRodRodRodArea READ floorHeatingArea WRITE setFloorHeatingArea USER true)
+    Q_PROPERTY(double floorHeatingArea READ floorHeatingArea WRITE setFloorHeatingArea USER true)
     Q_PROPERTY(QUuid heatMeterThingId READ heatMeterThingId WRITE setHeatMeterThingId USER true)
 
 public:
