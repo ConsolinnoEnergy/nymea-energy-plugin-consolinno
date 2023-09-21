@@ -666,7 +666,7 @@ JsonReply *ConsolinnoJsonHandler::GetHeatingRodConfigurations(const QVariantMap 
 
 JsonReply *ConsolinnoJsonHandler::SetHeatingRodConfiguration(const QVariantMap &params)
 {
-    EnergyEngine::HemsError error = m_energyEngine->setHeatingRodConfiguration(unpack<HeatingConfiguration>(params.value("heatingRodConfiguration").toMap()));
+    EnergyEngine::HemsError error = m_energyEngine->setHeatingRodConfiguration(unpack<HeatingRodConfiguration>(params.value("heatingRodConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));
     return createReply(returns);

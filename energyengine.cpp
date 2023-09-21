@@ -155,14 +155,14 @@ EnergyEngine::HemsError EnergyEngine::setHeatingRodConfiguration(const HeatingRo
 {
 
     qCDebug(dcConsolinnoEnergy()) << "Set heating rod configuration called" << heatingRodConfiguration;
-    if (!m_heatingRodConfigurations.contains(heatingRodConfiguration.heatPumpThingId())) {
+    if (!m_heatingRodConfigurations.contains(heatingRodConfiguration.heatingRodThingId())) {
         qCWarning(dcConsolinnoEnergy()) << "Could not set heating rod configuration. The given heat pump thing id does not exist." << heatingRodConfiguration;
         return HemsErrorInvalidThing;
     }
 
 
-    if (m_heatingRodConfigurations.value(heatingRodConfiguration.heatPumpThingId()) != heatingRodConfiguration) {
-        m_heatingRodConfigurations[heatingRodConfiguration.heatPumpThingId()] = heatingRodConfiguration;
+    if (m_heatingRodConfigurations.value(heatingRodConfiguration.heatingRodThingId()) != heatingRodConfiguration) {
+        m_heatingRodConfigurations[heatingRodConfiguration.heatingRodThingId()] = heatingRodConfiguration;
         qCDebug(dcConsolinnoEnergy()) << "Heating rod configuration changed" << heatingRodConfiguration;
         saveHeatingRodConfigurationToSettings(heatingRodConfiguration);
         emit heatingRodConfigurationChanged(heatingRodConfiguration);
@@ -383,6 +383,15 @@ void EnergyEngine::monitorHeatPump(Thing *thing)
     loadHeatingConfiguration(thing->id());
 }
 
+void EnergyEngine::monitorHeatingRod(Thing *thing)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring heating rod" << thing;
+    m_heatingRods.insert(thing->id(), thing);
+    evaluateAvailableUseCases();
+    loadHeatingRodConfiguration(thing->id());
+}
+
+
 void EnergyEngine::monitorInverter(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring inverter" << thing;
@@ -504,7 +513,7 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
         qCDebug(dcConsolinnoEnergy()) << "Removed heating rod from energy manager" << thingId.toString();
 
         if (m_heatingRodConfigurations.contains(thingId)) {
-            HeatingConfiguration heatingRodConfig = m_heatingRodConfigurations.take(thingId);
+            HeatingRodConfiguration heatingRodConfig = m_heatingRodConfigurations.take(thingId);
             removeHeatingRodConfigurationFromSettings(thingId);
             emit heatingRodConfigurationRemoved(thingId);
             qCDebug(dcConsolinnoEnergy()) << "Removed heating rod configuration" << heatingRodConfig;
@@ -793,13 +802,9 @@ void EnergyEngine::saveHeatingRodConfigurationToSettings(const HeatingRodConfigu
 {
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("HeatingRodConfigurations");
-    settings.beginGroup(heatingRodConfiguration.heatPumpThingId().toString());
+    settings.beginGroup(heatingRodConfiguration.heatingRodThingId().toString());
     settings.setValue("optimizationEnabled", heatingRodConfiguration.optimizationEnabled());
-    settings.setValue("houseType", heatingRodConfiguration.houseType());
-    settings.setValue("floorHeatingArea", heatingRodConfiguration.floorHeatingArea());
     settings.setValue("maxElectricalPower", heatingRodConfiguration.maxElectricalPower());
-    settings.setValue("maxThermalEnergy", heatingRodConfiguration.maxThermalEnergy());
-    settings.setValue("heatMeterThingId", heatingRodConfiguration.heatMeterThingId());
     settings.endGroup();
     settings.endGroup();
 }

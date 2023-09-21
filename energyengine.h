@@ -17,6 +17,7 @@
 #include "configurations/chargingoptimizationconfiguration.h"
 #include "configurations/chargingsessionconfiguration.h"
 #include "configurations/heatingconfiguration.h"
+#include "configurations/heatingrodconfiguration.h"
 #include "configurations/pvconfiguration.h"
 #include "configurations/conemsstate.h"
 #include "configurations/userconfiguration.h"
@@ -41,7 +42,7 @@ public:
         HemsUseCaseHeating = 0x02,
         HemsUseCaseCharging = 0x04,
         HemsUseCasePv = 0x08,
-        HemsUseCaseBattery = 0x10
+        HemsUseCaseBattery = 0x10,
         HemsUseCaseHeatingRod = 0x20
     };
     Q_ENUM(HemsUseCase)
@@ -74,7 +75,7 @@ public:
 
     // Heating rod configurations
     QList<HeatingRodConfiguration> heatingRodConfigurations() const;
-    EnergyEngine::HemsError setHeatingRodConfiguration(const HeatingConfiguration &heatingRodConfiguration);
+    EnergyEngine::HemsError setHeatingRodConfiguration(const HeatingRodConfiguration &heatingRodConfiguration);
 
     // Charging configurations
     QList<ChargingConfiguration> chargingConfigurations() const;
@@ -165,11 +166,13 @@ private:
 
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
+    QHash<ThingId, Thing *> m_heatingRods;
     QHash<ThingId, Thing *> m_evChargers;
     QHash<ThingId, Thing *> m_batteries;
 
 
     void monitorHeatPump(Thing *thing);
+    void monitorHeatingRod(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorBattery(Thing *thing);
     void monitorEvCharger(Thing *thing);
