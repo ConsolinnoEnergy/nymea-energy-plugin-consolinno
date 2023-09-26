@@ -18,6 +18,7 @@
 #include "configurations/chargingoptimizationconfiguration.h"
 #include "configurations/chargingsessionconfiguration.h"
 #include "configurations/heatingconfiguration.h"
+#include "configurations/heatingrodconfiguration.h"
 #include "configurations/pvconfiguration.h"
 #include "configurations/conemsstate.h"
 #include "configurations/userconfiguration.h"
@@ -42,7 +43,8 @@ public:
         HemsUseCaseHeating = 0x02,
         HemsUseCaseCharging = 0x04,
         HemsUseCasePv = 0x08,
-        HemsUseCaseBattery = 0x10
+        HemsUseCaseBattery = 0x10,
+        HemsUseCaseHeatingRod = 0x20
     };
     Q_ENUM(HemsUseCase)
 
@@ -71,6 +73,10 @@ public:
     // Heating configurations
     QList<HeatingConfiguration> heatingConfigurations() const;
     EnergyEngine::HemsError setHeatingConfiguration(const HeatingConfiguration &heatingConfiguration);
+
+    // Heating rod configurations
+    QList<HeatingRodConfiguration> heatingRodConfigurations() const;
+    EnergyEngine::HemsError setHeatingRodConfiguration(const HeatingRodConfiguration &heatingRodConfiguration);
 
     // Charging configurations
     QList<ChargingConfiguration> chargingConfigurations() const;
@@ -111,6 +117,10 @@ signals:
     void heatingConfigurationChanged(const HeatingConfiguration &heatingConfiguration);
     void heatingConfigurationRemoved(const ThingId &heatPumpThingId);
 
+    void heatingRodConfigurationAdded(const HeatingRodConfiguration &heatingRodConfiguration);
+    void heatingRodConfigurationChanged(const HeatingRodConfiguration &heatingRodConfiguration);
+    void heatingRodConfigurationRemoved(const ThingId &heatingRodThingId);
+
     void chargingConfigurationAdded(const ChargingConfiguration &chargingConfiguration);
     void chargingConfigurationChanged(const ChargingConfiguration &chargingConfiguration);
     void chargingConfigurationRemoved(const ThingId &evChargerThingId);
@@ -146,6 +156,7 @@ private:
     double m_housholdPowerLimit = m_housholdPhaseCount * m_housholdPhaseLimit;
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
+    QHash<ThingId, HeatingRodConfiguration> m_heatingRodConfigurations;
     QHash<ThingId, ChargingOptimizationConfiguration> m_chargingOptimizationConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
     QHash<ThingId, BatteryConfiguration> m_batteryConfigurations;
@@ -156,6 +167,7 @@ private:
 
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
+    QHash<ThingId, Thing *> m_heatingRods;
     QHash<ThingId, Thing *> m_evChargers;
     QHash<ThingId, Thing *> m_batteries;
 
@@ -165,6 +177,7 @@ private:
 
 
     void monitorHeatPump(Thing *thing);
+    void monitorHeatingRod(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorBattery(Thing *thing);
     void monitorEvCharger(Thing *thing);
@@ -191,6 +204,10 @@ private slots:
     void loadHeatingConfiguration(const ThingId &heatPumpThingId);
     void saveHeatingConfigurationToSettings(const HeatingConfiguration &heatingConfiguration);
     void removeHeatingConfigurationFromSettings(const ThingId &heatPumpThingId);
+
+    void loadHeatingRodConfiguration(const ThingId &heatingRodThingId);
+    void saveHeatingRodConfigurationToSettings(const HeatingRodConfiguration &heatingRodConfiguration);
+    void removeHeatingRodConfigurationFromSettings(const ThingId &heatingRodThingId);
 
     void loadChargingConfiguration(const ThingId &evChargerThingId);
     void saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration);

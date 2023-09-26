@@ -29,6 +29,9 @@ public:
     Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
 
+    Q_INVOKABLE JsonReply* GetHeatingRodConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetHeatingRodConfiguration(const QVariantMap &params);
+
     Q_INVOKABLE JsonReply* GetUserConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetUserConfiguration(const QVariantMap &params);
 
@@ -64,6 +67,10 @@ signals:
     void HeatingConfigurationAdded(const QVariantMap &params);
     void HeatingConfigurationRemoved(const QVariantMap &params);
     void HeatingConfigurationChanged(const QVariantMap &params);
+
+    void HeatingRodConfigurationAdded(const QVariantMap &params);
+    void HeatingRodConfigurationRemoved(const QVariantMap &params);
+    void HeatingRodConfigurationChanged(const QVariantMap &params);
 
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);
