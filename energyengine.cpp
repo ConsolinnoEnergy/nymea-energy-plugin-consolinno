@@ -693,6 +693,7 @@ void EnergyEngine::evaluate()
                     overshotPower = consumptionOvershotPower;
                 }
             } else {
+                qCDebug(dcConsolinnoEnergy()) << "No consumption limit exceeded. currentPower: " << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W. Limit is" << m_consumptionLimit << "W";
                 double consumptionMarginPower = consumptionLimitPerPhase - currentPhaseConsumption.value(phase);
                 //per phase power
                 if (consumptionMarginPower < marginPower) {
@@ -724,6 +725,9 @@ void EnergyEngine::evaluate()
             if(currMax != absMax && marginPower > 250) {
                 thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMax, currMax + 1));
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
+            }
+            else{
+                qCDebug(dcConsolinnoEnergy()) << "Blackout protection: maxChargingCurrent not changed";
             }
         }
 
