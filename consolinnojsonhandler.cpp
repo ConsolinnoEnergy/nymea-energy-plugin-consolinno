@@ -5,12 +5,14 @@
 
 #include "consolinnojsonhandler.h"
 #include "energyengine.h"
+#include "energypluginconsolinno.h"
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
-ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent) :
+ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVersionInfo versionInfo, QObject *parent) :
     JsonHandler(parent),
-    m_energyEngine(energyEngine)
+    m_energyEngine(energyEngine),
+    m_versionInfo(versionInfo)
 {
     // Enums
     registerEnum<EnergyEngine::HemsError>();
@@ -22,6 +24,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     // Types
     registerObject<HeatingConfiguration>();
+    registerObject<HeatingRodConfiguration>();
     registerObject<ChargingConfiguration>();
     registerObject<ChargingOptimizationConfiguration>();
     registerObject<ChargingSessionConfiguration>();
@@ -33,7 +36,15 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     QVariantMap params, returns;
     QString description;
 
+
+
+
     // Methods
+    //
+    params.clear(); returns.clear();
+    description = "Get the version of the HEMS system";
+    registerMethod("GetHEMSVersion", description, params, returns);
+
     params.clear(); returns.clear();
     description = "Get the current available optimization UseCases based on the thing setup available in the system.";
     returns.insert("availableUseCases", flagRef<EnergyEngine::HemsUseCases>());
@@ -62,7 +73,6 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetUserConfiguration", description, params, returns);
 
-
     // Heating
     params.clear(); returns.clear();
     description = "Get the list of available heating configurations from the energy engine.";
@@ -74,6 +84,18 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     params.insert("heatingConfiguration", objectRef<HeatingConfiguration>());
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetHeatingConfiguration", description, params, returns);
+
+    // Heating rod
+    params.clear(); returns.clear();
+    description = "Get the list of available heating rod configurations from the energy engine.";
+    returns.insert("heatingRodConfigurations", QVariantList() << objectRef<HeatingRodConfiguration>());
+    registerMethod("GetHeatingRodConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a heating rod configuration to the given heating rod configuration. The heating rod thing ID will be used as an identifier.";
+    params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetHeatingRodConfiguration", description, params, returns);
 
     // ConEMS
     params.clear(); returns.clear();
@@ -165,17 +187,17 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 
     // UserConfig
     params.clear();
-    description = "Emitted whenever a new heating configuration has been added to the energy engine.";
+    description = "Emitted whenever a new user configuration has been added to the energy engine.";
     params.insert("userConfiguration", objectRef<UserConfiguration>());
     registerNotification("UserConfigurationAdded", description, params);
 
     params.clear();
-    description = "Emitted whenever a heating configuration has been removed from the energy engine with the given heat pump thing ID.";
+    description = "Emitted whenever a user configuration has been removed from the energy engine with the given heat pump thing ID.";
     params.insert("userConfigID", enumValueName(Uuid));
     registerNotification("UserConfigurationRemoved", description, params);
 
     params.clear();
-    description = "Emitted whenever a heating configuration has changed in the energy engine.";
+    description = "Emitted whenever a user configuration has changed in the energy engine.";
     params.insert("userConfiguration", objectRef<UserConfiguration>());
     registerNotification("UserConfigurationChanged", description, params);
 
@@ -195,6 +217,22 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     description = "Emitted whenever a heating configuration has changed in the energy engine.";
     params.insert("heatingConfiguration", objectRef<HeatingConfiguration>());
     registerNotification("HeatingConfigurationChanged", description, params);
+
+    // Heating rod
+    params.clear();
+    description = "Emitted whenever a new heating rod configuration has been added to the energy engine.";
+    params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
+    registerNotification("HeatingRodConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a heating rod configuration has been removed from the energy engine with the given heat pump thing ID.";
+    params.insert("heatingRodThingId", enumValueName(Uuid));
+    registerNotification("HeatingRodConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a heating rod configuration has changed in the energy engine.";
+    params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
+    registerNotification("HeatingRodConfigurationChanged", description, params);
 
     // ConEMS
     params.clear();
@@ -362,6 +400,26 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
         emit HeatingConfigurationChanged(params);
     });
 
+
+    // Heating rod
+    connect(m_energyEngine, &EnergyEngine::heatingRodConfigurationAdded, this, [=](const HeatingRodConfiguration &heatingRodConfiguration){
+        QVariantMap params;
+        params.insert("heatingRodConfiguration", pack(heatingRodConfiguration));
+        emit HeatingRodConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::heatingRodConfigurationRemoved, this, [=](const ThingId &heatingRodThingId){
+        QVariantMap params;
+        params.insert("heatingRodThingId", heatingRodThingId);
+        emit HeatingRodConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::heatingRodConfigurationChanged, this, [=](const HeatingRodConfiguration &heatingRodConfiguration){
+        QVariantMap params;
+        params.insert("heatingRodConfiguration", pack(heatingRodConfiguration));
+        emit HeatingRodConfigurationChanged(params);
+    });
+
     //ConEMS
     connect(m_energyEngine, &EnergyEngine::conEMSStatesAdded, this, [=](const ConEMSState &conEMSState){
         QVariantMap params;
@@ -486,6 +544,16 @@ QString ConsolinnoJsonHandler::name() const
     return "Hems";
 }
 
+JsonReply *ConsolinnoJsonHandler::GetHEMSVersion(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+    QVariantMap returns;
+    returns.insert("product", m_versionInfo.product);
+    returns.insert("version", m_versionInfo.version);
+    returns.insert("stage", m_versionInfo.stage);
+    return createReply(returns);
+}
+
 JsonReply *ConsolinnoJsonHandler::GetAvailableUseCases(const QVariantMap &params)
 {
     Q_UNUSED(params)
@@ -577,6 +645,28 @@ JsonReply *ConsolinnoJsonHandler::GetHeatingConfigurations(const QVariantMap &pa
 JsonReply *ConsolinnoJsonHandler::SetHeatingConfiguration(const QVariantMap &params)
 {
     EnergyEngine::HemsError error = m_energyEngine->setHeatingConfiguration(unpack<HeatingConfiguration>(params.value("heatingConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
+
+// Heating rod
+JsonReply *ConsolinnoJsonHandler::GetHeatingRodConfigurations(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const HeatingRodConfiguration &heatingRodConfig, m_energyEngine->heatingRodConfigurations()) {
+        configurations << pack(heatingRodConfig);
+    }
+    returns.insert("heatingRodConfigurations", configurations);
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetHeatingRodConfiguration(const QVariantMap &params)
+{
+    EnergyEngine::HemsError error = m_energyEngine->setHeatingRodConfiguration(unpack<HeatingRodConfiguration>(params.value("heatingRodConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));
     return createReply(returns);

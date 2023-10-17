@@ -1,3 +1,33 @@
+nymea-energy-plugin-consolinno (1.7.001-1) buster focal jammy; urgency=medium
+
+* Adapt to new versioning schema
+
+ -- Florian Knab <f.knab@consolinno.de> Thu, 19 Sep 2023 7:50:53 +0200
+
+nymea-energy-plugin-consolinno (1.7.001) dev; urgency=medium
+  * Added hybrid simulation feature
+  * Added retrieving HEMS version info 
+  * Added Amperfied integration plugin to meta package
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Tue, 05 Sep 2023 10:28:48 +0100
+
+nymea-energy-plugin-consolinno (1.5.127-1) dev; urgency=medium
+  * Software unchanged: New Debian revision for Consolinno HEMS v1.0.1
+ -- Knab Florian <f.knab@consolinno.de>  Thu, 24 Aug 2023 09:43:48 +0100
+
+nymea-energy-plugin-consolinno (1.5.127) qa; urgency=medium
+  * Added Kostal Pico integration
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 02 Aug 2022 10:28:48 +0100
+
+nymea-energy-plugin-consolinno (1.5.126) qa; urgency=medium
+  * Added Goodwe integration
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 02 Aug 2022 10:28:48 +0100
+
+nymea-energy-plugin-consolinno (1.5.125) qa; urgency=medium
+  * Added features for simple pv charging mode
+  * Added Kaco legacy plugin
+  * Added Azurro plugin
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 26 Jun 2022 10:28:48 +0100
+
 nymea-energy-plugin-consolinno (1.5.123) qa; urgency=medium
   * Limit lower bound of blackout protection and improve debug output
  -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 6 Mar 2022 10:43:41 +0100

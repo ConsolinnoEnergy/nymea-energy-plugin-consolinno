@@ -8,6 +8,7 @@
 
 #include <QObject>
 #include "jsonrpc/jsonhandler.h"
+#include "energypluginconsolinno.h"
 
 class EnergyEngine;
 
@@ -15,10 +16,11 @@ class ConsolinnoJsonHandler : public JsonHandler
 {
     Q_OBJECT
 public:
-    explicit ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent = nullptr);
+    explicit ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVersionInfo versionInfo, QObject *parent = nullptr);
 
     QString name() const override;
 
+    Q_INVOKABLE JsonReply* GetHEMSVersion(const QVariantMap &params);
     Q_INVOKABLE JsonReply* GetAvailableUseCases(const QVariantMap &params);
 
     Q_INVOKABLE JsonReply* GetHousholdPhaseLimit(const QVariantMap &params);
@@ -26,6 +28,9 @@ public:
 
     Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
+
+    Q_INVOKABLE JsonReply* GetHeatingRodConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetHeatingRodConfiguration(const QVariantMap &params);
 
     Q_INVOKABLE JsonReply* GetUserConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetUserConfiguration(const QVariantMap &params);
@@ -63,6 +68,10 @@ signals:
     void HeatingConfigurationRemoved(const QVariantMap &params);
     void HeatingConfigurationChanged(const QVariantMap &params);
 
+    void HeatingRodConfigurationAdded(const QVariantMap &params);
+    void HeatingRodConfigurationRemoved(const QVariantMap &params);
+    void HeatingRodConfigurationChanged(const QVariantMap &params);
+
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);
     void ChargingConfigurationChanged(const QVariantMap &params);
@@ -90,6 +99,7 @@ signals:
 
 private:
     EnergyEngine *m_energyEngine = nullptr;
+    HEMSVersionInfo m_versionInfo;
 
 };
 

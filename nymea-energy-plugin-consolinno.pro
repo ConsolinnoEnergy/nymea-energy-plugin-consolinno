@@ -23,6 +23,7 @@ HEADERS += \
     configurations/heatingconfiguration.h \
     configurations/pvconfiguration.h \
     configurations/userconfiguration.h \
+    configurations/heatingrodconfiguration.h \
     consolinnojsonhandler.h \
     energyengine.h \
     energypluginconsolinno.h
@@ -36,6 +37,7 @@ SOURCES += \
     configurations/heatingconfiguration.cpp \
     configurations/pvconfiguration.cpp \
     configurations/userconfiguration.cpp \
+    configurations/heatingrodconfiguration.cpp \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
     energypluginconsolinno.cpp
