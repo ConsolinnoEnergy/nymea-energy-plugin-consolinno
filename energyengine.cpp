@@ -103,22 +103,14 @@ ConEMSState EnergyEngine::ConemsState() const
 
 EnergyEngine::HemsError EnergyEngine::setConEMSState(const ConEMSState &conEMSState)
 {
-
-    qCDebug(dcConsolinnoEnergy()) << "Set ConEMSState configuration called" << conEMSState;
-    if (m_conEMSState.ConEMSStateID() != conEMSState.ConEMSStateID()) {
-        qCWarning(dcConsolinnoEnergy()) << "Could not set ConEMSState. The given QUUID is not the same." << conEMSState;
-        return HemsErrorInvalidThing;
-    }
-
-    if (m_conEMSState.timestamp() != conEMSState.timestamp()) {
+    if (m_conEMSState != conEMSState) {
         m_conEMSState = conEMSState;
         qCDebug(dcConsolinnoEnergy()) << "ConEMSState changed" << conEMSState;
-        emit conEMSStatesChanged(conEMSState);
+        emit conEMSStateChanged(conEMSState);
     } else{
-        qCDebug(dcConsolinnoEnergy()) << "ConEMSState did not change, because the timestamp is the same";
+        qCDebug(dcConsolinnoEnergy()) << "ConEMSState did not change";
 
     }
-
     return HemsErrorNoError;
 }
 

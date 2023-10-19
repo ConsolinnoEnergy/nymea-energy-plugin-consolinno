@@ -4,8 +4,11 @@
  */
 
 #include "consolinnojsonhandler.h"
+#include "configurations/conemsstate.h"
 #include "energyengine.h"
 #include "energypluginconsolinno.h"
+#include <QJsonDocument>
+#include <QJsonParseError>
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
@@ -17,7 +20,6 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     // Enums
     registerEnum<EnergyEngine::HemsError>();
     registerEnum<HeatingConfiguration::HouseType>();
-    registerEnum<ConEMSState::State>();
 
     // Flags
     registerFlag<EnergyEngine::HemsUseCase, EnergyEngine::HemsUseCases>();
@@ -32,6 +34,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     registerObject<ConEMSState>();
     registerObject<UserConfiguration>();
     registerObject<BatteryConfiguration>();
+    registerObject<ConEMSState>();
 
     QVariantMap params, returns;
     QString description;
@@ -100,8 +103,8 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     // ConEMS
     params.clear(); returns.clear();
     description = "Get the list of available ConEMSState from the energy engine.";
-    returns.insert("conEMSStates", QVariantList() << objectRef<ConEMSState>());
-    registerMethod("GetConEMSStates", description, params, returns);
+    returns.insert("conEMSState", QVariantList() << objectRef<ConEMSState>());
+    registerMethod("GetConEMSState", description, params, returns);
 
     params.clear(); returns.clear();
     description = "Update the ConEMSState";
@@ -421,19 +424,19 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     });
 
     //ConEMS
-    connect(m_energyEngine, &EnergyEngine::conEMSStatesAdded, this, [=](const ConEMSState &conEMSState){
+    connect(m_energyEngine, &EnergyEngine::conEMSStateAdded, this, [=](const ConEMSState &conEMSState){
         QVariantMap params;
         params.insert("conEMSState", pack(conEMSState));
         emit ConEMSStateAdded(params);
     });
 
-    connect(m_energyEngine, &EnergyEngine::conEMSStatesRemoved, this, [=](const QUuid &conEMSStateID){
+    connect(m_energyEngine, &EnergyEngine::conEMSStateRemoved, this, [=](const QUuid &conEMSStateID){
         QVariantMap params;
         params.insert("conEMSStateID", conEMSStateID);
         emit ConEMSStateRemoved(params);
     });
 
-    connect(m_energyEngine, &EnergyEngine::conEMSStatesChanged, this, [=](const ConEMSState &conEMSState){
+    connect(m_energyEngine, &EnergyEngine::conEMSStateChanged, this, [=](const ConEMSState &conEMSState){
         QVariantMap params;
         params.insert("conEMSState", pack(conEMSState));
         emit ConEMSStateChanged(params);
@@ -673,24 +676,35 @@ JsonReply *ConsolinnoJsonHandler::SetHeatingRodConfiguration(const QVariantMap &
 }
 
 //ConEMS
-JsonReply *ConsolinnoJsonHandler::GetConEMSStates(const QVariantMap &params)
+JsonReply *ConsolinnoJsonHandler::GetConEMSState(const QVariantMap &params)
 {
-    qCDebug(dcConsolinnoEnergy()) << "Reached GetConEMSStates" << params;
     Q_UNUSED(params)
     QVariantMap returns;
     QVariantList Cstates;
 
     Cstates << pack(m_energyEngine->ConemsState());
 
-    returns.insert("conEMSStates", Cstates);
+    returns.insert("conEMSState", Cstates);
     return createReply(returns);
 }
 
 JsonReply *ConsolinnoJsonHandler::SetConEMSState(const QVariantMap &params)
 {
-    EnergyEngine::HemsError error = m_energyEngine->setConEMSState(unpack<ConEMSState>(params.value("conEMSState").toMap()));
+    // unpacking json payload to a JSON object seems not work using the unpack macro
+    // and results in an empty object...
+    // Let's do it manually
+    QJsonParseError err;
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(params.value("conEMSState").toMap().value("currentState").toString().toUtf8(), &err);
     QVariantMap returns;
-    returns.insert("hemsError", enumValueName(error));
+    if (err.error != QJsonParseError::NoError) {
+        qCWarning(dcConsolinnoEnergy()) << "Error parsing json: " << err.errorString();
+        returns.insert("hemsError", EnergyEngine::HemsError::HemsErrorInvalidParameter);
+        return createReply(returns);
+    }    
+    ConEMSState conemsstate = unpack<ConEMSState>(params.value("conEMSState").toMap());
+    conemsstate.setCurrentState(jsonResponse.object());
+    EnergyEngine::HemsError error = m_energyEngine->setConEMSState(conemsstate);
+    returns.insert("hemsError", error);
     return createReply(returns);
 }
 

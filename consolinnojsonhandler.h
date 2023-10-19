@@ -50,7 +50,7 @@ public:
     Q_INVOKABLE JsonReply* GetBatteryConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetBatteryConfiguration(const QVariantMap &params);
 
-    Q_INVOKABLE JsonReply* GetConEMSStates(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* GetConEMSState(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetConEMSState(const QVariantMap &params);
 
 signals:

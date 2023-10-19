@@ -98,7 +98,7 @@ public:
     QList<PvConfiguration> pvConfigurations() const;
     EnergyEngine::HemsError setPvConfiguration(const PvConfiguration &pvConfiguration);
 
-    // ConEMSStates
+    // ConEMSState
     ConEMSState ConemsState() const;
     EnergyEngine::HemsError setConEMSState(const ConEMSState &conEMSState);
 
@@ -141,9 +141,9 @@ signals:
     void chargingSessionConfigurationChanged(const ChargingSessionConfiguration &chargingSessionConfiguration);
     void chargingSessionConfigurationRemoved(const ThingId &evChargerThingId);
 
-    void conEMSStatesAdded(const ConEMSState &conEMSState);
-    void conEMSStatesChanged(const ConEMSState &conEMSState);
-    void conEMSStatesRemoved(const QUuid &conEMSStateID);
+    void conEMSStateAdded(const ConEMSState &conEMSState);
+    void conEMSStateChanged(const ConEMSState &conEMSState);
+    void conEMSStateRemoved(const QUuid &conEMSStateID);
 
 private:
     ThingManager *m_thingManager = nullptr;
