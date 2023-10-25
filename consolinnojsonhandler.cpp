@@ -5,12 +5,14 @@
 
 #include "consolinnojsonhandler.h"
 #include "energyengine.h"
+#include "energypluginconsolinno.h"
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
-ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject *parent) :
+ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVersionInfo versionInfo, QObject *parent) :
     JsonHandler(parent),
-    m_energyEngine(energyEngine)
+    m_energyEngine(energyEngine),
+    m_versionInfo(versionInfo)
 {
     // Enums
     registerEnum<EnergyEngine::HemsError>();
@@ -33,7 +35,15 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
     QVariantMap params, returns;
     QString description;
 
+
+
+
     // Methods
+    //
+    params.clear(); returns.clear();
+    description = "Get the version of the HEMS system";
+    registerMethod("GetHEMSVersion", description, params, returns);
+
     params.clear(); returns.clear();
     description = "Get the current available optimization UseCases based on the thing setup available in the system.";
     returns.insert("availableUseCases", flagRef<EnergyEngine::HemsUseCases>());
@@ -484,6 +494,16 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, QObject
 QString ConsolinnoJsonHandler::name() const
 {
     return "Hems";
+}
+
+JsonReply *ConsolinnoJsonHandler::GetHEMSVersion(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+    QVariantMap returns;
+    returns.insert("product", m_versionInfo.product);
+    returns.insert("version", m_versionInfo.version);
+    returns.insert("stage", m_versionInfo.stage);
+    return createReply(returns);
 }
 
 JsonReply *ConsolinnoJsonHandler::GetAvailableUseCases(const QVariantMap &params)
