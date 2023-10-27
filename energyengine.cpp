@@ -786,7 +786,6 @@ void EnergyEngine::updateHybridSimulation(Thing *thing)
 }
 
 
-
 void EnergyEngine::evaluate()
 {
     // We need a root meter, otherwise no optimization or blackout protection can be done.
@@ -864,8 +863,8 @@ void EnergyEngine::evaluate()
         qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Checking EV charger thing " << thing->name();
         absMax = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
         absMin = thing->thingClass().stateTypes().findByName("maxChargingCurrent").minValue().toFloat();
-        qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Absolute limits are min. " << absMin << "A and max. " << absMax << "A.";
         currMax = thing->state("maxChargingCurrent").maxValue().toFloat();
+        qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Absolute limits: min=" << absMin << "A, max=" << absMax << "A, Current value :" << currMax << "A";
         overshotCurrent = qRound(overshotPower / 230);
         //thing->state("maxChargingCurrent") is meant to be the current limit per phase, so multiply by 3
         if (limitExceeded) 
