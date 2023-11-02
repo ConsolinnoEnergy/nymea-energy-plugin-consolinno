@@ -836,12 +836,12 @@ void EnergyEngine::evaluate()
     };
     bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit;
-    double finalOvershotPower = 0;
+    double finalPhaseOvershotPower = 0;
     double finalPhaseMarginPower = 230 * m_housholdPhaseLimit; // the finalPhaseMarginPower is the maximum/minimum??? available power per phase
-    double currMax = 0;
-    double overshotCurrent = 0;
-    double absMax = 0;
-    double absMin = 0;
+    double phaseOvershotCurrent = 0;
+    double absMaxOfMaxChargingCurrent = 0;
+    double absMinOfMaxChargingCurrent = 0;
+    double currentMaxChargingCurrent = 0;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
@@ -850,9 +850,9 @@ void EnergyEngine::evaluate()
             qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
-            //If the value is negatve, the power usage is below the limit, compare to previous value and set the lowest value as finalOvershotPower
-            if (phaseOvershotPower > finalOvershotPower) {
-                finalOvershotPower = phaseOvershotPower;
+            //If the value is negatve, the power usage is below the limit, compare to previous value and set the lowest value as finalPhaseOvershotPower
+            if (phaseOvershotPower > finalPhaseOvershotPower) {
+                finalPhaseOvershotPower = phaseOvershotPower;
             }
         } else {
             double phaseMarginPower = phasePowerLimit - currentPhaseConsumption.value(phase);
@@ -874,8 +874,8 @@ void EnergyEngine::evaluate()
                 //OvershotPower for all phases
                 double phaseConsumptionOvershotPower = currentPhaseConsumption.value(phase) - phaseConsumptionLimit;
                 //Use smaller value
-                if (phaseConsumptionOvershotPower > finalOvershotPower) {
-                    finalOvershotPower = phaseConsumptionOvershotPower;
+                if (phaseConsumptionOvershotPower > finalPhaseOvershotPower) {
+                    finalPhaseOvershotPower = phaseConsumptionOvershotPower;
                 }
             } else {
                 qCDebug(dcConsolinnoEnergy()) << "No consumption limit exceeded. currentPower: " << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W. Limit is" << m_consumptionLimit << "W";
@@ -892,23 +892,26 @@ void EnergyEngine::evaluate()
     
     qCDebug(dcConsolinnoEnergy()) << "Blackout protection and consumption limit: Maximum available power per phase: " << finalPhaseMarginPower << "W";
 
+    // if the limit is exceeded or below max, we adjust the charging current for each EV charger
     foreach (Thing *thing, m_evChargers) {
         qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Checking EV charger thing " << thing->name();
-        absMax = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
-        absMin = thing->thingClass().stateTypes().findByName("maxChargingCurrent").minValue().toFloat();
-        currMax = thing->state("maxChargingCurrent").maxValue().toFloat();
-        qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Absolute limits: min=" << absMin << "A, max=" << absMax << "A, Current value :" << currMax << "A";
-        overshotCurrent = qRound(finalOvershotPower / 230);
+        absMaxOfMaxChargingCurrent = thing->thingClass().stateTypes().findByName("maxChargingCurrent").maxValue().toFloat();
+        absMinOfMaxChargingCurrent = thing->thingClass().stateTypes().findByName("maxChargingCurrent").minValue().toFloat();
+        currentMaxChargingCurrent = thing->state("maxChargingCurrent").maxValue().toFloat();
+        qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Absolute limits: min=" << absMinOfMaxChargingCurrent << "A, max=" << absMaxOfMaxChargingCurrent << "A, Current value :" << currentMaxChargingCurrent << "A";
         //thing->state("maxChargingCurrent") is meant to be the current limit per phase, so multiply by 3
         if (limitExceeded) 
         {
-            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << finalOvershotPower  << "W to much. Adjusting the evChargers...";
-            thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::max(absMin, currMax - overshotCurrent - 1));
+            // If the limit is exceeded, we go down step by step
+            phaseOvershotCurrent = qRound(finalPhaseOvershotPower / 230);
+            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << finalPhaseOvershotPower  << "W to much. Adjusting the evChargers...";
+            thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::max(absMinOfMaxChargingCurrent, currentMaxChargingCurrent - phaseOvershotCurrent - 1));
             qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
         }else{
             //Otherwise we can go up again step by step
-            if(currMax != absMax && finalPhaseMarginPower > 250) {
-                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMax, currMax + 1));
+            // TODO: why finalPhaseMarginPower > 250?
+            if(currentMaxChargingCurrent != absMaxOfMaxChargingCurrent && finalPhaseMarginPower > 250) {
+                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMaxOfMaxChargingCurrent, currentMaxChargingCurrent + 1));
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             }
             else{
