@@ -436,6 +436,11 @@ void EnergyEngine::monitorUserConfig()
     loadUserConfiguration();
 }
 
+/*!
+ * \brief EnergyEngine::monitorBattery
+ * \param thing
+ * \details This function is called when a battery is added to the system.
+ */
 void EnergyEngine::monitorBattery(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring Battery" << thing;
@@ -444,6 +449,11 @@ void EnergyEngine::monitorBattery(Thing *thing)
     loadBatteryConfiguration(thing->id());
 }
 
+/*!
+ * \brief EnergyEngine::monitorHeatPump
+ * \param thing
+ * \details This function is called when a heatpump is added to the system.
+ */
 void EnergyEngine::monitorHeatPump(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring heatpump" << thing;
@@ -452,6 +462,11 @@ void EnergyEngine::monitorHeatPump(Thing *thing)
     loadHeatingConfiguration(thing->id());
 }
 
+/*!
+ * \brief EnergyEngine::monitorHeatingRod
+ * \param thing
+ * \details This function is called when a heating rod is added to the system.
+ */
 void EnergyEngine::monitorHeatingRod(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring heating rod" << thing;
@@ -460,7 +475,11 @@ void EnergyEngine::monitorHeatingRod(Thing *thing)
     loadHeatingRodConfiguration(thing->id());
 }
 
-
+/*!
+ * \brief EnergyEngine::monitorInverter
+ * \param thing
+ * \details This function is called when a inverter is added to the system.
+ */
 void EnergyEngine::monitorInverter(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring inverter" << thing;
@@ -469,7 +488,11 @@ void EnergyEngine::monitorInverter(Thing *thing)
     loadPvConfiguration(thing->id());
 }
 
-
+/*!
+ * \brief EnergyEngine::monitorEvCharger
+ * \param thing
+ * \details This function is called when a ev charger is added to the system.
+ */
 void EnergyEngine::monitorEvCharger(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring ev charger" << thing;
@@ -509,7 +532,12 @@ void EnergyEngine::monitorChargingSession(Thing *thing)
 
 }
 
-
+// doxygen style comment
+/*!
+ * \brief EnergyEngine::onThingAdded
+ * \details This function is called when a new thing is added to the system.
+ * If the thing is handled, the monitoring function for the thing is invoked.
+ */
 void EnergyEngine::onThingAdded(Thing *thing)
 {
     if (thing->thingClass().interfaces().contains("solarinverter")) {
@@ -785,7 +813,10 @@ void EnergyEngine::updateHybridSimulation(Thing *thing)
     linkedSimulatedThing->setStateValue("power", thing->stateValue("power"));
 }
 
-
+/*!
+ * \brief EnergyEngine::pluggedInEventHandling
+ * \details This function is called when certain variables or configurations change 
+ */
 void EnergyEngine::evaluate()
 {
     // We need a root meter, otherwise no optimization or blackout protection can be done.
@@ -796,7 +827,7 @@ void EnergyEngine::evaluate()
     qCDebug(dcConsolinnoEnergy()) << "Root meter consumption changed" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W";
 
 
-    // Blackout protection just incase something is still over the limit
+    // Blackout protection just in case something is still over the limit
     qCDebug(dcConsolinnoEnergy()) << "--> Evaluating blackout protection";
     QHash<QString, double> currentPhaseConsumption = {
         {"A", m_energyManager->rootMeter()->stateValue("currentPowerPhaseA").toDouble()},
@@ -805,51 +836,53 @@ void EnergyEngine::evaluate()
     };
     bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit;
-    double overshotPower = 0;
-    double marginPower = 230 * m_housholdPhaseLimit;
+    double finalOvershotPower = 0;
+    double finalPhaseMarginPower = 230 * m_housholdPhaseLimit; // the finalPhaseMarginPower is the maximum/minimum??? available power per phase
     double currMax = 0;
     double overshotCurrent = 0;
     double absMax = 0;
     double absMin = 0;
+
+    // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit << "[A] =" << phasePowerLimit << "[W] at 230V";
     foreach (const QString &phase, currentPhaseConsumption.keys()) {
         if (currentPhaseConsumption.value(phase) > phasePowerLimit) {
             qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Phase" << phase << "exceeding limit:" << currentPhaseConsumption.value(phase) << "W. Maximum allowance:" << phasePowerLimit << "W";
             limitExceeded = true;
             double phaseOvershotPower = currentPhaseConsumption.value(phase) - phasePowerLimit;
-            //If the value is negatve, the power usage is below the limit, compare to previous value and set the lowest value as overshotPower
-            if (phaseOvershotPower > overshotPower) {
-                overshotPower = phaseOvershotPower;
+            //If the value is negatve, the power usage is below the limit, compare to previous value and set the lowest value as finalOvershotPower
+            if (phaseOvershotPower > finalOvershotPower) {
+                finalOvershotPower = phaseOvershotPower;
             }
         } else {
             double phaseMarginPower = phasePowerLimit - currentPhaseConsumption.value(phase);
-            if (phaseMarginPower < marginPower) {
-                marginPower = phaseMarginPower;
+            if (phaseMarginPower < finalPhaseMarginPower) {
+                finalPhaseMarginPower = phaseMarginPower;
             }
         }
     }
 
+    // Check if the power consumption limit is exceeded in regards to finalPhaseMarginPower
     qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
-    // Check if the consumption limit is exceeded related to marginPower
     if (m_consumptionLimit > 0) {
         qCDebug(dcConsolinnoEnergy()) << "Consumption limit is set to" << m_consumptionLimit << "W";
-        double consumptionLimitPerPhase = m_consumptionLimit / m_housholdPhaseCount;
+        double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
         foreach (const QString &phase, currentPhaseConsumption.keys()) {
             if (m_energyManager->rootMeter()->stateValue("currentPower").toDouble() > m_consumptionLimit) {
                 qCInfo(dcConsolinnoEnergy()) << "Consumption limit exceeded. Current consumption is" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W. Limit is" << m_consumptionLimit << "W";
                 limitExceeded = true;
                 //OvershotPower for all phases
-                double consumptionOvershotPower = currentPhaseConsumption.value(phase) - consumptionLimitPerPhase;
+                double phaseConsumptionOvershotPower = currentPhaseConsumption.value(phase) - phaseConsumptionLimit;
                 //Use smaller value
-                if (consumptionOvershotPower > overshotPower) {
-                    overshotPower = consumptionOvershotPower;
+                if (phaseConsumptionOvershotPower > finalOvershotPower) {
+                    finalOvershotPower = phaseConsumptionOvershotPower;
                 }
             } else {
                 qCDebug(dcConsolinnoEnergy()) << "No consumption limit exceeded. currentPower: " << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W. Limit is" << m_consumptionLimit << "W";
-                double consumptionMarginPower = consumptionLimitPerPhase - currentPhaseConsumption.value(phase);
+                double phaseConsumptionMarginPower = phaseConsumptionLimit - currentPhaseConsumption.value(phase);
                 //per phase power
-                if (consumptionMarginPower < marginPower) {
-                    marginPower = consumptionMarginPower;
+                if (phaseConsumptionMarginPower < finalPhaseMarginPower) {
+                    finalPhaseMarginPower = phaseConsumptionMarginPower;
                 }
             }
         }
@@ -857,7 +890,7 @@ void EnergyEngine::evaluate()
         qCDebug(dcConsolinnoEnergy()) << "Consumption limit is not set";
     }
     
-    qCDebug(dcConsolinnoEnergy()) << "Blackout protection and consumption limit: Maximum available power per phase: " << marginPower << "W";
+    qCDebug(dcConsolinnoEnergy()) << "Blackout protection and consumption limit: Maximum available power per phase: " << finalPhaseMarginPower << "W";
 
     foreach (Thing *thing, m_evChargers) {
         qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Checking EV charger thing " << thing->name();
@@ -865,16 +898,16 @@ void EnergyEngine::evaluate()
         absMin = thing->thingClass().stateTypes().findByName("maxChargingCurrent").minValue().toFloat();
         currMax = thing->state("maxChargingCurrent").maxValue().toFloat();
         qCDebug(dcConsolinnoEnergy()) << "Blackout protection: Absolute limits: min=" << absMin << "A, max=" << absMax << "A, Current value :" << currMax << "A";
-        overshotCurrent = qRound(overshotPower / 230);
+        overshotCurrent = qRound(finalOvershotPower / 230);
         //thing->state("maxChargingCurrent") is meant to be the current limit per phase, so multiply by 3
         if (limitExceeded) 
         {
-            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << overshotPower  << "W to much. Adjusting the evChargers...";
+            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Using at least" << finalOvershotPower  << "W to much. Adjusting the evChargers...";
             thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::max(absMin, currMax - overshotCurrent - 1));
             qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
         }else{
             //Otherwise we can go up again step by step
-            if(currMax != absMax && marginPower > 250) {
+            if(currMax != absMax && finalPhaseMarginPower > 250) {
                 thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMax, currMax + 1));
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             }
