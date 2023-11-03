@@ -923,7 +923,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current down to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
         }else{
             //Otherwise we can go up again step by step, only if Margin Power larger than 250W
-            if(currentMaxChargingCurrent != absMaxOfMaxChargingCurrent && minPhaseMarginPower > 250) {
+            if(currentMaxChargingCurrent < absMaxOfMaxChargingCurrent && minPhaseMarginPower > 250) {
                 thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(), std::min(absMaxOfMaxChargingCurrent, currentMaxChargingCurrent + 1));
                 qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Ajdusted limit of charging current up to" <<  thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             }
