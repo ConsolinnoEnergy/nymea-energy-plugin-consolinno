@@ -881,7 +881,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         bool consumptionLimitExceeded = (m_energyManager->rootMeter()->stateValue("currentPower").toDouble() > m_consumptionLimit);
         if (consumptionLimitExceeded) {            limitExceeded = true;            }
         foreach (const QString &phase, allPhasesCurrentPower.keys()) {
-            if (phaseConsumptionLimitExceeded) {
+            if (consumptionLimitExceeded) {
                 qCInfo(dcConsolinnoEnergy()) << "Consumption limit exceeded. Current consumption is" << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W. Limit is" << m_consumptionLimit << "W";
                 //OvershotPower for given phase
                 double phaseConsumptionOvershotPower = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
