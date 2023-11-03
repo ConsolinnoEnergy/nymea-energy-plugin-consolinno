@@ -282,7 +282,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
         qCDebug(dcConsolinnoEnergy()) << "Charging configuration changed" << chargingConfiguration;
         saveChargingConfigurationToSettings(chargingConfiguration);
         emit chargingConfigurationChanged(chargingConfiguration);
-        evaluate();
+        evaluateAndSetMaxChargingCurrent();
 
     }
 
@@ -725,7 +725,7 @@ void EnergyEngine::onRootMeterChanged()
             Q_UNUSED(value)
             StateType stateType = m_energyManager->rootMeter()->thingClass().getStateType(stateTypeId);
             if (stateType.name() == "currentPower") {
-                evaluate();
+                evaluateAndSetMaxChargingCurrent();
             }
         });
     } else {
@@ -743,7 +743,7 @@ void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit){
         qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
         //set new consumption limit 
         m_consumptionLimit = consumptionLimit;
-        evaluate();
+        evaluateAndSetMaxChargingCurrent();
     } else {
         qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChanged called and root meter is not set";
         qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
@@ -760,7 +760,7 @@ void EnergyEngine::onConsumptionLimitChangedOPC(qlonglong consumptionLimit){
         qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
         //set new consumption limit 
         m_consumptionLimit = consumptionLimit;
-        evaluate();
+        evaluateAndSetMaxChargingCurrent();
     } else {
         qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChangedOPC called and root meter is not set";
         qCWarning(dcConsolinnoEnergy()) << "There is no root meter configured. Optimization will not be available until a root meter has been declared in the energy experience.";
@@ -814,10 +814,10 @@ void EnergyEngine::updateHybridSimulation(Thing *thing)
 }
 
 /*!
- * \brief EnergyEngine::pluggedInEventHandling
- * \details This function is called when certain variables or configurations change 
+ * \brief EnergyEngine::evaluateAndSetMaxChargingCurrent
+ * \details This function evaluates the current power consumption and sets the maxChargingCurrent for each ev charger.
  */
-void EnergyEngine::evaluate()
+void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 {
     // We need a root meter, otherwise no optimization or blackout protection can be done.
     if (!m_energyManager->rootMeter())

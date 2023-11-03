@@ -197,7 +197,7 @@ private slots:
 
     void onRootMeterChanged();
 
-    void evaluate();
+    void evaluateAndSetMaxChargingCurrent();
     void updateHybridSimulation(Thing *thing);
 
     void evaluateAvailableUseCases();
