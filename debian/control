@@ -41,7 +41,7 @@ Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          consolinno-hems-updater,
-         nymea,
+         nymead,
          nymea-data,
          nymea-energy-plugin-consolinno,
          conems,
