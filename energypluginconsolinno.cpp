@@ -62,7 +62,15 @@ void EnergyPluginConsolinno::init()
 {
     qCDebug(dcConsolinnoEnergy()) << "Initializing energy plugin...";
     HEMSVersionInfo versionInfo;
-    parseVersionFile("/etc/consolinno-release", versionInfo); 
+    // This file should be shipped with the image for the Leaflet device
+    bool res;
+    res = parseVersionFile("/etc/consolinno-release", versionInfo); 
+    // This is used when the plugin is not run within the usual HEMS environment.
+    // /etc/hems_version_info is shipped with this debian package
+    if (!res) {
+        qWarning(dcConsolinnoEnergy()) << "This seems not to be a Consolinno HEMS Leaflet environment. Trying to read /etc/hems_version_info for version information.";
+        res = parseVersionFile("/etc/hems_version_info", versionInfo);
+    }
     EnergyEngine *energyEngine = new EnergyEngine(thingManager(), energyManager(), this);
     jsonRpcServer()->registerExperienceHandler(new ConsolinnoJsonHandler(energyEngine, versionInfo,  this), versionInfo.major, versionInfo.minor, versionInfo.patch);
 }
