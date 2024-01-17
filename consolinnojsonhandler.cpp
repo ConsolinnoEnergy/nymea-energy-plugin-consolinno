@@ -27,6 +27,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     // Types
     registerObject<HeatingConfiguration>();
     registerObject<HeatingRodConfiguration>();
+    registerObject<WashingMachineConfiguration>();
     registerObject<ChargingConfiguration>();
     registerObject<ChargingOptimizationConfiguration>();
     registerObject<ChargingSessionConfiguration>();
@@ -99,6 +100,18 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetHeatingRodConfiguration", description, params, returns);
+
+    // Washing machine
+    params.clear(); returns.clear();
+    description = "Get the list of available washing machine configurations from the energy engine.";
+    returns.insert("washingMachineConfigurations", QVariantList() << objectRef<WashingMachineConfiguration>());
+    registerMethod("GetWashingMachineConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a washing machine configuration to the given washing machine configuration. The washing machine thing ID will be used as an identifier.";
+    params.insert("washingMachineConfiguration", objectRef<WashingMachineConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetWashingMachineConfiguration", description, params, returns);
 
     // ConEMS
     params.clear(); returns.clear();
@@ -236,6 +249,22 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     description = "Emitted whenever a heating rod configuration has changed in the energy engine.";
     params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
     registerNotification("HeatingRodConfigurationChanged", description, params);
+
+    // Washing machine
+    params.clear();
+    description = "Emitted whenever a new washing machine configuration has been added to the energy engine.";
+    params.insert("washingMachineonfiguration", objectRef<WashingMachineConfiguration>());
+    registerNotification("WashingMachineConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a washing machine configuration has been removed from the energy engine with the given washing machine thing ID.";
+    params.insert("heatingRodThingId", enumValueName(Uuid));
+    registerNotification("WashingMachineConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a washing machine configuration has changed in the energy engine.";
+    params.insert("washingMachineConfiguration", objectRef<WashingMachineConfiguration>());
+    registerNotification("WashingMachineConfigurationChanged", description, params);
 
     // ConEMS
     params.clear();
@@ -421,6 +450,25 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
         QVariantMap params;
         params.insert("heatingRodConfiguration", pack(heatingRodConfiguration));
         emit HeatingRodConfigurationChanged(params);
+    });
+
+    // Washing machine
+    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationAdded, this, [=](const WashingMachineConfiguration &washingMachingConfiguration){
+        QVariantMap params;
+        params.insert("washingMachineConfiguration", pack(washingMachineConfiguration));
+        emit WashingMachineConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationRemoved, this, [=](const ThingId &washingMachineThingId){
+        QVariantMap params;
+        params.insert("washingMachineThingId", washingMachineThingId);
+        emit WashingMachineConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationChanged, this, [=](const WashingMachineConfiguration &washingMachineConfiguration){
+        QVariantMap params;
+        params.insert("washingMachineConfiguration", pack(washingMachineConfiguration));
+        emit WashingMachineConfigurationChanged(params);
     });
 
     //ConEMS
@@ -664,6 +712,19 @@ JsonReply *ConsolinnoJsonHandler::GetHeatingRodConfigurations(const QVariantMap 
         configurations << pack(heatingRodConfig);
     }
     returns.insert("heatingRodConfigurations", configurations);
+    return createReply(returns);
+}
+
+// Washing machine
+JsonReply *ConsolinnoJsonHandler::GetWashingMachineConfigurations(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const WashingMachineConfiguration &washingMachineConfig, m_energyEngine->washingMachineConfigurations()) {
+        configurations << pack(washingMachineConfig);
+    }
+    returns.insert("washingMachineConfigurations", configurations);
     return createReply(returns);
 }
 

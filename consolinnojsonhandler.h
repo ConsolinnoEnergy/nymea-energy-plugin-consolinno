@@ -32,6 +32,9 @@ public:
     Q_INVOKABLE JsonReply* GetHeatingRodConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetHeatingRodConfiguration(const QVariantMap &params);
 
+    Q_INVOKABLE JsonReply* GetWashingMachineConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetWashingMachineConfiguration(const QVariantMap &params);
+
     Q_INVOKABLE JsonReply* GetUserConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetUserConfiguration(const QVariantMap &params);
 
@@ -71,6 +74,10 @@ signals:
     void HeatingRodConfigurationAdded(const QVariantMap &params);
     void HeatingRodConfigurationRemoved(const QVariantMap &params);
     void HeatingRodConfigurationChanged(const QVariantMap &params);
+
+    void washingMachineConfigurationAdded(const QVariantMap &params);
+    void washingMachineConfigurationRemoved(const QVariantMap &params);
+    void washingMachineConfigurationChanged(const QVariantMap &params);
 
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);
