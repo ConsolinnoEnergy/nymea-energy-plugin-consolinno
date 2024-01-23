@@ -223,7 +223,7 @@ private slots:
     void removeHeatingRodConfigurationFromSettings(const ThingId &heatingRodThingId);
 
     void loadWashingMachineConfiguration(const ThingId &washingMachineThingId);
-    void saveWashingMachineConfigurationToSettings(const WashingMachineConfiguration &hwashingMachineConfiguration);
+    void saveWashingMachineConfigurationToSettings(const WashingMachineConfiguration &washingMachineConfiguration);
     void removeWashingMachineConfigurationFromSettings(const ThingId &washingMachineThingId);
 
     void loadChargingConfiguration(const ThingId &evChargerThingId);

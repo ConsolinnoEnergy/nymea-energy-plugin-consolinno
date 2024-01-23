@@ -838,7 +838,7 @@ void EnergyEngine::evaluateAvailableUseCases()
         availableUseCases = availableUseCases.setFlag(HemsUseCaseHeatingRod);
     }
     
-    // Heating rod
+    // Washing machine
     if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_washingMachines.isEmpty()) {
         // We need at least a root meter and and inverter for having the washing machine use case
         availableUseCases = availableUseCases.setFlag(HemsUseCaseWashingMachine);
@@ -997,7 +997,7 @@ void EnergyEngine::removeHeatingRodConfigurationFromSettings(const ThingId &heat
     settings.endGroup();
 }
 
-void EnergyEngine::loadWashingMachinedConfiguration(const ThingId &washingMachineThingId)
+void EnergyEngine::loadWashingMachineConfiguration(const ThingId &washingMachineThingId)
 {
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("WashingMachineConfigurations");

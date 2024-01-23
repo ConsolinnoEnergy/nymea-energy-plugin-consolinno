@@ -5,63 +5,63 @@
 
 #include "washingmachineconfiguration.h"
 
-WashingmachineConfiguration::washingmachineConfiguration()
+WashingmachineConfiguration::WashingMachineConfiguration()
 {
     // By default invalid
 }
 
-ThingId WashingmachineConfiguration::washingmachineThingId() const
+ThingId WashingMachineConfiguration::washingMachineThingId() const
 {
-    return m_washingmachineThingId;
+    return m_washingMachineThingId;
 }
 
-void WashingmachineConfiguration::setWashingmachineThingId(const ThingId &washingmachineThingId)
+void WashingMachineConfiguration::setWashingMachineThingId(const ThingId &washingMachineThingId)
 {
-    m_washingmachineThingId = washingmachineThingId;
+    m_washingMachineThingId = washingMachineThingId;
 }
 
-bool WashingmachineConfiguration::optimizationEnabled() const
+bool WashingMachineConfiguration::optimizationEnabled() const
 {
     return m_optimizationEnabled;
 }
 
-void WashingmachineConfiguration::setOptimizationEnabled(bool optimizationEnabled)
+void WashingMachineConfiguration::setOptimizationEnabled(bool optimizationEnabled)
 {
     m_optimizationEnabled = optimizationEnabled;
 }
 
-double WashingmachineConfiguration::maxElectricalPower() const
+double WashingMachineConfiguration::maxElectricalPower() const
 {
     return m_maxElectricalPower;
 }
 
-void WashingmachineConfiguration::setMaxElectricalPower(double maxElectricalPower)
+void WashingMachineConfiguration::setMaxElectricalPower(double maxElectricalPower)
 {
     m_maxElectricalPower = maxElectricalPower;
 }
 
-bool WashingmachineConfiguration::isValid() const
+bool WashingMachineConfiguration::isValid() const
 {
-    return !m_washingmachineThingId.isNull() && m_maxElectricalPower != 0;
+    return !m_washingMachineThingId.isNull() && m_maxElectricalPower != 0;
 }
 
-bool WashingmachineConfiguration::operator==(const WashingmachineConfiguration &other) const
+bool WashingMachineConfiguration::operator==(const WashingmachineConfiguration &other) const
 {
     return m_heatMeterThingId == other.washingmachineThingId() &&
             m_optimizationEnabled == other.optimizationEnabled() &&
             m_maxElectricalPower == other.maxElectricalPower();
 }
 
-bool WashingmachineConfiguration::operator!=(const WashingmachineConfiguration &other) const
+bool WashingMachineConfiguration::operator!=(const WashingMachineConfiguration &other) const
 {
     return !(*this == other);
 }
 
-QDebug operator<<(QDebug debug, const washingmachineConfiguration &washingmachineConfig)
+QDebug operator<<(QDebug debug, const WashingMachineConfiguration &washingMachineConfig)
 {
-    debug.nospace() << "WashingmachineConfiguration(" << washingmachineConfig.washingmachineThingId().toString();
-    debug.nospace() << ", " << (washingmachineConfig.optimizationEnabled() ? "enabled" : "disabled");
-    debug.nospace() << ", " << "max power: " << washingmachineConfig.maxElectricalPower() << "W";
+    debug.nospace() << "WashingmachineConfiguration(" << washingMachineConfig.washingMachineThingId().toString();
+    debug.nospace() << ", " << (washingMachineConfig.optimizationEnabled() ? "enabled" : "disabled");
+    debug.nospace() << ", " << "max power: " << washingMachineConfig.maxElectricalPower() << "W";
     debug.nospace() << ")";
     return debug.maybeSpace();
 }

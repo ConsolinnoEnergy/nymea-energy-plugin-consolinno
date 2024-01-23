@@ -75,9 +75,9 @@ signals:
     void HeatingRodConfigurationRemoved(const QVariantMap &params);
     void HeatingRodConfigurationChanged(const QVariantMap &params);
 
-    void washingMachineConfigurationAdded(const QVariantMap &params);
-    void washingMachineConfigurationRemoved(const QVariantMap &params);
-    void washingMachineConfigurationChanged(const QVariantMap &params);
+    void WashingMachineConfigurationAdded(const QVariantMap &params);
+    void WashingMachineConfigurationRemoved(const QVariantMap &params);
+    void WashingMachineConfigurationChanged(const QVariantMap &params);
 
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);

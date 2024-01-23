@@ -715,6 +715,14 @@ JsonReply *ConsolinnoJsonHandler::GetHeatingRodConfigurations(const QVariantMap 
     return createReply(returns);
 }
 
+JsonReply *ConsolinnoJsonHandler::SetHeatingRodConfiguration(const QVariantMap &params)
+{
+    EnergyEngine::HemsError error = m_energyEngine->setHeatingRodConfiguration(unpack<HeatingRodConfiguration>(params.value("heatingRodConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
 // Washing machine
 JsonReply *ConsolinnoJsonHandler::GetWashingMachineConfigurations(const QVariantMap &params)
 {
@@ -728,9 +736,9 @@ JsonReply *ConsolinnoJsonHandler::GetWashingMachineConfigurations(const QVariant
     return createReply(returns);
 }
 
-JsonReply *ConsolinnoJsonHandler::SetHeatingRodConfiguration(const QVariantMap &params)
+JsonReply *ConsolinnoJsonHandler::SetWashingMachineConfiguration(const QVariantMap &params)
 {
-    EnergyEngine::HemsError error = m_energyEngine->setHeatingRodConfiguration(unpack<HeatingRodConfiguration>(params.value("heatingRodConfiguration").toMap()));
+    EnergyEngine::HemsError error = m_energyEngine->setWashingMachineConfiguration(unpack<WashingMachineConfiguration>(params.value("washingMachineConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));
     return createReply(returns);
