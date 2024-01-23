@@ -193,7 +193,7 @@ EnergyEngine::HemsError EnergyEngine::setWashingMachineConfiguration(const Washi
     }
 
 
-    if (m_washingMachine.value(washingMachineConfiguration.washingMachineThingId()) != washingMachineConfiguration) {
+    if (m_washingMachineConfigurations.value(washingMachineConfiguration.washingMachineThingId()) != washingMachineConfiguration) {
         m_washingMachineConfigurations[washingMachineConfiguration.washingMachineThingId()] = washingMachineConfiguration;
         qCDebug(dcConsolinnoEnergy()) << "Washing machine configuration changed" << washingMachineConfiguration;
         saveWashingMachineConfigurationToSettings(washingMachineConfiguration);
@@ -212,7 +212,7 @@ QList<ChargingConfiguration> EnergyEngine::chargingConfigurations() const
 EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingConfiguration &chargingConfiguration)
 {
     //qCDebug(dcConsolinnoEnergy()) << "Set charging configuration called" << chargingConfiguration;
-    if (!m_chargingConfigurations.contains(chargingConfiguration.evChargerThingId())) {
+    if (!m_chargingConfigurationm_he.contains(chargingConfiguration.evChargerThingId())) {
         qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The given ev charger thing id does not exist." << chargingConfiguration;
         return HemsErrorInvalidThing;
     }
@@ -314,10 +314,7 @@ QList<PvConfiguration> EnergyEngine::pvConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setPvConfiguration(const PvConfiguration &pvConfiguration)
 {
-
-    if (!m_pvConfigurations.contains(pvConfiguration.pvThingId())) {
-        qCWarning(dcConsolinnoEnergy()) << "Could not set pv configuration. The given pv thing id does not exist." << pvConfiguration;
-        return HemsErrorInvalidThing;
+m_he
     }
 
 
