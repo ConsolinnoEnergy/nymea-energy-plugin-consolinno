@@ -193,7 +193,7 @@ EnergyEngine::HemsError EnergyEngine::setWashingMachineConfiguration(const Washi
     }
 
 
-    if (m_washingMachineConfigurations.value(washingMachineConfiguration.washingMachineThingId()) != washingMachineConfiguration) {
+    if (m_washingMachine.value(washingMachineConfiguration.washingMachineThingId()) != washingMachineConfiguration) {
         m_washingMachineConfigurations[washingMachineConfiguration.washingMachineThingId()] = washingMachineConfiguration;
         qCDebug(dcConsolinnoEnergy()) << "Washing machine configuration changed" << washingMachineConfiguration;
         saveWashingMachineConfigurationToSettings(washingMachineConfiguration);
@@ -314,9 +314,10 @@ QList<PvConfiguration> EnergyEngine::pvConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setPvConfiguration(const PvConfiguration &pvConfiguration)
 {
-m_he
+    if (!m_pvConfigurations.contains(pvConfiguration.pvThingId())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set pv configuration. The given pv thing id does not exist." << pvConfiguration;
+        return HemsErrorInvalidThing;
     }
-
 
      if (m_pvConfigurations.value(pvConfiguration.pvThingId()) != pvConfiguration) {
 
