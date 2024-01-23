@@ -5,7 +5,7 @@
 
 #include "washingmachineconfiguration.h"
 
-WashingmachineConfiguration::WashingMachineConfiguration()
+WashingMachineConfiguration::WashingMachineConfiguration()
 {
     // By default invalid
 }
@@ -45,9 +45,9 @@ bool WashingMachineConfiguration::isValid() const
     return !m_washingMachineThingId.isNull() && m_maxElectricalPower != 0;
 }
 
-bool WashingMachineConfiguration::operator==(const WashingmachineConfiguration &other) const
+bool WashingMachineConfiguration::operator==(const WashingMachineConfiguration &other) const
 {
-    return m_heatMeterThingId == other.washingmachineThingId() &&
+    return m_heatMeterThingId == other.washingMachineThingId() &&
             m_optimizationEnabled == other.optimizationEnabled() &&
             m_maxElectricalPower == other.maxElectricalPower();
 }
@@ -59,7 +59,7 @@ bool WashingMachineConfiguration::operator!=(const WashingMachineConfiguration &
 
 QDebug operator<<(QDebug debug, const WashingMachineConfiguration &washingMachineConfig)
 {
-    debug.nospace() << "WashingmachineConfiguration(" << washingMachineConfig.washingMachineThingId().toString();
+    debug.nospace() << "WashingMachineConfiguration(" << washingMachineConfig.washingMachineThingId().toString();
     debug.nospace() << ", " << (washingMachineConfig.optimizationEnabled() ? "enabled" : "disabled");
     debug.nospace() << ", " << "max power: " << washingMachineConfig.maxElectricalPower() << "W";
     debug.nospace() << ")";
