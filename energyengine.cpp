@@ -212,7 +212,7 @@ QList<ChargingConfiguration> EnergyEngine::chargingConfigurations() const
 EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingConfiguration &chargingConfiguration)
 {
     //qCDebug(dcConsolinnoEnergy()) << "Set charging configuration called" << chargingConfiguration;
-    if (!m_chargingConfigurationm_he.contains(chargingConfiguration.evChargerThingId())) {
+    if (!m_chargingConfigurations.contains(chargingConfiguration.evChargerThingId())) {
         qCWarning(dcConsolinnoEnergy()) << "Could not set charging configuration. The given ev charger thing id does not exist." << chargingConfiguration;
         return HemsErrorInvalidThing;
     }
@@ -251,6 +251,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(const ChargingCon
 
     return HemsErrorNoError;
 }
+
 
 QList<ChargingOptimizationConfiguration> EnergyEngine::chargingOptimizationConfigurations() const
 {
