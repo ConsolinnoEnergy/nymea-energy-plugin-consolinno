@@ -453,7 +453,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     });
 
     // Washing machine
-    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationAdded, this, [=](const WashingMachineConfiguration &washingMachingConfiguration){
+    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationAdded, this, [=](const WashingMachineConfiguration &washingMachineConfiguration){
         QVariantMap params;
         params.insert("washingMachineConfiguration", pack(washingMachineConfiguration));
         emit WashingMachineConfigurationAdded(params);
