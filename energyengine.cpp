@@ -193,7 +193,7 @@ EnergyEngine::HemsError EnergyEngine::setWashingMachineConfiguration(const Washi
     }
 
 
-    if (m_washingMachine.value(washingMachineConfiguration.washingMachineThingId()) != washingMachineConfiguration) {
+    if (m_washingMachineConfigurations.value(washingMachineConfiguration.washingMachineThingId()) != washingMachineConfiguration) {
         m_washingMachineConfigurations[washingMachineConfiguration.washingMachineThingId()] = washingMachineConfiguration;
         qCDebug(dcConsolinnoEnergy()) << "Washing machine configuration changed" << washingMachineConfiguration;
         saveWashingMachineConfigurationToSettings(washingMachineConfiguration);
