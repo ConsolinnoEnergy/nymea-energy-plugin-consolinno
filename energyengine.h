@@ -19,6 +19,7 @@
 #include "configurations/chargingsessionconfiguration.h"
 #include "configurations/heatingconfiguration.h"
 #include "configurations/heatingrodconfiguration.h"
+#include "configurations/washingmachineconfiguration.h"
 #include "configurations/pvconfiguration.h"
 #include "configurations/conemsstate.h"
 #include "configurations/userconfiguration.h"
@@ -44,7 +45,8 @@ public:
         HemsUseCaseCharging = 0x04,
         HemsUseCasePv = 0x08,
         HemsUseCaseBattery = 0x10,
-        HemsUseCaseHeatingRod = 0x20
+        HemsUseCaseHeatingRod = 0x20,
+        HemsUseCaseWashingMachine = 0x30
     };
     Q_ENUM(HemsUseCase)
 
@@ -77,6 +79,10 @@ public:
     // Heating rod configurations
     QList<HeatingRodConfiguration> heatingRodConfigurations() const;
     EnergyEngine::HemsError setHeatingRodConfiguration(const HeatingRodConfiguration &heatingRodConfiguration);
+    
+    // Washing machine configurations
+    QList<WashingMachineConfiguration> washingMachineConfigurations() const;
+    EnergyEngine::HemsError setWashingMachineConfiguration(const WashingMachineConfiguration &washingMachineConfiguration);
 
     // Charging configurations
     QList<ChargingConfiguration> chargingConfigurations() const;
@@ -121,6 +127,10 @@ signals:
     void heatingRodConfigurationChanged(const HeatingRodConfiguration &heatingRodConfiguration);
     void heatingRodConfigurationRemoved(const ThingId &heatingRodThingId);
 
+    void washingMachineConfigurationAdded(const WashingMachineConfiguration &washingMachineConfiguration);
+    void washingMachineConfigurationChanged(const WashingMachineConfiguration &washingMachineConfiguration);
+    void washingMachineConfigurationRemoved(const ThingId &washingMachineThingId);
+
     void chargingConfigurationAdded(const ChargingConfiguration &chargingConfiguration);
     void chargingConfigurationChanged(const ChargingConfiguration &chargingConfiguration);
     void chargingConfigurationRemoved(const ThingId &evChargerThingId);
@@ -157,6 +167,7 @@ private:
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
     QHash<ThingId, HeatingRodConfiguration> m_heatingRodConfigurations;
+    QHash<ThingId, WashingMachineConfiguration> m_washingMachineConfigurations;
     QHash<ThingId, ChargingOptimizationConfiguration> m_chargingOptimizationConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
     QHash<ThingId, BatteryConfiguration> m_batteryConfigurations;
@@ -168,6 +179,7 @@ private:
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
     QHash<ThingId, Thing *> m_heatingRods;
+    QHash<ThingId, Thing *> m_washingMachines;
     QHash<ThingId, Thing *> m_evChargers;
     QHash<ThingId, Thing *> m_batteries;
 
@@ -177,7 +189,8 @@ private:
 
 
     void monitorHeatPump(Thing *thing);
-    void monitorHeatingRod(Thing *thing);
+    void monitorHeatingRod(Thing *thing);    
+    void monitorWashingMachine(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorBattery(Thing *thing);
     void monitorEvCharger(Thing *thing);
@@ -208,6 +221,10 @@ private slots:
     void loadHeatingRodConfiguration(const ThingId &heatingRodThingId);
     void saveHeatingRodConfigurationToSettings(const HeatingRodConfiguration &heatingRodConfiguration);
     void removeHeatingRodConfigurationFromSettings(const ThingId &heatingRodThingId);
+
+    void loadWashingMachineConfiguration(const ThingId &washingMachineThingId);
+    void saveWashingMachineConfigurationToSettings(const WashingMachineConfiguration &washingMachineConfiguration);
+    void removeWashingMachineConfigurationFromSettings(const ThingId &washingMachineThingId);
 
     void loadChargingConfiguration(const ThingId &evChargerThingId);
     void saveChargingConfigurationToSettings(const ChargingConfiguration &chargingConfiguration);
