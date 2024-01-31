@@ -258,7 +258,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
 
     params.clear();
     description = "Emitted whenever a washing machine configuration has been removed from the energy engine with the given washing machine thing ID.";
-    params.insert("heatingRodThingId", enumValueName(Uuid));
+    params.insert("washingMachineThingId", enumValueName(Uuid));
     registerNotification("WashingMachineConfigurationRemoved", description, params);
 
     params.clear();
