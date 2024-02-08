@@ -40,13 +40,13 @@ public:
     Q_ENUM(HemsError)
 
     enum HemsUseCase {
-        HemsUseCaseBlackoutProtection = 0x01,
-        HemsUseCaseHeating = 0x02,
-        HemsUseCaseCharging = 0x04,
-        HemsUseCasePv = 0x08,
-        HemsUseCaseBattery = 0x10,
-        HemsUseCaseHeatingRod = 0x20,
-        HemsUseCaseWashingMachine = 0x30
+        HemsUseCaseBlackoutProtection = 1,
+        HemsUseCaseHeating = 2,
+        HemsUseCaseCharging = 4,
+        HemsUseCasePv = 8,
+        HemsUseCaseBattery = 16,
+        HemsUseCaseHeatingRod = 32,
+        HemsUseCaseWashingMachine = 64
     };
     Q_ENUM(HemsUseCase)
 
