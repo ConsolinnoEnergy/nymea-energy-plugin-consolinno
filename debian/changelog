@@ -1,6 +1,6 @@
 nymea-energy-plugin-consolinno (1.7.03-1) buster focal jammy; urgency=medium
-    * Add support for external modbusrtu adapter and consolinno generic integrations
- -- Leonid Verhovskij <l.verhovskij@consolinno.de>  Tue, 23 Jan 2024 09:12:14 +0100
+    * Added smart washing machine support 
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 23 Jan 2024 09:12:14 +0100
 
 nymea-energy-plugin-consolinno (1.7.02-1) buster focal jammy; urgency=medium
     * Improved ConEMS state
