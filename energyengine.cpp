@@ -76,6 +76,7 @@ EnergyEngine::EnergyEngine(ThingManager *thingManager, EnergyManager *energyMana
         qCWarning(dcConsolinnoEnergy()) << "Error getting consumption limit from dbus";
     }
 
+    qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: *******************************************************";
     //Add signal handler for consumption limit with same name as property on iface
     qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: " << "sDbusService" << sDbusService.c_str() << "; "<< "sDbusPath" << sDbusPath.c_str() << "; " << "sDbusInterface" << sDbusInterface.c_str() << "AnOut_mxVal_f";
     
