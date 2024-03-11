@@ -58,7 +58,10 @@ EnergyEngine::EnergyEngine(
                                   << m_housholdPowerLimit << "[W]";
 
     std::string sDbusService = "de.consolinno.fnnstb.iec61850";
-    std::string sDbusPath = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/1";
+    std::string sDbusPath1 = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/1";
+    std::string sDbusPath2 = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/2";
+    std::string sDbusPath3 = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/3";
+    std::string sDbusPath4 = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/4";
     std::string sDbusInterface = "de.consolinno.fnnstb.iec61850.cls.actpow_ggio001";
 
     std::string sDbusOPCService = "de.consolinno.fnnstb.opcua";
@@ -67,7 +70,7 @@ EnergyEngine::EnergyEngine(
 
     // Load current p-lim for consumption limit from iec server / only on hems with integrated iec
     // server
-    QDBusInterface iface(sDbusService.c_str(), sDbusPath.c_str(), sDbusInterface.c_str(),
+    QDBusInterface iface(sDbusService.c_str(), sDbusPath1.c_str(), sDbusInterface.c_str(),
         QDBusConnection::systemBus());
     // Get DBUS Property anout in format (xtixx) / struct, with first x as float value of current
     // consumption limit
@@ -86,22 +89,50 @@ EnergyEngine::EnergyEngine(
     // Add signal handler for consumption limit with same name as property on iface
     qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: "
                                   << "sDbusService" << sDbusService.c_str() << "; "
-                                  << "sDbusPath" << sDbusPath.c_str() << "; "
+                                  << "sDbusPath1" << sDbusPath1.c_str() << "; "
                                   << "sDbusInterface" << sDbusInterface.c_str() << "AnOut_mxVal_f";
 
-    // QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath.c_str(),
+    // QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath1.c_str(),
     //     sDbusInterface.c_str(), "AnOut_mxVal_f", this, &EnergyEngine::onConsumptionLimitChanged);
 
-    // QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath.c_str(),
-    //     sDbusInterface.c_str(), "AnOut_mxVal_f", this, SLOT(onConsumptionLimitChanged(qlonglong)));
+    // QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath1.c_str(),
+    //     sDbusInterface.c_str(), "AnOut_mxVal_f", this,
+    //     SLOT(onConsumptionLimitChanged(qlonglong)));
 
-    if (!QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath.c_str(),
+    if (!QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath1.c_str(),
             sDbusInterface.c_str(), "AnOut_mxVal_f", this,
             SLOT(onConsumptionLimitChanged(qlonglong)))) {
         qCWarning(dcConsolinnoEnergy())
-            << "Error subscribing to consumption limit signal from iec server";
+            << "Error subscribing to consumption limit signal from iec server actpow_ggio001/1";
     } else {
-        qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal";
+        qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal actpow_ggio001/1";
+    }
+
+    if (!QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath2.c_str(),
+            sDbusInterface.c_str(), "AnOut_mxVal_f", this,
+            SLOT(onConsumptionLimitChanged(qlonglong)))) {
+        qCWarning(dcConsolinnoEnergy())
+            << "Error subscribing to consumption limit signal from iec server actpow_ggio001/2";
+    } else {
+        qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal actpow_ggio001/2";
+    }
+
+    if (!QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath3.c_str(),
+            sDbusInterface.c_str(), "AnOut_mxVal_f", this,
+            SLOT(onConsumptionLimitChanged(qlonglong)))) {
+        qCWarning(dcConsolinnoEnergy())
+            << "Error subscribing to consumption limit signal from iec server actpow_ggio001/3";
+    } else {
+        qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal actpow_ggio001/3";
+    }
+
+    if (!QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath4.c_str(),
+            sDbusInterface.c_str(), "AnOut_mxVal_f", this,
+            SLOT(onConsumptionLimitChanged(qlonglong)))) {
+        qCWarning(dcConsolinnoEnergy())
+            << "Error subscribing to consumption limit signal from iec server actpow_ggio001/4";
+    } else {
+        qCDebug(dcConsolinnoEnergy()) << "Subscribed to consumption limit signal actpow_ggio001/4";
     }
 
     // Load current p-lim for consumption limit from opc-ua client / only on hems with integrated
