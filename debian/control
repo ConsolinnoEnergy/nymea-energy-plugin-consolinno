@@ -110,7 +110,7 @@ Depends: ${shlibs:Depends},
          nymea-zeroconf-plugin-avahi,
          nymea-system-plugin-systemd,
 Description: Consolinno Home Energy Management System
-plugins
+ plugins
  
 Package: consolinno-hems-plugins-cigate
 Section: libs
