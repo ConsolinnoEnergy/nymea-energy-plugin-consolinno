@@ -1,3 +1,7 @@
+nymea-energy-plugin-consolinno (1.7.04-1) buster bullseye focal jammy; urgency=medium
+    * Added cigate-modbus-adapter to consolinno-hems package
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 19 Mar 2024 14:04:14 +0100
+
 nymea-energy-plugin-consolinno (1.7.03-1) buster focal jammy; urgency=medium
     * Added smart washing machine support 
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 23 Jan 2024 09:12:14 +0100
