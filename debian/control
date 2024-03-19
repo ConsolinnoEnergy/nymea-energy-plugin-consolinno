@@ -42,7 +42,7 @@ Depends: ${shlibs:Depends},
          ${misc:Depends},
 Description: Package containing version infos for the Consolinno HEMS product
 
-Package: consolinno-hems
+Package: consolinno-hems-base
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -54,9 +54,29 @@ Depends: ${shlibs:Depends},
          nymea-data,
          nymea-energy-plugin-consolinno,
          conems,
+Description: Consolinno Home Energy Management System
+ Meta package for basic components.
+
+Package: consolinno-hems-leaflet
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
          authentication-button,
          statusledcontroller,
-         cigate-adapter-modbusrtu,
+Description: Consolinno Home Energy Management System
+ Meta package for leaflet specific packges
+
+
+Package: consolinno-hems-plugins
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
          nymea-plugin-alphainnotec,
          nymea-plugin-amperfied,
          nymea-plugin-azzurro,
@@ -90,21 +110,18 @@ Depends: ${shlibs:Depends},
          nymea-zeroconf-plugin-avahi,
          nymea-system-plugin-systemd,
 Description: Consolinno Home Energy Management System
- Meta package for everything required to install a consolinno
- HEMS system.
-
-Package: consolinno-hems-latest
+plugins
+ 
+Package: consolinno-hems-plugins-cigate
 Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
-         consolinno-hems,
+         consolinno-hems-base,
+         cigate-adapter-modbusrtu,
 Description: Consolinno Home Energy Management System
- Latest Meta package for everything required to install a consolinno
- HEMS system. ATTENTION: This packages is deprecated. Please use 
- consolinno-hems instead. This package will only be kept for compatibility 
- reasons.
+ CI gate plugins
 
 
 Package: consolinno-hems-devtools
