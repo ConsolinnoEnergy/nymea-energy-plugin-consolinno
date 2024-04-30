@@ -1,5 +1,6 @@
-nymea-energy-plugin-consolinno (1.7.05-1) buster bullseye focal jammy; urgency=medium
+nymea-energy-plugin-consolinno (1.7.05-2) buster bullseye focal jammy; urgency=medium
     * Split up consolinno-hems meta package
+    * Added consolinno generic plugin
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 19 Mar 2024 14:27:14 +0100
 
 nymea-energy-plugin-consolinno (1.7.04-1) buster bullseye focal jammy; urgency=medium
