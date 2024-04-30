@@ -1,3 +1,8 @@
+nymea-energy-plugin-consolinno (1.7.05-2) buster bullseye focal jammy; urgency=medium
+    * Added cigate-modbus-adapter to consolinno-hems package
+    * Split up consolinno-hems meta package
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 19 Mar 2024 14:04:14 +0100
+
 nymea-energy-plugin-consolinno (1.7.001-1) buster focal jammy; urgency=medium
 
 * Adapt to new versioning schema
