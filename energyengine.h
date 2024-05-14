@@ -24,6 +24,8 @@
 #include "configurations/userconfiguration.h"
 #include "configurations/batteryconfiguration.h"
 
+// #include "jsonrpccxx/iclientconnector.hpp"
+// #include "jsonrpccxx/client.hpp"
 
 class EnergyEngine : public QObject
 {

@@ -87,9 +87,8 @@ EnergyEngine::EnergyEngine(
         << "********************** Signal Handler implementation *****************************";
 
     // Add signal handler for consumption limit with same name as property on iface
-    qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: "
-                                  << "sDbusService" << sDbusService.c_str() << "; "
-                                  << "sDbusPath1" << sDbusPath1.c_str() << "; "
+    qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: " << "sDbusService" << sDbusService.c_str()
+                                  << "; " << "sDbusPath1" << sDbusPath1.c_str() << "; "
                                   << "sDbusInterface" << sDbusInterface.c_str() << "AnOut_mxVal_f";
 
     // QDBusConnection::systemBus().connect(sDbusService.c_str(), sDbusPath1.c_str(),
@@ -153,11 +152,10 @@ EnergyEngine::EnergyEngine(
 
     // Add signal handler for consumption limit with same name as property on iface for opc-ua
     // client
-    qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: "
-                                  << "sDbusOPCService" << sDbusOPCService.c_str() << "; "
-                                  << "sDbusOPCPath" << sDbusOPCPath.c_str() << "; "
-                                  << "sDbusOPCInterface" << sDbusOPCInterface.c_str()
-                                  << "AnOut_mxVal_f";
+    qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: " << "sDbusOPCService"
+                                  << sDbusOPCService.c_str() << "; " << "sDbusOPCPath"
+                                  << sDbusOPCPath.c_str() << "; " << "sDbusOPCInterface"
+                                  << sDbusOPCInterface.c_str() << "AnOut_mxVal_f";
 
     if (!QDBusConnection::systemBus().connect("", sDbusOPCPath.c_str(), sDbusOPCInterface.c_str(),
             "AnOut_mxVal_f", this, SLOT(onConsumptionLimitChangedOPC(qlonglong)))) {
@@ -843,13 +841,43 @@ void EnergyEngine::onRootMeterChanged()
     evaluateAvailableUseCases();
 }
 
+// void InternalInterfaceJSONRPC::sendLimitOverJSONRPC(int CLS_index, int64_t PLim)
+// {
+//     // TODO: use CLS_index
+//     // TODO: send real duration
+
+//     clientConnector = std::make_unique<CppHttpLibClientConnector>("localhost", 20000);
+//     client = std::make_unique<JsonRpcClient>(*clientConnector, version::v2);
+
+//     int duration_in_seconds = 3600; // Placeholder, set this as required
+
+//     try {
+//         Json::Value params;
+//         params["Identifier"]
+//             = "d:_n:EEBUS_App/2/"; // + std::to_string(CLS_index); // Adding CLS_index if needed
+//         params["power"] = PLim;
+//         params["duration_in_seconds"] = duration_in_seconds;
+
+//         bool success = client->CallMethod<bool>("emobility/setPowerLimit", params);
+//         if (success) {
+//             std::cout << "InternalInterfaceJSONRPC -> Successfully sent values to server."
+//                       << std::endl;
+//         } else {
+//             std::cerr << "InternalInterfaceJSONRPC -> Failed to send values to server."
+//                       << std::endl;
+//         }
+//     } catch (const JsonRpcException& e) {
+//         std::cerr << "InternalInterfaceJSONRPC -> Error sending values: " << e.what() << "\n";
+//     }
+// }
+
 void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit)
 {
     // Echo to debug log, function "onConsumptionLimitChanged" is called
     qDebug() << "##### onConsumptionLimitChanged called with new consumption limit:"
              << consumptionLimit;
-    qCDebug(dcConsolinnoEnergy()) << "onConsumptionLimitChanged called with new consumption limit:"
-                                  << consumptionLimit;
+    qCDebug(dcConsolinnoEnergy())
+        << "##### onConsumptionLimitChanged called with new consumption limit:" << consumptionLimit;
     qCDebug(dcConsolinnoEnergy()) << "Previous consumption limit:" << m_consumptionLimit;
 
     if (m_energyManager->rootMeter()) {
@@ -857,7 +885,8 @@ void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit)
         qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
         // set new consumption limit
         m_consumptionLimit = consumptionLimit;
-        evaluateAndSetMaxChargingCurrent();
+        evaluateAndSetMaxChargingCurrent(consumptionLimit);
+        // sendLimitOverJSONRPC(1, consumptionLimit);
     } else {
         qCDebug(dcConsolinnoEnergy())
             << "onConsumptionLimitChanged called and root meter is not set";
@@ -967,6 +996,15 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         { "B", m_energyManager->rootMeter()->stateValue("currentPowerPhaseB").toDouble() },
         { "C", m_energyManager->rootMeter()->stateValue("currentPowerPhaseC").toDouble() },
     };
+
+    // Log the power values for each phase
+    qCDebug(dcConsolinnoEnergy()) << "Phase A current power:" << allPhasesCurrentPower.value("A")
+                                  << "W";
+    qCDebug(dcConsolinnoEnergy()) << "Phase B current power:" << allPhasesCurrentPower.value("B")
+                                  << "W";
+    qCDebug(dcConsolinnoEnergy()) << "Phase C current power:" << allPhasesCurrentPower.value("C")
+                                  << "W";
+
     bool householdLimitExceeded = false;
     bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit;
@@ -984,15 +1022,24 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     // first check if any of the currents exceed the limit
     foreach (const QString& phase, allPhasesCurrentPower.keys()) {
         if (allPhasesCurrentPower.value(phase) > phasePowerLimit) {
-            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Phase" << phase
-                                         << "exceeding limit:" << allPhasesCurrentPower.value(phase)
-                                         << "W. Maximum allowance:" << phasePowerLimit << "W";
+            // qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Phase" << phase
+            //                              << "exceeding limit:" <<
+            //                              allPhasesCurrentPower.value(phase)
+            //                              << "W. Maximum allowance:" << phasePowerLimit << "W";
+            qCDebug(dcConsolinnoEnergy())
+                << "Phase" << phase << "exceeds limit by" << phaseOvershotPower << "W";
+
             householdLimitExceeded = true;
         }
     }
     if (householdLimitExceeded) {
         limitExceeded = true;
     }
+
+    // Log the maximum phase overshot power
+    qCDebug(dcConsolinnoEnergy()) << "Maximum phase overshot power:" << maxPhaseOvershotPower
+                                  << "W";
+
     // dependent on the limitExceeded value, we either set the maxPhaseOvershotPower or the
     // minPhaseMarginPower
     foreach (const QString& phase, allPhasesCurrentPower.keys()) {
@@ -1013,6 +1060,8 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             // this case is not relevant for maxPhaseOvershotPower and minPhaseMarginPower
         }
     }
+
+    qCDebug(dcConsolinnoEnergy()) << "Minimum phase margin power:" << minPhaseMarginPower << "W";
 
     // Check if the power consumption limit is exceeded in regards to consumption limit
     qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
@@ -1065,8 +1114,11 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     }
 
     qCDebug(dcConsolinnoEnergy())
-        << "Blackout protection and consumption limit: Maximum available power per phase: "
+        << "Blackout protection and consumption limit: Maximum available power per phase:"
         << minPhaseMarginPower << "W";
+    qCDebug(dcConsolinnoEnergy()) << "Limit exceeded:" << limitExceeded;
+    qCDebug(dcConsolinnoEnergy()) << "Maximum phase overshot power after consumption limit check:"
+                                  << maxPhaseOvershotPower << "W";
 
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
     foreach (Thing* thing, m_evChargers) {
