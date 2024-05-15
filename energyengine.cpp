@@ -979,6 +979,12 @@ void EnergyEngine::updateHybridSimulation(Thing* thing)
  */
 void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 {
+    /*
+    Scheinleistung_3Phasen_Dreieck = 400V * Leiterstrom * Wurzel(3)
+    Scheinleistung_3Phasen_Stern = 230V * Phasenstrom * 3
+    Scheinleistung_1Phasen = 230V * Stromstärke
+    */
+
     // We need a root meter, otherwise no optimization or blackout protection can be done.
     if (!m_energyManager->rootMeter())
         return;
@@ -986,7 +992,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     qCDebug(dcConsolinnoEnergy()) << "============> Evaluate system:"
                                   << QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
     qCDebug(dcConsolinnoEnergy())
-        << "CurrentPower at NAP: "
+        << "Current Power at NAP: "
         << m_energyManager->rootMeter()->stateValue("currentPower").toDouble() << "W";
 
     // Blackout protection just in case something is still over the limit
@@ -1007,40 +1013,43 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
     bool householdLimitExceeded = false;
     bool limitExceeded = false;
-    double phasePowerLimit = 230 * m_housholdPhaseLimit;
+    double phasePowerLimit = 230 * m_housholdPhaseLimit; // m_housholdPhaseLimit sind zB 63A
     double maxPhaseOvershotPower = 0;
     double minPhaseMarginPower
         = 230 * m_housholdPhaseLimit; // the minPhaseMarginPower is the minimum available power per
                                       // phase for which it can be increased
-    double absMaxOfMaxChargingCurrent = 0;
-    double absMinOfMaxChargingCurrent = 0;
-    double currentMaxChargingCurrent = 0;
+    double maxAllowedChargingCurrentPhase = 0;
+    double minAllowedChargingCurrentPhase = 0;
+    double actualChargingCurrentLimitPhase = 0;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
-    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit" << m_housholdPhaseLimit
+    qCDebug(dcConsolinnoEnergy()) << "Houshold phase limit:" << m_housholdPhaseLimit
                                   << "[A] =" << phasePowerLimit << "[W] at 230V";
+    qCDebug(dcConsolinnoEnergy()) << "Houshold power limit total:" << phasePowerLimit * 3
+                                  << "[W] at 230V";
 
     // first check if any of the currents exceed the limit
     foreach (const QString& phase, allPhasesCurrentPower.keys()) {
         if (allPhasesCurrentPower.value(phase) > phasePowerLimit) {
-            // qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Phase" << phase
-            //                              << "exceeding limit:" <<
-            //                              allPhasesCurrentPower.value(phase)
-            //                              << "W. Maximum allowance:" << phasePowerLimit << "W";
             double phaseOvershotPower = allPhasesCurrentPower.value(phase) - phasePowerLimit;
             qCDebug(dcConsolinnoEnergy())
-                << "Phase" << phase << "exceeds limit by" << phaseOvershotPower << "W";
+                << "!!! Phase" << phase << "exceeds limit by" << phaseOvershotPower << "W";
 
             householdLimitExceeded = true;
+
+            // Update the maxPhaseOvershotPower
+            if (phaseOvershotPower > maxPhaseOvershotPower) {
+                maxPhaseOvershotPower = phaseOvershotPower;
+            }
         }
     }
     if (householdLimitExceeded) {
         limitExceeded = true;
+        qCDebug(dcConsolinnoEnergy())
+            << "Maximum phase overshot power:" << maxPhaseOvershotPower << "W";
+    } else {
+        qCDebug(dcConsolinnoEnergy()) << "No phase exceeds the limit right now";
     }
-
-    // Log the maximum phase overshot power
-    qCDebug(dcConsolinnoEnergy()) << "Maximum phase overshot power:" << maxPhaseOvershotPower
-                                  << "W";
 
     // dependent on the limitExceeded value, we either set the maxPhaseOvershotPower or the
     // minPhaseMarginPower
@@ -1050,6 +1059,9 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             // take the largest overshot power
             if (phaseOvershotPower > maxPhaseOvershotPower) {
                 maxPhaseOvershotPower = phaseOvershotPower;
+                qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced "
+                                                 "without exceeding the phase limit is:"
+                                              << maxPhaseOvershotPower << "W";
             }
         } else if (allPhasesCurrentPower.value(phase) < phasePowerLimit
             && !householdLimitExceeded) {
@@ -1063,25 +1075,29 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         }
     }
 
-    qCDebug(dcConsolinnoEnergy()) << "Minimum phase margin power:" << minPhaseMarginPower << "W";
+    qCDebug(dcConsolinnoEnergy())
+        << "The minimum phase power that can be increased without exceeding the phase limit is:"
+        << minPhaseMarginPower << "W";
 
     // Check if the power consumption limit is exceeded in regards to consumption limit
     qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
     if (m_consumptionLimit > 0) {
-        qCDebug(dcConsolinnoEnergy()) << "Consumption limit is set to" << m_consumptionLimit << "W";
+        qCDebug(dcConsolinnoEnergy())
+            << "Consumption limit for group of controllable devices is set to" << m_consumptionLimit
+            << "W";
         double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
         bool consumptionLimitExceeded
             = (m_energyManager->rootMeter()->stateValue("currentPower").toDouble()
                 > m_consumptionLimit);
         if (consumptionLimitExceeded) {
             limitExceeded = true;
+            qCInfo(dcConsolinnoEnergy())
+                << "Consumption limit exceeded. Current consumption at NAP is"
+                << m_energyManager->rootMeter()->stateValue("currentPower").toDouble()
+                << "W. Limit is" << m_consumptionLimit << "W";
         }
         foreach (const QString& phase, allPhasesCurrentPower.keys()) {
             if (consumptionLimitExceeded) {
-                qCInfo(dcConsolinnoEnergy())
-                    << "Consumption limit exceeded. Current consumption is"
-                    << m_energyManager->rootMeter()->stateValue("currentPower").toDouble()
-                    << "W. Limit is" << m_consumptionLimit << "W";
                 // OvershotPower for given phase
                 double phaseConsumptionOvershotPower
                     = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
@@ -1089,6 +1105,9 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
                     && phaseConsumptionOvershotPower > 0) {
                     maxPhaseOvershotPower = phaseConsumptionOvershotPower;
+                    qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced "
+                                                     "without exceeding the consumption limit is:"
+                                                  << maxPhaseOvershotPower << "W";
                 }
             } else if (!limitExceeded) {
                 qCDebug(dcConsolinnoEnergy())
@@ -1115,58 +1134,53 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             << "W";
     }
 
-    qCDebug(dcConsolinnoEnergy())
-        << "Blackout protection and consumption limit: Maximum available power per phase:"
-        << minPhaseMarginPower << "W";
-
-    qCDebug(dcConsolinnoEnergy()) << "Limit exceeded:" << limitExceeded;
-    qCDebug(dcConsolinnoEnergy()) << "Maximum phase overshot power after consumption limit check:"
-                                  << maxPhaseOvershotPower << "W";
-
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
     foreach (Thing* thing, m_evChargers) {
         qCDebug(dcConsolinnoEnergy())
             << "Blackout protection: Checking EV charger thing " << thing->name();
-        absMaxOfMaxChargingCurrent = thing->thingClass()
-                                         .stateTypes()
-                                         .findByName("maxChargingCurrent")
-                                         .maxValue()
-                                         .toFloat();
-        absMinOfMaxChargingCurrent = thing->thingClass()
-                                         .stateTypes()
-                                         .findByName("maxChargingCurrent")
-                                         .minValue()
-                                         .toFloat();
-        currentMaxChargingCurrent = thing->state("maxChargingCurrent").maxValue().toFloat();
+        maxAllowedChargingCurrentPhase = thing->thingClass()
+                                             .stateTypes()
+                                             .findByName("maxChargingCurrent")
+                                             .maxValue()
+                                             .toFloat();
+        minAllowedChargingCurrentPhase = thing->thingClass()
+                                             .stateTypes()
+                                             .findByName("maxChargingCurrent")
+                                             .minValue()
+                                             .toFloat();
+        actualChargingCurrentLimitPhase = thing->state("maxChargingCurrent").maxValue().toFloat();
         qCDebug(dcConsolinnoEnergy())
-            << "Blackout protection: Absolute limits: min=" << absMinOfMaxChargingCurrent
-            << "A, max=" << absMaxOfMaxChargingCurrent
-            << "A, Current value :" << currentMaxChargingCurrent << "A";
-        // thing->state("maxChargingCurrent") is meant to be the current limit per phase, so
-        // multiply by 3
+            << "Blackout protection: Absolute limits: min=" << minAllowedChargingCurrentPhase
+            << "A, max=" << maxAllowedChargingCurrentPhase
+            << "A, actual value :" << actualChargingCurrentLimitPhase << "A";
+
         if (limitExceeded) {
             // If the limit is exceeded, we go down sat least maxPhaseOvershotCurrent
             double maxPhaseOvershotCurrent = qRound(maxPhaseOvershotPower / 230);
             qCInfo(dcConsolinnoEnergy())
                 << "Blackout protection: Using at least" << maxPhaseOvershotPower
-                << "W to much. Adjusting the evChargers...";
-            thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
-                std::max(absMinOfMaxChargingCurrent,
-                    currentMaxChargingCurrent - maxPhaseOvershotCurrent - 1));
+                << "W per Phase to much. Adjusting the evChargers...";
+
+            float newMaxChargingCurrentLimit = std::max(minAllowedChargingCurrentPhase,
+                actualChargingCurrentLimitPhase - maxPhaseOvershotCurrent - 1);
+            thing->setStateMaxValue(
+                thing->state("maxChargingCurrent").stateTypeId(), newMaxChargingCurrentLimit);
             qCInfo(dcConsolinnoEnergy())
-                << "Blackout protection: limitExceeded -> Ajdusted limit of charging current down "
+                << "Blackout protection: limitExceeded -> Ajdusted limit of charging current per "
+                   "Phase down "
                    "to"
                 << thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             qCInfo(dcConsolinnoEnergy())
-                << "Blackout protection: limitExceeded -> Ajdusted limit of charging power down "
+                << "Blackout protection: limitExceeded -> Ajdusted limit of charging power total "
+                   "down "
                    "to"
                 << thing->state("maxChargingCurrent").maxValue().toInt() * 3 * 230 << "W";
         } else {
             // Otherwise we can go up again step by step, only if Margin Power larger than 250W
-            if (currentMaxChargingCurrent < absMaxOfMaxChargingCurrent
+            if (actualChargingCurrentLimitPhase < maxAllowedChargingCurrentPhase
                 && minPhaseMarginPower > 250) {
                 thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
-                    std::min(absMaxOfMaxChargingCurrent, currentMaxChargingCurrent + 1));
+                    std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1));
                 qCInfo(dcConsolinnoEnergy())
                     << "Blackout protection: no limitExceeded -> Ajdusted limit of charging "
                        "current up to"
