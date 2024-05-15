@@ -885,7 +885,7 @@ void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit)
         qCDebug(dcConsolinnoEnergy()) << "Using root meter" << m_energyManager->rootMeter();
         // set new consumption limit
         m_consumptionLimit = consumptionLimit;
-        evaluateAndSetMaxChargingCurrent(consumptionLimit);
+        evaluateAndSetMaxChargingCurrent();
         // sendLimitOverJSONRPC(1, consumptionLimit);
     } else {
         qCDebug(dcConsolinnoEnergy())
