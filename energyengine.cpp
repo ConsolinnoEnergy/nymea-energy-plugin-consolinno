@@ -1027,6 +1027,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             //                              << "exceeding limit:" <<
             //                              allPhasesCurrentPower.value(phase)
             //                              << "W. Maximum allowance:" << phasePowerLimit << "W";
+            double phaseOvershotPower = allPhasesCurrentPower.value(phase) - phasePowerLimit;
             qCDebug(dcConsolinnoEnergy())
                 << "Phase" << phase << "exceeds limit by" << phaseOvershotPower << "W";
 
