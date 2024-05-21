@@ -27,6 +27,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     // Types
     registerObject<HeatingConfiguration>();
     registerObject<HeatingRodConfiguration>();
+    registerObject<DynamicElectricPricingConfiguration>();
     registerObject<WashingMachineConfiguration>();
     registerObject<ChargingConfiguration>();
     registerObject<ChargingOptimizationConfiguration>();
@@ -100,6 +101,18 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetHeatingRodConfiguration", description, params, returns);
+   
+    // Dynamic Electric Pricing
+    params.clear(); returns.clear();
+    description = "Get the list of available dynamic electric pricing configurations from the energy engine.";
+    returns.insert("dynamicElectricPricingConfigurations", QVariantList() << objectRef<DynamicElectricPricingConfiguration>());
+    registerMethod("GetDynamicElectricPricingConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a dynamic electric pricing configuration to the given dynamic electric pricing configuration. The dynamic electric pricing thing ID will be used as an identifier.";
+    params.insert("dynamicElectricPricingConfiguration", objectRef<DynamicElectricPricingConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetDynamicElectricPricingConfiguration", description, params, returns);
 
     // Washing machine
     params.clear(); returns.clear();
@@ -249,6 +262,22 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     description = "Emitted whenever a heating rod configuration has changed in the energy engine.";
     params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
     registerNotification("HeatingRodConfigurationChanged", description, params);
+
+    // Dynamic Electric Pricing
+    params.clear();
+    description = "Emitted whenever a new dynamic electric pricing configuration has been added to the energy engine.";
+    params.insert("dynamicElectricPricingConfiguration", objectRef<DynamicElectricPricingConfiguration>());
+    registerNotification("DynamicElectricPricingConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a dynamic electric pricing configuration has been removed from the energy engine with the given dynamic electric pricing thing ID.";
+    params.insert("dynamicElectricPricingThingId", enumValueName(Uuid));
+    registerNotification("DynamicElectricPricingConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a dynamic electric pricing configuration has changed in the energy engine.";
+    params.insert("dynamicElectricPricingConfiguration", objectRef<DynamicElectricPricingConfiguration>());
+    registerNotification("DynamicElectricPricingConfigurationChanged", description, params);
 
     // Washing machine
     params.clear();
@@ -450,6 +479,25 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
         QVariantMap params;
         params.insert("heatingRodConfiguration", pack(heatingRodConfiguration));
         emit HeatingRodConfigurationChanged(params);
+    });
+
+    // Dynamic Electric Pricing
+    connect(m_energyEngine, &EnergyEngine::dynamicElectricPricingConfigurationAdded, this, [=](const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration){
+        QVariantMap params;
+        params.insert("dynamicElectricPricingConfiguration", pack(dynamicElectricPricingConfiguration));
+        emit DynamicElectricPricingConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::dynamicElectricPricingConfigurationRemoved, this, [=](const ThingId &dynamicElectricPricingThingId){
+        QVariantMap params;
+        params.insert("dynamicElectricPricingThingId", dynamicElectricPricingThingId);
+        emit DynamicElectricPricingConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::dynamicElectricPricingConfigurationChanged, this, [=](const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration){
+        QVariantMap params;
+        params.insert("dynamicElectricPricingConfiguration", pack(dynamicElectricPricingConfiguration));
+        emit DynamicElectricPricingConfigurationChanged(params);
     });
 
     // Washing machine
@@ -718,6 +766,27 @@ JsonReply *ConsolinnoJsonHandler::GetHeatingRodConfigurations(const QVariantMap 
 JsonReply *ConsolinnoJsonHandler::SetHeatingRodConfiguration(const QVariantMap &params)
 {
     EnergyEngine::HemsError error = m_energyEngine->setHeatingRodConfiguration(unpack<HeatingRodConfiguration>(params.value("heatingRodConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
+// Dynamic Electric Pricing
+JsonReply *ConsolinnoJsonHandler::GetDynamicElectricPricingConfigurations(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const DynamicElectricPricingConfiguration &dynamicElectricPricingConfig, m_energyEngine->dynamicElectricPricingConfigurations()) {
+        configurations << pack(dynamicElectricPricingConfig);
+    }
+    returns.insert("dynamicElectricPricingConfigurations", configurations);
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetDynamicElectricPricingConfiguration(const QVariantMap &params)
+{
+    EnergyEngine::HemsError error = m_energyEngine->setDynamicElectricPricingConfiguration(unpack<DynamicElectricPricingConfiguration>(params.value("dynamicElectricPricingConfiguration").toMap()));
     QVariantMap returns;
     returns.insert("hemsError", enumValueName(error));
     return createReply(returns);

@@ -178,6 +178,29 @@ EnergyEngine::HemsError EnergyEngine::setHeatingRodConfiguration(const HeatingRo
     return HemsErrorNoError;
 }
 
+QList<DynamicElectricPricingConfiguration> EnergyEngine::dynamicElectricPricingConfigurations() const
+{
+    return m_dynamicElectricPricingConfigurations.values();
+}
+
+EnergyEngine::HemsError EnergyEngine::setDynamicElectricPricingConfiguration(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Set dynamic electric pricing configuration called" << dynamicElectricPricingConfiguration;
+    if (!m_dynamicElectricPricingConfigurations.contains(dynamicElectricPricingConfiguration.dynamicElectricPricingThingId())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set dynamic electric pricing configuration. The given dynamic electric pricing thing ID does not exist." << dynamicElectricPricingConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+    if (m_dynamicElectricPricingConfigurations.value(dynamicElectricPricingConfiguration.dynamicElectricPricingThingId()) != dynamicElectricPricingConfiguration) {
+        m_dynamicElectricPricingConfigurations[dynamicElectricPricingConfiguration.dynamicElectricPricingThingId()] = dynamicElectricPricingConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Dynamic electric pricing configuration changed" << dynamicElectricPricingConfiguration;
+        saveDynamicElectricPricingConfigurationToSettings(dynamicElectricPricingConfiguration);
+        emit dynamicElectricPricingConfigurationChanged(dynamicElectricPricingConfiguration);
+    }
+
+    return HemsErrorNoError;
+}
+
 QList<WashingMachineConfiguration> EnergyEngine::washingMachineConfigurations() const
 {
     return m_washingMachineConfigurations.values();
@@ -422,6 +445,14 @@ void EnergyEngine::monitorHeatingRod(Thing *thing)
     loadHeatingRodConfiguration(thing->id());
 }
 
+void EnergyEngine::monitorDynamicElectricPricing(Thing *thing)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring dynamic electric pricing" << thing;
+    m_dynamicElectricPricings.insert(thing->id(), thing);
+    evaluateAvailableUseCases();
+    loadDynamicElectricPricingConfiguration(thing->id());
+}
+
 void EnergyEngine::monitorWashingMachine(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring washing machine" << thing;
@@ -491,6 +522,10 @@ void EnergyEngine::onThingAdded(Thing *thing)
 
     if (thing->thingClass().interfaces().contains("smartheatingrod")) {
         monitorHeatingRod(thing);
+    }
+
+    if (thing->thingClass().interfaces().contains("dynamicelectricpricing")) {
+        monitorDymanicElectricPricing(thing);
     }
 
     if (thing->thingClass().interfaces().contains("smartwashingmachine")) {
@@ -587,6 +622,19 @@ void EnergyEngine::onThingRemoved(const ThingId &thingId)
             removeHeatingRodConfigurationFromSettings(thingId);
             emit heatingRodConfigurationRemoved(thingId);
             qCDebug(dcConsolinnoEnergy()) << "Removed heating rod configuration" << heatingRodConfig;
+        }
+    }
+
+    // Dynamic Electric Pricing
+    if (m_dynamicElectricPricings.contains(thingId)) {
+        m_dynamicElectricPricings.remove(thingId);
+        qCDebug(dcConsolinnoEnergy()) << "Removed dynamic electric pricing from energy manager" << thingId.toString();
+
+        if (m_dynamicElectricPricingConfigurations.contains(thingId)) {
+            DynamicElectricPricingConfiguration dynamicElectricPricingConfig = m_dynamicElectricPricingConfigurations.take(thingId);
+            removeDynamicElectricPricingConfigurationFromSettings(thingId);
+            emit dynamicElectricPricingConfigurationRemoved(thingId);
+            qCDebug(dcConsolinnoEnergy()) << "Removed dynamic electric pricing configuration" << dynamicElectricPricingConfig;
         }
     }
 
@@ -836,6 +884,12 @@ void EnergyEngine::evaluateAvailableUseCases()
         // We need at least a root meter and and inverter for having the heating rod use case
         availableUseCases = availableUseCases.setFlag(HemsUseCaseHeatingRod);
     }
+
+    // Dynamic electric pricing
+    if (m_energyManager->rootMeter() && !m_dynamicElectricPricings.isEmpty()) {
+        // We need at least a root meter for having the dynamic electric pricing use case
+        availableUseCases = availableUseCases.setFlag(HemsUseCaseDynamicEPricing);
+    }
     
     // Washing machine
     if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_washingMachines.isEmpty()) {
@@ -991,6 +1045,56 @@ void EnergyEngine::removeHeatingRodConfigurationFromSettings(const ThingId &heat
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("HeatingRodConfigurations");
     settings.beginGroup(heatingRodThingId.toString());
+    settings.remove("");
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::loadDynamicElectricPricingConfiguration(const ThingId &dynamicElectricPricingThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("DynamicElectricPricingConfigurations");
+    if (settings.childGroups().contains(dynamicElectricPricingThingId.toString())) {
+        settings.beginGroup(dynamicElectricPricingThingId.toString());
+
+        DynamicElectricPricingConfiguration configuration;
+        configuration.setDynamicElectricPricingThingId(dynamicElectricPricingThingId);
+        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        configuration.setMaxElectricalPower(settings.value("maxElectricalPower").toDouble());
+        settings.endGroup(); // ThingId
+
+        m_dynamicElectricPricingConfigurations.insert(dynamicElectricPricingThingId, configuration);
+        emit dynamicElectricPricingConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // Dynamic Electric Pricing usecase is available and this heat pump has no configuration yet, lets add one
+        DynamicElectricPricingConfiguration configuration;
+        configuration.setDynamicElectricPricingThingId(dynamicElectricPricingThingId);
+        m_dynamicElectricPricingConfigurations.insert(dynamicElectricPricingThingId, configuration);
+        emit dynamicElectricPricingConfigurationAdded(configuration);
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveDynamicElectricPricingConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // DynamicElectricPricingConfigurations
+}
+
+void EnergyEngine::saveDynamicElectricPricingConfigurationToSettings(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("DynamicElectricPricingConfigurations");
+    settings.beginGroup(dynamicElectricPricingConfiguration.dynamicElectricPricingThingId().toString());
+    settings.setValue("optimizationEnabled", dynamicElectricPricingConfiguration.optimizationEnabled());
+    settings.setValue("maxElectricalPower", dynamicElectricPricingConfiguration.maxElectricalPower());
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::removeDynamicElectricPricingConfigurationFromSettings(const ThingId &dynamicElectricPricingThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("DynamicElectricPricingConfigurations");
+    settings.beginGroup(dynamicElectricPricingThingId.toString());
     settings.remove("");
     settings.endGroup();
     settings.endGroup();
