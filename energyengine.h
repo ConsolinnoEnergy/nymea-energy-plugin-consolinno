@@ -19,6 +19,7 @@
 #include "configurations/chargingsessionconfiguration.h"
 #include "configurations/heatingconfiguration.h"
 #include "configurations/heatingrodconfiguration.h"
+#include "configurations/dynamicelectricpricingconfiguration.h"
 #include "configurations/washingmachineconfiguration.h"
 #include "configurations/pvconfiguration.h"
 #include "configurations/conemsstate.h"
@@ -46,7 +47,8 @@ public:
         HemsUseCasePv = 8,
         HemsUseCaseBattery = 16,
         HemsUseCaseHeatingRod = 32,
-        HemsUseCaseWashingMachine = 64
+        HemsUseCaseDynamicEPricing = 64,
+        HemsUseCaseWashingMachine = 128
     };
     Q_ENUM(HemsUseCase)
 
@@ -79,7 +81,11 @@ public:
     // Heating rod configurations
     QList<HeatingRodConfiguration> heatingRodConfigurations() const;
     EnergyEngine::HemsError setHeatingRodConfiguration(const HeatingRodConfiguration &heatingRodConfiguration);
-    
+
+    // Dynamic Electric Pricing configurations
+    QList<DynamicElectricPricingConfiguration> dynamicElectricPricingConfigurations() const;
+    EnergyEngine::HemsError setDynamicElectricPricingConfiguration(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration);
+   
     // Washing machine configurations
     QList<WashingMachineConfiguration> washingMachineConfigurations() const;
     EnergyEngine::HemsError setWashingMachineConfiguration(const WashingMachineConfiguration &washingMachineConfiguration);
@@ -127,6 +133,10 @@ signals:
     void heatingRodConfigurationChanged(const HeatingRodConfiguration &heatingRodConfiguration);
     void heatingRodConfigurationRemoved(const ThingId &heatingRodThingId);
 
+    void dynamicElectricPricingConfigurationAdded(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration);
+    void dynamicElectricPricingConfigurationChanged(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration);
+    void dynamicElectricPricingConfigurationRemoved(const ThingId &dynamicElectricPricingThingId);
+
     void washingMachineConfigurationAdded(const WashingMachineConfiguration &washingMachineConfiguration);
     void washingMachineConfigurationChanged(const WashingMachineConfiguration &washingMachineConfiguration);
     void washingMachineConfigurationRemoved(const ThingId &washingMachineThingId);
@@ -167,6 +177,7 @@ private:
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
     QHash<ThingId, HeatingRodConfiguration> m_heatingRodConfigurations;
+    QHash<ThingId, DynamicElectricPricingConfiguration> m_dynamicElectricPricingConfigurations;
     QHash<ThingId, WashingMachineConfiguration> m_washingMachineConfigurations;
     QHash<ThingId, ChargingOptimizationConfiguration> m_chargingOptimizationConfigurations;
     QHash<ThingId, ChargingConfiguration> m_chargingConfigurations;
@@ -179,6 +190,7 @@ private:
     QHash<ThingId, Thing *> m_inverters;
     QHash<ThingId, Thing *> m_heatPumps;
     QHash<ThingId, Thing *> m_heatingRods;
+    QHash<ThingId, Thing *> m_dynamicElectricPricings;
     QHash<ThingId, Thing *> m_washingMachines;
     QHash<ThingId, Thing *> m_evChargers;
     QHash<ThingId, Thing *> m_batteries;
@@ -190,6 +202,7 @@ private:
 
     void monitorHeatPump(Thing *thing);
     void monitorHeatingRod(Thing *thing);    
+    void monitorDynamicElectricPricing(Thing *thing);
     void monitorWashingMachine(Thing *thing);
     void monitorInverter(Thing *thing);
     void monitorBattery(Thing *thing);
@@ -221,6 +234,10 @@ private slots:
     void loadHeatingRodConfiguration(const ThingId &heatingRodThingId);
     void saveHeatingRodConfigurationToSettings(const HeatingRodConfiguration &heatingRodConfiguration);
     void removeHeatingRodConfigurationFromSettings(const ThingId &heatingRodThingId);
+
+    void loadDynamicElectricPricingConfiguration(const ThingId &dynamicElectricPricingThingId);
+    void saveDynamicElectricPricingConfigurationToSettings(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration);
+    void removeDynamicElectricPricingConfigurationFromSettings(const ThingId &dynamicElectricPricingThingId);
 
     void loadWashingMachineConfiguration(const ThingId &washingMachineThingId);
     void saveWashingMachineConfigurationToSettings(const WashingMachineConfiguration &washingMachineConfiguration);
