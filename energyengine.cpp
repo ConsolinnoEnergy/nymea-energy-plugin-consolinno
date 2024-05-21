@@ -524,8 +524,8 @@ void EnergyEngine::onThingAdded(Thing *thing)
         monitorHeatingRod(thing);
     }
 
-    if (thing->thingClass().interfaces().contains("dynamicelectricpricing")) {
-        monitorDymanicElectricPricing(thing);
+    if (thing->thingClass().interfaces().contains("dynamicEpricing")) {
+        monitorDynamicElectricPricing(thing);
     }
 
     if (thing->thingClass().interfaces().contains("smartwashingmachine")) {
