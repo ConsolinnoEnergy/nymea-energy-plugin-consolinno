@@ -1186,8 +1186,9 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
                     std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1));
 
-                qCInfo(dcConsolinnoEnergy()) << "thing->state(maxChargingCurrent).stateTypeId() "
-                                             << thing->state("maxChargingCurrent").stateTypeId();
+                float newMaxChargingCurrentLimit
+                    = std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1);
+                thing->state("maxChargingCurrent").setValue(newMaxChargingCurrentLimit);
 
                 qCInfo(dcConsolinnoEnergy())
                     << "Blackout protection: no limitExceeded -> Ajdusted limit of charging "
