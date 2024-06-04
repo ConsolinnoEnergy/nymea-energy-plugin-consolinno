@@ -1190,11 +1190,13 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                     = std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1);
                 // thing->state("maxChargingCurrent").setValue(newMaxChargingCurrentLimit); //
                 // setValue is private, so i need "executeAction"
+
                 // QVariantMap params;
                 // params["maxChargingCurrent"] = newMaxChargingCurrentLimit;
                 // thing->executeAction("setChargingCurrent", params);
+                // executeAction is not available, so i need the API from the thingManager
 
-                m_energyManager->thingManager()->setThingState(thing,
+                m_thingManager->setThingState(thing,
                     thing->state("maxChargingCurrent").stateTypeId(), newMaxChargingCurrentLimit);
 
                 qCInfo(dcConsolinnoEnergy())
