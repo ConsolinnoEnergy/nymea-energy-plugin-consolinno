@@ -1144,7 +1144,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                              .findByName("maxChargingCurrent")
                                              .minValue()
                                              .toFloat();
-        actualChargingCurrentLimitPhase = thing->state("maxChargingCurrent").stateTypeId().toFloat();
+        actualChargingCurrentLimitPhase = thing->state("maxChargingCurrent").stateTypeId();
         qCDebug(dcConsolinnoEnergy())
             << "Blackout protection: Absolute limits: min=" << minAllowedChargingCurrentPhase
             << "A, max=" << maxAllowedChargingCurrentPhase
