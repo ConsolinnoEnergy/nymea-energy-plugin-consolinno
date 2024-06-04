@@ -1021,7 +1021,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                       // phase for which it can be increased
     double maxAllowedChargingCurrentPhase = 0;
     double minAllowedChargingCurrentPhase = 0;
-    double actualChargingCurrentLimitPhase = 0;
+    float actualChargingCurrentLimitPhase = 0;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
