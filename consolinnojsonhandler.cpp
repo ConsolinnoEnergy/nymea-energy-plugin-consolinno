@@ -495,7 +495,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     connect(m_energyEngine, &EnergyEngine::pvConfigurationAdded, this, [=](const PvConfiguration &pvConfiguration){
 
         QVariantMap params;
-       params.insert("pvConfiguration", pack(pvConfiguration));
+        params.insert("pvConfiguration", pack(pvConfiguration));
         emit PvConfigurationAdded(params);
     });
 

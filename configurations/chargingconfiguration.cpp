@@ -80,6 +80,14 @@ bool ChargingConfiguration::isValid() const {
   return !m_evChargerThingId.isNull() && !m_carThingId.isNull();
 }
 
+bool ChargingConfiguration::controllableLocalSystem() const {
+    return m_controllableLocalSystem;
+}
+
+void ChargingConfiguration::setControllableLocalSystem(bool controllableLocalSystem) {
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 bool ChargingConfiguration::operator==(
     const ChargingConfiguration &other) const {
   return m_evChargerThingId == other.evChargerThingId() &&

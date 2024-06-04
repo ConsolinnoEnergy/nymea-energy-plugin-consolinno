@@ -25,6 +25,7 @@ class HeatingConfiguration
     Q_PROPERTY(HouseType houseType READ houseType WRITE setHouseType USER true)
     Q_PROPERTY(double floorHeatingArea READ floorHeatingArea WRITE setFloorHeatingArea USER true)
     Q_PROPERTY(QUuid heatMeterThingId READ heatMeterThingId WRITE setHeatMeterThingId USER true)
+    Q_PROPERTY(bool controllableLocalSystem READ controllableLocalSystem WRITE setControllableLocalSystem USER true)
 
 public:
     HeatingConfiguration();
@@ -69,6 +70,9 @@ public:
 
     bool isValid() const;
 
+    bool controllableLocalSystem() const;
+    void setControllableLocalSystem(bool controllableLocalSystem);
+
     bool operator==(const HeatingConfiguration &other) const;
     bool operator!=(const HeatingConfiguration &other) const;
 
@@ -80,6 +84,7 @@ private:
     HouseType m_houseType = HouseTypeSince1984;
     double m_floorHeatingArea = 100;
     ThingId m_heatMeterThingId;
+    bool m_controllableLocalSystem = false;
 };
 
 QDebug operator<<(QDebug debug, const HeatingConfiguration &heatingConfig);

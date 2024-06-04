@@ -45,6 +45,16 @@ bool HeatingRodConfiguration::isValid() const
     return !m_heatingRodThingId.isNull() && m_maxElectricalPower != 0;
 }
 
+bool HeatingRodConfiguration::controllableLocalSystem() const
+{
+    return m_controllableLocalSystem;
+}
+
+void HeatingRodConfiguration::setControllableLocalSystem(bool controllableLocalSystem)
+{
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 bool HeatingRodConfiguration::operator==(const HeatingRodConfiguration &other) const
 {
     return m_heatMeterThingId == other.heatingRodThingId() &&
