@@ -1165,9 +1165,18 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
             float newMaxChargingCurrentLimit = std::max(minAllowedChargingCurrentPhase,
                 actualChargingCurrentLimitPhase - maxPhaseOvershotCurrent - 1);
-            thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
-                newMaxChargingCurrentLimit); // hier wird nur der max Value gesetzt, nicht der
-                                             // maxChargingCurrent
+
+            // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
+            //     newMaxChargingCurrentLimit); // hier wird nur der max Value gesetzt, nicht der
+            //                                  // maxChargingCurrent
+
+            Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
+            ParamList params;
+            params.append(Param(
+                ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), newMaxChargingCurrentLimit));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
             qCInfo(dcConsolinnoEnergy())
                 << "Blackout protection: limitExceeded -> Ajdusted limit of charging current per "
                    "Phase down "
@@ -1183,24 +1192,14 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             if (actualChargingCurrentLimitPhase < maxAllowedChargingCurrentPhase
                 && minPhaseMarginPower > 250) {
                 qCDebug(dcConsolinnoEnergy()) << "Blackout protection: lets go up again!";
-                thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
-                    std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1));
+                // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
+                //     std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase +
+                //     1));
 
                 float newMaxChargingCurrentLimit
                     = std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1);
                 // thing->state("maxChargingCurrent").setValue(newMaxChargingCurrentLimit); //
                 // setValue is private, so i need "executeAction"
-
-                // QVariantMap params;
-                // params["maxChargingCurrent"] = newMaxChargingCurrentLimit;
-                // thing->executeAction("setChargingCurrent", params);
-                // executeAction is not available, so i need the API from the thingManager
-
-                // Action action;
-                // action.setThingId(thing->id());
-                // action.setActionTypeId("setMaxChargingCurrent");
-                // action.setParams({ { "maxChargingCurrent", newMaxChargingCurrentLimit } });
-                // m_thingManager->executeAction(action);
 
                 // Using executeAction to set the new value
                 Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
