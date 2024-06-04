@@ -1202,9 +1202,11 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 // action.setParams({ { "maxChargingCurrent", newMaxChargingCurrentLimit } });
                 // m_thingManager->executeAction(action);
 
+                // Using executeAction to set the new value
                 Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
                 ParamList params;
-                params.append(Param("maxChargingCurrent", newMaxChargingCurrentLimit));
+                params.append(Param(ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"),
+                    newMaxChargingCurrentLimit));
                 action.setParams(params);
                 m_thingManager->executeAction(action);
 
