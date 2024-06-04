@@ -43,7 +43,7 @@ public:
 private:
     ThingId m_heatingRodThingId;
     bool m_optimizationEnabled = false;
-    double m_maxElectricalPower = 9;
+    double m_maxElectricalPower = 3;
     ThingId m_heatMeterThingId;
 };
 
