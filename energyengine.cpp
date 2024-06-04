@@ -1196,8 +1196,17 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 // thing->executeAction("setChargingCurrent", params);
                 // executeAction is not available, so i need the API from the thingManager
 
-                m_thingManager->setThingState(thing,
-                    thing->state("maxChargingCurrent").stateTypeId(), newMaxChargingCurrentLimit);
+                // Action action;
+                // action.setThingId(thing->id());
+                // action.setActionTypeId("setMaxChargingCurrent");
+                // action.setParams({ { "maxChargingCurrent", newMaxChargingCurrentLimit } });
+                // m_thingManager->executeAction(action);
+
+                Action action;
+                action.setThingId(thing->id());
+                action.setActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e");
+                action.setParams({ { "maxChargingCurrent", newMaxChargingCurrentLimit } });
+                m_thingManager->executeAction(action);
 
                 qCInfo(dcConsolinnoEnergy())
                     << "Blackout protection: no limitExceeded -> Ajdusted limit of charging "
