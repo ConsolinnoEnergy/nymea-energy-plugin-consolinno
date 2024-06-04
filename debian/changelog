@@ -1,3 +1,9 @@
+nymea-energy-plugin-consolinno (1.7.1) buster focal jammy; urgency=medium
+
+* Working on BlackoutProtection to handle PLim
+
+ -- Tim Fischer <t.fischer@consolinno.de> Tue, 4 Jun 2024 10:30:53 +0200
+
 nymea-energy-plugin-consolinno (1.7.001-1) buster focal jammy; urgency=medium
 
 * Adapt to new versioning schema
