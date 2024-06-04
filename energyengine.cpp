@@ -1144,48 +1144,15 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                              .findByName("maxChargingCurrent")
                                              .minValue()
                                              .toFloat();
-        actualChargingCurrentLimitPhase = thing->state("maxChargingCurrent").maxValue().toFloat();
+        actualChargingCurrentLimitPhase = thing->state("maxChargingCurrent").value().toFloat();
 
-        qCDebug(dcConsolinnoEnergy()) << "actual 1: " << thing->state("maxChargingCurrent").value().toFloat();
+        // qCDebug(dcConsolinnoEnergy())
+        //     << "actual 1: " << thing->state("maxChargingCurrent").value().toFloat();
 
         qCDebug(dcConsolinnoEnergy())
             << "Blackout protection: Absolute limits: min=" << minAllowedChargingCurrentPhase
             << "A, max=" << maxAllowedChargingCurrentPhase
             << "A, actual value :" << actualChargingCurrentLimitPhase << "A";
-
-        // debug stateTypes:
-        qCDebug(dcConsolinnoEnergy()) << "stateTypes defaultValue: "
-                                      << thing->thingClass()
-                                             .stateTypes()
-                                             .findByName("maxChargingCurrent")
-                                             .defaultValue()
-                                             .toFloat();
-
-        auto possibleValues
-            = thing->thingClass().stateTypes().findByName("maxChargingCurrent").possibleValues();
-        qCDebug(dcConsolinnoEnergy()) << "stateTypes possibleValues: " << possibleValues[1];
-
-        // debug state:
-        qCDebug(dcConsolinnoEnergy())
-            << "max " << thing->state("maxChargingCurrent").maxValue().toFloat();
-        qCDebug(dcConsolinnoEnergy())
-            << "min " << thing->state("maxChargingCurrent").minValue().toFloat();
-
-        qCDebug(dcConsolinnoEnergy()) << "value" << thing->state("maxChargingCurrent").value();
-
-        qCDebug(dcConsolinnoEnergy()) << "action paramTypes max: "
-                                      << thing->thingClass()
-                                             .paramTypes()
-                                             .findByName("maxChargingCurrent")
-                                             .maxValue()
-                                             .toFloat();
-
-        qCDebug(dcConsolinnoEnergy()) << "action paramTypes min: "
-                                      << thing->thingClass()
-                                             .paramTypes()
-                                             .findByName("maxChargingCurrent")
-                                             .minValue()
-                                             .toFloat();
 
         if (limitExceeded) {
             // If the limit is exceeded, we go down sat least maxPhaseOvershotCurrent

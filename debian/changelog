@@ -1,4 +1,4 @@
-nymea-energy-plugin-consolinno (1.7.1) buster focal jammy; urgency=medium
+nymea-energy-plugin-consolinno (1.7.2) buster focal jammy; urgency=medium
 
 * Working on BlackoutProtection to handle PLim
 
