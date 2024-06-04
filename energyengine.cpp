@@ -1160,9 +1160,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                              .findByName("maxChargingCurrent")
                                              .defaultValue()
                                              .toFloat();
-        qCDebug(dcConsolinnoEnergy())
-            << "stateTypes index: "
-            << thing->thingClass().stateTypes().findByName("maxChargingCurrent").index().toInt();
 
         auto possibleValues
             = thing->thingClass().stateTypes().findByName("maxChargingCurrent").possibleValues();
