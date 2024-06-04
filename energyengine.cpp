@@ -1202,10 +1202,10 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 // action.setParams({ { "maxChargingCurrent", newMaxChargingCurrentLimit } });
                 // m_thingManager->executeAction(action);
 
-                Action action;
-                action.setThingId(thing->id());
-                action.setActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e");
-                action.setParams({ { "maxChargingCurrent", newMaxChargingCurrentLimit } });
+                Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
+                ParamList params;
+                params.append(Param("maxChargingCurrent", newMaxChargingCurrentLimit));
+                action.setParams(params);
                 m_thingManager->executeAction(action);
 
                 qCInfo(dcConsolinnoEnergy())
