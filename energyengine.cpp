@@ -1188,11 +1188,15 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
                 float newMaxChargingCurrentLimit
                     = std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1);
-                // thing->state("maxChargingCurrent").setValue(newMaxChargingCurrentLimit); // setValue is private, so i need "executeAction"
-                QVariantMap params;
-                params["maxChargingCurrent"] = newMaxChargingCurrentLimit;
-                thing->executeAction("setChargingCurrent", params);
-                
+                // thing->state("maxChargingCurrent").setValue(newMaxChargingCurrentLimit); //
+                // setValue is private, so i need "executeAction"
+                // QVariantMap params;
+                // params["maxChargingCurrent"] = newMaxChargingCurrentLimit;
+                // thing->executeAction("setChargingCurrent", params);
+
+                m_energyManager->thingManager()->setThingState(thing,
+                    thing->state("maxChargingCurrent").stateTypeId(), newMaxChargingCurrentLimit);
+
                 qCInfo(dcConsolinnoEnergy())
                     << "Blackout protection: no limitExceeded -> Ajdusted limit of charging "
                        "current up to"
