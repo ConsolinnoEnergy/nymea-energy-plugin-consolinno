@@ -1021,7 +1021,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                       // phase for which it can be increased
     double maxAllowedChargingCurrentPhase = 0;
     double minAllowedChargingCurrentPhase = 0;
-    float actualChargingCurrentLimitPhase = 0;
+    double actualChargingCurrentLimitPhase = 0;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
@@ -1144,11 +1144,37 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                              .findByName("maxChargingCurrent")
                                              .minValue()
                                              .toFloat();
-        actualChargingCurrentLimitPhase = thing->state("maxChargingCurrent").stateTypeId();
+        actualChargingCurrentLimitPhase = thing->state("maxChargingCurrent").maxValue().toFloat();
+
         qCDebug(dcConsolinnoEnergy())
             << "Blackout protection: Absolute limits: min=" << minAllowedChargingCurrentPhase
             << "A, max=" << maxAllowedChargingCurrentPhase
             << "A, actual value :" << actualChargingCurrentLimitPhase << "A";
+
+        qCDebug(dcConsolinnoEnergy())
+            << "max " << thing->state("maxChargingCurrent").maxValue().toFloat();
+        qCDebug(dcConsolinnoEnergy())
+            << "min " << thing->state("maxChargingCurrent").minValue().toFloat();
+        qCDebug(dcConsolinnoEnergy())
+            << "default " << thing->state("maxChargingCurrent").defaultValue().toFloat();
+        qCDebug(dcConsolinnoEnergy())
+            << "index" << thing->state("maxChargingCurrent").index().toFloat();
+        qCDebug(dcConsolinnoEnergy())
+            << "value" << thing->state("maxChargingCurrent").value();
+
+        qCDebug(dcConsolinnoEnergy()) << "action max: "
+                                      << thing->thingClass()
+                                             .actionTypes()
+                                             .findByName("maxChargingCurrent")
+                                             .maxValue()
+                                             .toFloat();
+
+        qCDebug(dcConsolinnoEnergy()) << "action min: "
+                                      << thing->thingClass()
+                                             .actionTypes()
+                                             .findByName("maxChargingCurrent")
+                                             .minValue()
+                                             .toFloat();
 
         if (limitExceeded) {
             // If the limit is exceeded, we go down sat least maxPhaseOvershotCurrent
