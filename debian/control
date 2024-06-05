@@ -67,7 +67,7 @@ Depends: ${shlibs:Depends},
          authentication-button,
          statusledcontroller,
 Description: Consolinno Home Energy Management System
- Meta package for leaflet specific packges
+ Meta package for leaflet specific packages
 
 
 Package: consolinno-hems-plugins
@@ -77,13 +77,17 @@ Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          consolinno-hems-base,
+         nymea-plugin-abb,
+         nymea-plugin-alfen,
          nymea-plugin-alphainnotec,
          nymea-plugin-amperfied,
          nymea-plugin-azzurro,
          nymea-plugin-bgetech,
          nymea-plugin-bgetech-inverter,
          nymea-plugin-delta,
+         nymea-plugin-dvmodbusir,
          nymea-plugin-e3dc,
+         nymea-plugin-fenecon,
          nymea-plugin-fronius,
          nymea-plugin-generic-car,
          nymea-plugin-generic-consolinno,
@@ -97,6 +101,7 @@ Depends: ${shlibs:Depends},
          nymea-plugin-kostalpiko,
          nymea-plugin-keba,
          nymea-plugin-mennekes,
+         nymea-plugin-sax,
          nymea-plugin-schneider,
          nymea-plugin-schneider-iem,
          nymea-plugin-sgready,
@@ -112,6 +117,7 @@ Depends: ${shlibs:Depends},
          nymea-plugin-webasto,
          nymea-zeroconf-plugin-avahi,
          nymea-system-plugin-systemd,
+
 Description: Consolinno Home Energy Management System
  plugins
  
