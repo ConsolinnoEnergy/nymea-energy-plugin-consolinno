@@ -1197,7 +1197,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 //     1));
 
                 float newMaxChargingCurrentLimit
-                    = std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1);
+                    = std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 2);
 
                 // Using executeAction to set the new value
                 Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
