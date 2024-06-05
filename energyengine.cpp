@@ -1198,8 +1198,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
                 float newMaxChargingCurrentLimit
                     = std::min(maxAllowedChargingCurrentPhase, actualChargingCurrentLimitPhase + 1);
-                // thing->state("maxChargingCurrent").setValue(newMaxChargingCurrentLimit); //
-                // setValue is private, so i need "executeAction"
 
                 // Using executeAction to set the new value
                 Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
@@ -1220,6 +1218,21 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                     << " minPhaseMarginPower: " << minPhaseMarginPower;
             }
         }
+    }
+
+    // Adding the logic for the heat pumps
+    foreach (Thing* thing, m_heatPumps) {
+        qCDebug(dcConsolinnoEnergy())
+            << "Blackout protection: Turning off heat pump with name: " << thing->name()
+            << " and id: " << thing->id();
+
+        Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+        ParamList params;
+        params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Off"));
+        action.setParams(params);
+        m_thingManager->executeAction(action);
+
+        qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Heat pump turned off.";
     }
 }
 
