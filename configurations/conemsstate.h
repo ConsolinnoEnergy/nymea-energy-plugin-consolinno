@@ -38,7 +38,7 @@ public:
 
 private:
     QJsonObject m_currentState = QJsonObject() ;
-    long m_timestamp = 0;
+    uint64_t m_timestamp = 0;
 
 
 
