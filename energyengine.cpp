@@ -1222,7 +1222,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
     // Adding the logic for the heat pumps
     foreach (Thing* thing, m_heatPumps) {
-        if (limitExceeded) {
+        if (m_consumptionLimit > 0) {
 
             qCDebug(dcConsolinnoEnergy())
                 << "Blackout protection: Turning off heat pump with name: " << thing->name()
