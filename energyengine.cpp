@@ -1222,17 +1222,32 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
     // Adding the logic for the heat pumps
     foreach (Thing* thing, m_heatPumps) {
-        qCDebug(dcConsolinnoEnergy())
-            << "Blackout protection: Turning off heat pump with name: " << thing->name()
-            << " and id: " << thing->id();
+        if (limitExceeded) {
 
-        Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
-        ParamList params;
-        params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Off"));
-        action.setParams(params);
-        m_thingManager->executeAction(action);
+            qCDebug(dcConsolinnoEnergy())
+                << "Blackout protection: Turning off heat pump with name: " << thing->name()
+                << " and id: " << thing->id();
 
-        qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Heat pump turned off.";
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Off"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Heat pump turned off.";
+        } else {
+            qCDebug(dcConsolinnoEnergy())
+                << "Blackout protection: Turning on heat pump with name: " << thing->name()
+                << " and id: " << thing->id();
+
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Standard"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Heat pump turned on.";
+        }
     }
 }
 
@@ -1338,7 +1353,8 @@ void EnergyEngine::loadHeatingConfiguration(const ThingId& heatPumpThingId)
 
         qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     } else {
-        // Heating usecase is available and this heat pump has no configuration yet, lets add one
+        // Heating usecase is available and this heat pump has no configuration yet, lets add
+        // one
         HeatingConfiguration configuration;
         configuration.setHeatPumpThingId(heatPumpThingId);
         m_heatingConfigurations.insert(heatPumpThingId, configuration);
@@ -1393,7 +1409,8 @@ void EnergyEngine::loadHeatingRodConfiguration(const ThingId& heatingRodThingId)
 
         qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     } else {
-        // HeatingRod usecase is available and this heat pump has no configuration yet, lets add one
+        // HeatingRod usecase is available and this heat pump has no configuration yet, lets add
+        // one
         HeatingRodConfiguration configuration;
         configuration.setHeatingRodThingId(heatingRodThingId);
         m_heatingRodConfigurations.insert(heatingRodThingId, configuration);
@@ -1561,7 +1578,8 @@ void EnergyEngine::loadChargingConfiguration(const ThingId& evChargerThingId)
 
         qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     } else {
-        // Charging usecase is available and this ev charger has no configuration yet, lets add one
+        // Charging usecase is available and this ev charger has no configuration yet, lets add
+        // one
         ChargingConfiguration configuration;
         configuration.setEvChargerThingId(evChargerThingId);
         m_chargingConfigurations.insert(evChargerThingId, configuration);
@@ -1622,7 +1640,8 @@ void EnergyEngine::loadChargingOptimizationConfiguration(const ThingId& evCharge
 
         qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     } else {
-        // Charging usecase is available and this ev charger has no configuration yet, lets add one
+        // Charging usecase is available and this ev charger has no configuration yet, lets add
+        // one
         ChargingOptimizationConfiguration configuration;
         configuration.setEvChargerThingId(evChargerThingId);
         m_chargingOptimizationConfigurations.insert(evChargerThingId, configuration);
@@ -1754,7 +1773,8 @@ void EnergyEngine::loadChargingSessionConfiguration(const ThingId& evChargerThin
 
         // qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
     } else {
-        // Charging usecase is available and this ev charger has no configuration yet, lets add one
+        // Charging usecase is available and this ev charger has no configuration yet, lets add
+        // one
         ChargingSessionConfiguration configuration;
         configuration.setEvChargerThingId(evChargerThingId);
         m_chargingSessionConfigurations.insert(evChargerThingId, configuration);
