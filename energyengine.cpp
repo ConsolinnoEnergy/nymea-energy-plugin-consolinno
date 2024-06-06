@@ -1004,36 +1004,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         { "C", m_energyManager->rootMeter()->stateValue("currentPowerPhaseC").toDouble() },
     };
 
-    // Adding the logic for the heat pumps
-    foreach (Thing* thing, m_heatPumps) {
-        if (m_consumptionLimit > 0) {
-
-            qCDebug(dcConsolinnoEnergy())
-                << "Blackout protection: Turning off heat pump with name: " << thing->name()
-                << " and id: " << thing->id();
-
-            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
-            ParamList params;
-            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Off"));
-            action.setParams(params);
-            m_thingManager->executeAction(action);
-
-            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Heat pump turned off.";
-        } else {
-            qCDebug(dcConsolinnoEnergy())
-                << "Blackout protection: Turning on heat pump with name: " << thing->name()
-                << " and id: " << thing->id();
-
-            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
-            ParamList params;
-            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Standard"));
-            action.setParams(params);
-            m_thingManager->executeAction(action);
-
-            qCInfo(dcConsolinnoEnergy()) << "Blackout protection: Heat pump turned on.";
-        }
-    }
-
     // Log the power values for each phase
     qCDebug(dcConsolinnoEnergy()) << "Phase A current power:" << allPhasesCurrentPower.value("A")
                                   << "W";
@@ -1041,6 +1011,41 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                   << "W";
     qCDebug(dcConsolinnoEnergy()) << "Phase C current power:" << allPhasesCurrentPower.value("C")
                                   << "W";
+
+    // Adding the logic for the heat pumps
+    foreach (Thing* thing, m_heatPumps) {
+
+        // qCDebug(dcConsolinnoEnergy())
+        //     << "PLim: found Heat Pump with name: " << thing->name() << " and id: " <<
+        //     thing->id();
+        QString sgReadyMode = thing->state("sgReadyMode").value().toString();
+        qCDebug(dcConsolinnoEnergy())
+            << "Smart grid mode for Heat Pump with name: " << thing->name()
+            << " and id: " << thing->id() << " is: " << sgReadyMode;
+
+        if (m_consumptionLimit > 0) {
+            qCDebug(dcConsolinnoEnergy()) << "PLim: Turning off heat pump! ";
+
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Off"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump turned off.";
+
+        } else {
+            qCDebug(dcConsolinnoEnergy()) << "PLim: Turning on heat pump! ";
+
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Standard"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump turned on.";
+        }
+    }
 
     bool householdLimitExceeded = false;
     bool limitExceeded = false;
@@ -1223,8 +1228,15 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 //     std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent +
                 //     1));
 
-                float newMaxChargingCurrentLimit
-                    = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 2);
+                float newMaxChargingCurrentLimit = 0;
+
+                if (m_consumptionLimit > 0) {
+                    newMaxChargingCurrentLimit
+                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 1);
+                } else {
+                    newMaxChargingCurrentLimit
+                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 2);
+                }
 
                 // Using executeAction to set the new value
                 Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
