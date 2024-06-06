@@ -1012,6 +1012,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     qCDebug(dcConsolinnoEnergy()) << "Phase C current power:" << allPhasesCurrentPower.value("C")
                                   << "W";
 
+    bool heatPumpOff = true;
     // Adding the logic for the heat pumps
     foreach (Thing* thing, m_heatPumps) {
 
@@ -1022,6 +1023,11 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         qCDebug(dcConsolinnoEnergy())
             << "Smart grid mode for Heat Pump with name: " << thing->name()
             << " and id: " << thing->id() << " is: " << sgReadyMode;
+        if (sgReadyMode == "Off") {
+            heatPumpOff = true;
+        } else {
+            heatPumpOff = false;
+        }
 
         if (m_consumptionLimit > 0) {
             qCDebug(dcConsolinnoEnergy()) << "PLim: Turning off heat pump! ";
@@ -1207,7 +1213,9 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             params.append(Param(
                 ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), newMaxChargingCurrentLimit));
             action.setParams(params);
-            m_thingManager->executeAction(action);
+            if (heatPumpOff) {
+                m_thingManager->executeAction(action);
+            }
 
             qCInfo(dcConsolinnoEnergy())
                 << "Blackout protection: limitExceeded -> Ajdusted limit of charging current per "
@@ -1238,7 +1246,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                         = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 2);
                 }
 
-                // Using executeAction to set the new value
                 Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
                 ParamList params;
                 params.append(Param(ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"),
