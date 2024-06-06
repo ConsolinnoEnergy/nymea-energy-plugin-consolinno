@@ -1004,34 +1004,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         { "C", m_energyManager->rootMeter()->stateValue("currentPowerPhaseC").toDouble() },
     };
 
-    // Log the power values for each phase
-    qCDebug(dcConsolinnoEnergy()) << "Phase A current power:" << allPhasesCurrentPower.value("A")
-                                  << "W";
-    qCDebug(dcConsolinnoEnergy()) << "Phase B current power:" << allPhasesCurrentPower.value("B")
-                                  << "W";
-    qCDebug(dcConsolinnoEnergy()) << "Phase C current power:" << allPhasesCurrentPower.value("C")
-                                  << "W";
-
-    bool householdLimitExceeded = false;
-    bool limitExceeded = false;
-    double phasePowerLimit = 230 * m_housholdPhaseLimit; // m_housholdPhaseLimit sind zB 63A
-    double maxPhaseOvershotPower = 0;
-    double minPhaseMarginPower
-        = 230 * m_housholdPhaseLimit; // the minPhaseMarginPower is the minimum available power per
-                                      // phase for which it can be increased
-    double maxChargingCurrentPerPhaseMaxValue = 0;
-    double maxChargingCurrentPerPhaseMinValue = 0;
-    double maxChargingCurrentPerPhase = 0;
-
-    // Check if the power consumption limit is exceeded in regards to phasePowerLimit
-    qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
-                                  << "[A] =" << phasePowerLimit << "[W] at 230V";
-    qCDebug(dcConsolinnoEnergy()) << "Houshold physical power limit total:" << phasePowerLimit * 3
-                                  << "[W] at 230V";
-
-    /*
-    Adding the logic for the heat pumps
-    */
+    // Adding the logic for the heat pumps
     foreach (Thing* thing, m_heatPumps) {
         if (m_consumptionLimit > 0) {
 
@@ -1061,9 +1034,32 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         }
     }
 
-    /*
-    first check if any of the currents exceed the limit
-    */
+    // Log the power values for each phase
+    qCDebug(dcConsolinnoEnergy()) << "Phase A current power:" << allPhasesCurrentPower.value("A")
+                                  << "W";
+    qCDebug(dcConsolinnoEnergy()) << "Phase B current power:" << allPhasesCurrentPower.value("B")
+                                  << "W";
+    qCDebug(dcConsolinnoEnergy()) << "Phase C current power:" << allPhasesCurrentPower.value("C")
+                                  << "W";
+
+    bool householdLimitExceeded = false;
+    bool limitExceeded = false;
+    double phasePowerLimit = 230 * m_housholdPhaseLimit; // m_housholdPhaseLimit sind zB 63A
+    double maxPhaseOvershotPower = 0;
+    double minPhaseMarginPower
+        = 230 * m_housholdPhaseLimit; // the minPhaseMarginPower is the minimum available power per
+                                      // phase for which it can be increased
+    double maxChargingCurrentMaxValue = 0;
+    double maxChargingCurrentMinValue = 0;
+    double actualMaxChargingCurrent = 0;
+
+    // Check if the power consumption limit is exceeded in regards to phasePowerLimit
+    qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
+                                  << "[A] =" << phasePowerLimit << "[W] at 230V";
+    qCDebug(dcConsolinnoEnergy()) << "Houshold physical power limit total:" << phasePowerLimit * 3
+                                  << "[W] at 230V";
+
+    // first check if any of the currents exceed the limit
     foreach (const QString& phase, allPhasesCurrentPower.keys()) {
         if (allPhasesCurrentPower.value(phase) > phasePowerLimit) {
             double phaseOvershotPower = allPhasesCurrentPower.value(phase) - phasePowerLimit;
@@ -1162,30 +1158,28 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             << "Consumption limit is not set because m_consumptionLimit is: " << m_consumptionLimit;
     }
 
-    /*
-    ev chargers
-    */
+    // if the limit is exceeded or below max, we adjust the charging current for each EV charger
     foreach (Thing* thing, m_evChargers) {
         qCDebug(dcConsolinnoEnergy())
             << "Blackout protection: Checking EV charger thing with name: " << thing->name()
             << " and id: " << thing->id();
 
-        maxChargingCurrentPerPhaseMaxValue = thing->thingClass()
-                                                 .stateTypes()
-                                                 .findByName("maxChargingCurrent")
-                                                 .maxValue()
-                                                 .toFloat();
-        maxChargingCurrentPerPhaseMinValue = thing->thingClass()
-                                                 .stateTypes()
-                                                 .findByName("maxChargingCurrent")
-                                                 .minValue()
-                                                 .toFloat();
-        maxChargingCurrentPerPhase = thing->state("maxChargingCurrentPerPhase").value().toFloat();
+        maxChargingCurrentMaxValue = thing->thingClass()
+                                         .stateTypes()
+                                         .findByName("maxChargingCurrent")
+                                         .maxValue()
+                                         .toFloat();
+        maxChargingCurrentMinValue = thing->thingClass()
+                                         .stateTypes()
+                                         .findByName("maxChargingCurrent")
+                                         .minValue()
+                                         .toFloat();
+        actualMaxChargingCurrent = thing->state("maxChargingCurrent").value().toFloat();
 
         qCDebug(dcConsolinnoEnergy())
-            << "Blackout protection: Absolute limits: min=" << maxChargingCurrentPerPhaseMinValue
-            << "A, max=" << maxChargingCurrentPerPhaseMaxValue
-            << "A, actual value :" << maxChargingCurrentPerPhase << "A";
+            << "Blackout protection: Absolute limits: min=" << maxChargingCurrentMinValue
+            << "A, max=" << maxChargingCurrentMaxValue
+            << "A, actual value :" << actualMaxChargingCurrent << "A";
 
         if (limitExceeded) {
             // If the limit is exceeded, we go down sat least maxPhaseOvershotCurrent
@@ -1196,12 +1190,12 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 << maxPhaseOvershotPower * m_housholdPhaseCount
                 << "[W] to much! -> Adjusting the evChargers...";
 
-            float newMaxChargingCurrentLimit = std::max(maxChargingCurrentPerPhaseMinValue,
-                maxChargingCurrentPerPhase - maxPhaseOvershotCurrent - 1);
+            float newMaxChargingCurrentLimit = std::max(
+                maxChargingCurrentMinValue, actualMaxChargingCurrent - maxPhaseOvershotCurrent - 1);
 
-            // thing->setStateMaxValue(thing->state("maxChargingCurrentPerPhase").stateTypeId(),
+            // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
             //     newMaxChargingCurrentLimit); // hier wird nur der max Value gesetzt, nicht der
-            //                                  // maxChargingCurrentPerPhase
+            //                                  // maxChargingCurrent
 
             Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
             ParamList params;
@@ -1214,23 +1208,23 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 << "Blackout protection: limitExceeded -> Ajdusted limit of charging current per "
                    "Phase down "
                    "to"
-                << thing->state("maxChargingCurrentPerPhase").maxValue().toInt() << "A";
+                << thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             qCInfo(dcConsolinnoEnergy())
                 << "Blackout protection: limitExceeded -> Ajdusted limit of charging power total "
                    "down "
                    "to"
-                << thing->state("maxChargingCurrentPerPhase").maxValue().toInt() * 3 * 230 << "W";
+                << thing->state("maxChargingCurrent").maxValue().toInt() * 3 * 230 << "W";
         } else {
             // Otherwise we can go up again step by step, only if Margin Power larger than 250W
-            if (maxChargingCurrentPerPhase < maxChargingCurrentPerPhaseMaxValue
+            if (actualMaxChargingCurrent < maxChargingCurrentMaxValue
                 && minPhaseMarginPower > 250) {
                 qCDebug(dcConsolinnoEnergy()) << "Blackout protection: lets go up again!";
-                // thing->setStateMaxValue(thing->state("maxChargingCurrentPerPhase").stateTypeId(),
-                //     std::min(maxChargingCurrentPerPhaseMaxValue, maxChargingCurrentPerPhase +
+                // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
+                //     std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent +
                 //     1));
 
                 float newMaxChargingCurrentLimit
-                    = std::min(maxChargingCurrentPerPhaseMaxValue, maxChargingCurrentPerPhase + 2);
+                    = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 2);
 
                 // Using executeAction to set the new value
                 Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
@@ -1243,12 +1237,11 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 qCInfo(dcConsolinnoEnergy())
                     << "Blackout protection: no limitExceeded -> Ajdusted limit of charging "
                        "current up to"
-                    << thing->state("maxChargingCurrentPerPhase").maxValue().toInt() << "A";
+                    << thing->state("maxChargingCurrent").maxValue().toInt() << "A";
             } else {
                 qCDebug(dcConsolinnoEnergy())
-                    << "Blackout protection: maxChargingCurrentPerPhase not changed because: "
-                    << "actual: " << maxChargingCurrentPerPhase
-                    << " max: " << maxChargingCurrentPerPhaseMaxValue
+                    << "Blackout protection: maxChargingCurrent not changed because: " << "actual: "
+                    << actualMaxChargingCurrent << " max: " << maxChargingCurrentMaxValue
                     << " minPhaseMarginPower: " << minPhaseMarginPower;
             }
         }
