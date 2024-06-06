@@ -1,16 +1,16 @@
-nymea-energy-plugin-consolinno (1.7.4) buster focal jammy; urgency=medium
+nymea-energy-plugin-consolinno (1.7.001-4) buster focal jammy; urgency=medium
 
-* Turning HeatPumps off
+* Turning HeatPumps are getting deactivated if PLim is bigger than 0
 
  -- Tim Fischer <t.fischer@consolinno.de> Tue, 4 Jun 2024 15:04:53 +0200
 
-nymea-energy-plugin-consolinno (1.7.3) buster focal jammy; urgency=medium
+nymea-energy-plugin-consolinno (1.7.001-3) buster focal jammy; urgency=medium
 
 * BlackoutProtection uses execute action now
 
  -- Tim Fischer <t.fischer@consolinno.de> Tue, 4 Jun 2024 15:04:53 +0200
 
-nymea-energy-plugin-consolinno (1.7.2) buster focal jammy; urgency=medium
+nymea-energy-plugin-consolinno (1.7.001-2) buster focal jammy; urgency=medium
 
 * Working on BlackoutProtection to handle PLim
 
