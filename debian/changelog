@@ -1,5 +1,7 @@
 nymea-energy-plugin-consolinno (1.7.002) buster focal jammy; urgency=medium
 * New Version for supporting §14a in a EMS 
+* HeatPumps are getting deactivated if PLim is bigger than 0
+* Wallboxes are limited to PLim but still using PV energy on top
  -- Tim Fischer <t.fischer@consolinno.de> Tue, 12 Jun 2024 08:50:53 +0200
 
 nymea-energy-plugin-consolinno (1.7.001-4) buster focal jammy; urgency=medium
