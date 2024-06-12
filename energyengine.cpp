@@ -1012,7 +1012,8 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     qCDebug(dcConsolinnoEnergy()) << "Phase C current power:" << allPhasesCurrentPower.value("C")
                                   << "W";
 
-    bool heatPumpOff = true;
+    QString heatPumpState;
+
     // Adding the logic for the heat pumps
     foreach (Thing* thing, m_heatPumps) {
 
@@ -1020,10 +1021,19 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         qCDebug(dcConsolinnoEnergy())
             << "Smart grid mode for Heat Pump with name: " << thing->name()
             << " is: " << sgReadyMode;
+
         if (sgReadyMode == "Off") {
-            heatPumpOff = true;
+            heatPumpState = "Off";
+        } else if (sgReadyMode == "Low") {
+            heatPumpState = "Low";
+        } else if (sgReadyMode == "Standard") {
+            heatPumpState = "Standard";
+        } else if (sgReadyMode == "High") {
+            heatPumpState = "High";
         } else {
-            heatPumpOff = false;
+            qCWarning(dcConsolinnoEnergy())
+                << "Unknown smart grid mode for Heat Pump with name: " << thing->name();
+            heatPumpState = "Unknown"; // Handle unknown state
         }
 
         if (m_consumptionLimit > 0) {
@@ -1141,8 +1151,10 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                 if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
                     && phaseConsumptionOvershotPower > 0) {
                     maxPhaseOvershotPower = phaseConsumptionOvershotPower;
-                    // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced "
-                    //                                  "without exceeding the consumption limit is:"
+                    // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced
+                    // "
+                    //                                  "without exceeding the consumption limit
+                    //                                  is:"
                     //                               << maxPhaseOvershotPower << "W";
                 }
             } else if (!limitExceeded) {
@@ -1209,18 +1221,16 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             params.append(Param(
                 ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), newMaxChargingCurrentLimit));
             action.setParams(params);
-            if (heatPumpOff) {
+            if (heatPumpState == "Off" || heatPumpState == "Low") {
                 m_thingManager->executeAction(action);
+
+                qCInfo(dcConsolinnoEnergy())
+                    << "Blackout protection: limitExceeded -> Ajdusted limit of charging current "
+                       "per "
+                       "Phase down to"
+                    << thing->state("maxChargingCurrent").value().toInt() << "A";
             }
 
-            qCInfo(dcConsolinnoEnergy())
-                << "Blackout protection: limitExceeded -> Ajdusted limit of charging current per "
-                   "Phase down to"
-                << thing->state("maxChargingCurrent").value().toInt() << "A";
-            qCInfo(dcConsolinnoEnergy())
-                << "Blackout protection: limitExceeded -> Ajdusted limit of charging power total "
-                   "down to"
-                << thing->state("maxChargingCurrent").value().toInt() * 3 * 230 << "W";
         } else {
             // Otherwise we can go up again step by step, only if Margin Power larger than 250W
             if (actualMaxChargingCurrent < maxChargingCurrentMaxValue
