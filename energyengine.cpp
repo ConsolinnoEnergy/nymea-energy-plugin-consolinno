@@ -1130,6 +1130,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     double maxChargingCurrentMaxValue = 0;
     double maxChargingCurrentMinValue = 0;
     double actualMaxChargingCurrent = 0;
+    bool consumptionLimitExceeded = false;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
@@ -1196,62 +1197,15 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             << "Consumption limit for group of controllable devices is set to" << m_consumptionLimit
             << "W";
         double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
-        bool consumptionLimitExceeded = (currentPowerNAP > m_consumptionLimit);
+        consumptionLimitExceeded = (currentPowerNAP > m_consumptionLimit);
         if (consumptionLimitExceeded) {
             limitExceeded = true;
             qCInfo(dcConsolinnoEnergy())
                 << "Consumption limit exceeded. Current consumption at NAP is" << currentPowerNAP
                 << "W. Limit is" << m_consumptionLimit << "W. That is a difference of"
                 << currentPowerNAP - m_consumptionLimit << "W";
-
-            // Adding the logic for the heat pumps
-            foreach (Thing* thing, m_heatPumps) { // TODO: only if the HP is a CLS unit
-
-                QString sgReadyMode = thing->state("sgReadyMode").value().toString();
-                qCDebug(dcConsolinnoEnergy())
-                    << "Smart grid mode for Heat Pump with name: " << thing->name()
-                    << " is: " << sgReadyMode;
-
-                if (sgReadyMode == "Off") {
-                    heatPumpState = "Off";
-                } else if (sgReadyMode == "Low") {
-                    heatPumpState = "Low";
-                } else if (sgReadyMode == "Standard") {
-                    heatPumpState = "Standard";
-                } else if (sgReadyMode == "High") {
-                    heatPumpState = "High";
-                } else {
-                    qCWarning(dcConsolinnoEnergy())
-                        << "Unknown smart grid mode for Heat Pump with name: " << thing->name();
-                    heatPumpState = "Unknown"; // Handle unknown state
-                }
-
-                if (m_consumptionLimit > 0) {
-
-                    Action action(
-                        ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
-                    ParamList params;
-                    params.append(
-                        Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Low"));
-                    action.setParams(params);
-                    m_thingManager->executeAction(action);
-
-                    qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Low.";
-
-                } else {
-
-                    Action action(
-                        ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
-                    ParamList params;
-                    params.append(
-                        Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Standard"));
-                    action.setParams(params);
-                    m_thingManager->executeAction(action);
-
-                    qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Standard.";
-                }
-            }
         }
+
         foreach (const QString& phase, allPhasesCurrentPower.keys()) {
             if (consumptionLimitExceeded) {
                 // OvershotPower for given phase
@@ -1286,6 +1240,51 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     } else {
         qCDebug(dcConsolinnoEnergy())
             << "Consumption limit is not set because m_consumptionLimit is: " << m_consumptionLimit;
+        consumptionLimitExceeded = false;
+    }
+
+    // Adding the logic for the heat pumps
+    foreach (Thing* thing, m_heatPumps) { // TODO: only if the HP is a CLS unit
+
+        if (consumptionLimitExceeded) {
+
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Low"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Low.";
+
+        } else {
+
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Standard"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Standard.";
+        }
+
+        QString sgReadyMode = thing->state("sgReadyMode").value().toString();
+        qCDebug(dcConsolinnoEnergy())
+            << "Smart grid mode for Heat Pump with name: " << thing->name()
+            << " is: " << sgReadyMode;
+
+        if (sgReadyMode == "Off") {
+            heatPumpState = "Off";
+        } else if (sgReadyMode == "Low") {
+            heatPumpState = "Low";
+        } else if (sgReadyMode == "Standard") {
+            heatPumpState = "Standard";
+        } else if (sgReadyMode == "High") {
+            heatPumpState = "High";
+        } else {
+            qCWarning(dcConsolinnoEnergy())
+                << "Unknown smart grid mode for Heat Pump with name: " << thing->name();
+            heatPumpState = "Unknown"; // Handle unknown state
+        }
     }
 
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
