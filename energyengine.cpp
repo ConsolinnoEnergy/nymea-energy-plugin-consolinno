@@ -1099,7 +1099,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     QString heatPumpState;
 
     // Adding the logic for the heat pumps
-    foreach (Thing* thing, m_heatPumps) {
+    foreach (Thing* thing, m_heatPumps) { // TODO: only if the HP is a CLS unit
 
         QString sgReadyMode = thing->state("sgReadyMode").value().toString();
         qCDebug(dcConsolinnoEnergy())
@@ -1124,11 +1124,11 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
             Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
             ParamList params;
-            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Off"));
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Low"));
             action.setParams(params);
             m_thingManager->executeAction(action);
 
-            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump turned off.";
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Low.";
 
         } else {
 
@@ -1138,7 +1138,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             action.setParams(params);
             m_thingManager->executeAction(action);
 
-            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump turned on.";
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Standard.";
         }
     }
 
@@ -1284,7 +1284,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
             << "A, max=" << maxChargingCurrentMaxValue
             << "A, actual max value :" << actualMaxChargingCurrent << "A";
 
-        if (limitExceeded) {
+        if (limitExceeded) { //TODO: only if the WB is a CLS unit
             // If the limit is exceeded, we go down sat least maxPhaseOvershotCurrent
             double maxPhaseOvershotCurrent = qRound(maxPhaseOvershotPower / 230);
             qCInfo(dcConsolinnoEnergy())
