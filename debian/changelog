@@ -1,5 +1,6 @@
 nymea-energy-plugin-consolinno (1.7.06-2) buster focal jammy; urgency=medium
 * Change the state of the heat pump to Low when a limit is set (future enhancement: restrict control to CLS units only).
+* Change the state of the heat pump if the limit at NAP is exceeded.
  -- Tim Fischer <t.fischer@consolinno.de> Tue, 13 Jun 2024 12:50:53 +0200
 
 nymea-energy-plugin-consolinno (1.7.06-1) buster focal jammy; urgency=medium
