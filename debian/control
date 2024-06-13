@@ -34,43 +34,82 @@ Description: Script to update consolinno-hems packages
  consolinno-hems Meta package.
 
 
-Package: consolinno-hems
+Package: consolinno-hems-version-info
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+Description: Package containing version infos for the Consolinno HEMS product
+
+Package: consolinno-hems-base
 Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          consolinno-hems-updater,
-         nymea,
+         consolinno-hems-version-info,
+         nymead,
          nymea-data,
          nymea-energy-plugin-consolinno,
          conems,
+Description: Consolinno Home Energy Management System
+ Meta package for basic components.
+
+Package: consolinno-hems-leaflet
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
          authentication-button,
          statusledcontroller,
+Description: Consolinno Home Energy Management System
+ Meta package for leaflet specific packages
+
+
+Package: consolinno-hems-plugins
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
+         nymea-plugin-abb,
+         nymea-plugin-alfen,
          nymea-plugin-alphainnotec,
          nymea-plugin-amperfied,
          nymea-plugin-azzurro,
          nymea-plugin-bgetech,
          nymea-plugin-bgetech-inverter,
          nymea-plugin-delta,
+         nymea-plugin-dvmodbusir,
          nymea-plugin-e3dc,
+         nymea-plugin-fenecon,
          nymea-plugin-fronius,
          nymea-plugin-generic-car,
+         nymea-plugin-generic-consolinno,
          nymea-plugin-goecharger,
          nymea-plugin-goodwe,
+         nymea-plugin-growatt,
          nymea-plugin-huawei,
          nymea-plugin-idm,
          nymea-plugin-kaco,
+         nymea-plugin-kaco-sunspec,
          nymea-plugin-kostal,
          nymea-plugin-kostalpiko,
          nymea-plugin-keba,
          nymea-plugin-mennekes,
+         nymea-plugin-sax,
          nymea-plugin-schneider,
          nymea-plugin-schneider-iem,
          nymea-plugin-sgready,
          nymea-plugin-shelly,
          nymea-plugin-simplesmartconsumer,
          nymea-plugin-sma,
+         nymea-plugin-solax,
          nymea-plugin-sungrow,
          nymea-plugin-sunspec,
          nymea-plugin-stiebeleltron,
@@ -80,21 +119,18 @@ Depends: ${shlibs:Depends},
          nymea-zeroconf-plugin-avahi,
          nymea-system-plugin-systemd,
 Description: Consolinno Home Energy Management System
- Meta package for everything required to install a consolinno
- HEMS system.
-
-Package: consolinno-hems-latest
+ plugins
+ 
+Package: consolinno-hems-plugins-cigate
 Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends},
          ${misc:Depends},
-         consolinno-hems,
+         consolinno-hems-base,
+         cigate-adapter-modbus,
 Description: Consolinno Home Energy Management System
- Latest Meta package for everything required to install a consolinno
- HEMS system. ATTENTION: This packages is deprecated. Please use 
- consolinno-hems instead. This package will only be kept for compatibility 
- reasons.
+ CI gate plugins
 
 
 Package: consolinno-hems-devtools

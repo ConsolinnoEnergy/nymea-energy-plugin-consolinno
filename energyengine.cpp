@@ -210,23 +210,14 @@ ConEMSState EnergyEngine::ConemsState() const { return m_conEMSState; }
 
 EnergyEngine::HemsError EnergyEngine::setConEMSState(const ConEMSState& conEMSState)
 {
-
-    qCDebug(dcConsolinnoEnergy()) << "Set ConEMSState configuration called" << conEMSState;
-    if (m_conEMSState.ConEMSStateID() != conEMSState.ConEMSStateID()) {
-        qCWarning(dcConsolinnoEnergy())
-            << "Could not set ConEMSState. The given QUUID is not the same." << conEMSState;
-        return HemsErrorInvalidThing;
-    }
-
-    if (m_conEMSState.timestamp() != conEMSState.timestamp()) {
+    if (m_conEMSState != conEMSState) {
         m_conEMSState = conEMSState;
         qCDebug(dcConsolinnoEnergy()) << "ConEMSState changed" << conEMSState;
-        emit conEMSStatesChanged(conEMSState);
-    } else {
-        qCDebug(dcConsolinnoEnergy())
-            << "ConEMSState did not change, because the timestamp is the same";
-    }
+        emit conEMSStateChanged(conEMSState);
+    } else{
+        qCDebug(dcConsolinnoEnergy()) << "ConEMSState did not change";
 
+    }
     return HemsErrorNoError;
 }
 
@@ -309,6 +300,55 @@ EnergyEngine::HemsError EnergyEngine::setHeatingRodConfiguration(
     return HemsErrorNoError;
 }
 
+QList<DynamicElectricPricingConfiguration> EnergyEngine::dynamicElectricPricingConfigurations() const
+{
+    return m_dynamicElectricPricingConfigurations.values();
+}
+
+EnergyEngine::HemsError EnergyEngine::setDynamicElectricPricingConfiguration(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Set dynamic electric pricing configuration called" << dynamicElectricPricingConfiguration;
+    if (!m_dynamicElectricPricingConfigurations.contains(dynamicElectricPricingConfiguration.dynamicElectricPricingThingId())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set dynamic electric pricing configuration. The given dynamic electric pricing thing ID does not exist." << dynamicElectricPricingConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+    if (m_dynamicElectricPricingConfigurations.value(dynamicElectricPricingConfiguration.dynamicElectricPricingThingId()) != dynamicElectricPricingConfiguration) {
+        m_dynamicElectricPricingConfigurations[dynamicElectricPricingConfiguration.dynamicElectricPricingThingId()] = dynamicElectricPricingConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Dynamic electric pricing configuration changed" << dynamicElectricPricingConfiguration;
+        saveDynamicElectricPricingConfigurationToSettings(dynamicElectricPricingConfiguration);
+        emit dynamicElectricPricingConfigurationChanged(dynamicElectricPricingConfiguration);
+    }
+
+    return HemsErrorNoError;
+}
+
+QList<WashingMachineConfiguration> EnergyEngine::washingMachineConfigurations() const
+{
+    return m_washingMachineConfigurations.values();
+}
+
+EnergyEngine::HemsError EnergyEngine::setWashingMachineConfiguration(const WashingMachineConfiguration &washingMachineConfiguration)
+{
+
+    qCDebug(dcConsolinnoEnergy()) << "Set washing machine configuration called" << washingMachineConfiguration;
+    if (!m_washingMachineConfigurations.contains(washingMachineConfiguration.washingMachineThingId())) {
+        qCWarning(dcConsolinnoEnergy()) << "Could not set washing machine configuration. The given washing machine thing id does not exist." << washingMachineConfiguration;
+        return HemsErrorInvalidThing;
+    }
+
+
+    if (m_washingMachineConfigurations.value(washingMachineConfiguration.washingMachineThingId()) != washingMachineConfiguration) {
+        m_washingMachineConfigurations[washingMachineConfiguration.washingMachineThingId()] = washingMachineConfiguration;
+        qCDebug(dcConsolinnoEnergy()) << "Washing machine configuration changed" << washingMachineConfiguration;
+        saveWashingMachineConfigurationToSettings(washingMachineConfiguration);
+        emit washingMachineConfigurationChanged(washingMachineConfiguration);
+    }
+
+    return HemsErrorNoError;
+}
+
+
 QList<ChargingConfiguration> EnergyEngine::chargingConfigurations() const
 {
     return m_chargingConfigurations.values();
@@ -370,6 +410,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingConfiguration(
 
     return HemsErrorNoError;
 }
+
 
 QList<ChargingOptimizationConfiguration> EnergyEngine::chargingOptimizationConfigurations() const
 {
@@ -440,7 +481,6 @@ QList<PvConfiguration> EnergyEngine::pvConfigurations() const
 
 EnergyEngine::HemsError EnergyEngine::setPvConfiguration(const PvConfiguration& pvConfiguration)
 {
-
     if (!m_pvConfigurations.contains(pvConfiguration.pvThingId())) {
         qCWarning(dcConsolinnoEnergy())
             << "Could not set pv configuration. The given pv thing id does not exist."
@@ -568,12 +608,23 @@ void EnergyEngine::monitorHeatingRod(Thing* thing)
     loadHeatingRodConfiguration(thing->id());
 }
 
-/*!
- * \brief EnergyEngine::monitorInverter
- * \param thing
- * \details This function is called when a inverter is added to the system.
- */
-void EnergyEngine::monitorInverter(Thing* thing)
+void EnergyEngine::monitorDynamicElectricPricing(Thing *thing)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring dynamic electric pricing" << thing;
+    m_dynamicElectricPricings.insert(thing->id(), thing);
+    evaluateAvailableUseCases();
+    loadDynamicElectricPricingConfiguration(thing->id());
+}
+
+void EnergyEngine::monitorWashingMachine(Thing *thing)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring washing machine" << thing;
+    m_washingMachines.insert(thing->id(), thing);
+    evaluateAvailableUseCases();
+    loadWashingMachineConfiguration(thing->id());
+}
+
+void EnergyEngine::monitorInverter(Thing *thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring inverter" << thing;
     m_inverters.insert(thing->id(), thing);
@@ -642,6 +693,14 @@ void EnergyEngine::onThingAdded(Thing* thing)
 
     if (thing->thingClass().interfaces().contains("smartheatingrod")) {
         monitorHeatingRod(thing);
+    }
+
+    if (thing->thingClass().interfaces().contains("dynamicelectricitypricing")) {
+        monitorDynamicElectricPricing(thing);
+    }
+
+    if (thing->thingClass().interfaces().contains("smartwashingmachine")) {
+        monitorWashingMachine(thing);
     }
 
     if (thing->thingClass().interfaces().contains("evcharger")) {
@@ -738,8 +797,33 @@ void EnergyEngine::onThingRemoved(const ThingId& thingId)
             HeatingRodConfiguration heatingRodConfig = m_heatingRodConfigurations.take(thingId);
             removeHeatingRodConfigurationFromSettings(thingId);
             emit heatingRodConfigurationRemoved(thingId);
-            qCDebug(dcConsolinnoEnergy())
-                << "Removed heating rod configuration" << heatingRodConfig;
+            qCDebug(dcConsolinnoEnergy()) << "Removed heating rod configuration" << heatingRodConfig;
+        }
+    }
+
+    // Dynamic Electric Pricing
+    if (m_dynamicElectricPricings.contains(thingId)) {
+        m_dynamicElectricPricings.remove(thingId);
+        qCDebug(dcConsolinnoEnergy()) << "Removed dynamic electric pricing from energy manager" << thingId.toString();
+
+        if (m_dynamicElectricPricingConfigurations.contains(thingId)) {
+            DynamicElectricPricingConfiguration dynamicElectricPricingConfig = m_dynamicElectricPricingConfigurations.take(thingId);
+            removeDynamicElectricPricingConfigurationFromSettings(thingId);
+            emit dynamicElectricPricingConfigurationRemoved(thingId);
+            qCDebug(dcConsolinnoEnergy()) << "Removed dynamic electric pricing configuration" << dynamicElectricPricingConfig;
+        }
+    }
+
+    // Washing machine
+    if (m_washingMachines.contains(thingId)) {
+        m_washingMachines.remove(thingId);
+        qCDebug(dcConsolinnoEnergy()) << "Removed washing machine from energy manager" << thingId.toString();
+
+        if (m_washingMachineConfigurations.contains(thingId)) {
+            WashingMachineConfiguration washingMachineConfig = m_washingMachineConfigurations.take(thingId);
+            removeWashingMachineConfigurationFromSettings(thingId);
+            emit washingMachineConfigurationRemoved(thingId);
+            qCDebug(dcConsolinnoEnergy()) << "Removed washing Machine configuration" << washingMachineConfig;
         }
     }
 
@@ -1306,6 +1390,18 @@ void EnergyEngine::evaluateAvailableUseCases()
         availableUseCases = availableUseCases.setFlag(HemsUseCaseHeatingRod);
     }
 
+    // Dynamic electric pricing
+    if (m_energyManager->rootMeter() && !m_dynamicElectricPricings.isEmpty()) {
+        // We need at least a root meter for having the dynamic electric pricing use case
+        availableUseCases = availableUseCases.setFlag(HemsUseCaseDynamicEPricing);
+    }
+    
+    // Washing machine
+    if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_washingMachines.isEmpty()) {
+        // We need at least a root meter and and inverter for having the washing machine use case
+        availableUseCases = availableUseCases.setFlag(HemsUseCaseWashingMachine);
+    }
+
     // Charging
     if (m_energyManager->rootMeter() && !m_inverters.isEmpty() && !m_evChargers.isEmpty()) {
         // We need at least a root meter, an inverter and and ev charger for having the charging
@@ -1458,6 +1554,106 @@ void EnergyEngine::removeHeatingRodConfigurationFromSettings(const ThingId& heat
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("HeatingRodConfigurations");
     settings.beginGroup(heatingRodThingId.toString());
+    settings.remove("");
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::loadDynamicElectricPricingConfiguration(const ThingId &dynamicElectricPricingThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("DynamicElectricPricingConfigurations");
+    if (settings.childGroups().contains(dynamicElectricPricingThingId.toString())) {
+        settings.beginGroup(dynamicElectricPricingThingId.toString());
+
+        DynamicElectricPricingConfiguration configuration;
+        configuration.setDynamicElectricPricingThingId(dynamicElectricPricingThingId);
+        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        configuration.setMaxElectricalPower(settings.value("maxElectricalPower").toDouble());
+        settings.endGroup(); // ThingId
+
+        m_dynamicElectricPricingConfigurations.insert(dynamicElectricPricingThingId, configuration);
+        emit dynamicElectricPricingConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // Dynamic Electric Pricing usecase is available and this heat pump has no configuration yet, lets add one
+        DynamicElectricPricingConfiguration configuration;
+        configuration.setDynamicElectricPricingThingId(dynamicElectricPricingThingId);
+        m_dynamicElectricPricingConfigurations.insert(dynamicElectricPricingThingId, configuration);
+        emit dynamicElectricPricingConfigurationAdded(configuration);
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveDynamicElectricPricingConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // DynamicElectricPricingConfigurations
+}
+
+void EnergyEngine::saveDynamicElectricPricingConfigurationToSettings(const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("DynamicElectricPricingConfigurations");
+    settings.beginGroup(dynamicElectricPricingConfiguration.dynamicElectricPricingThingId().toString());
+    settings.setValue("optimizationEnabled", dynamicElectricPricingConfiguration.optimizationEnabled());
+    settings.setValue("maxElectricalPower", dynamicElectricPricingConfiguration.maxElectricalPower());
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::removeDynamicElectricPricingConfigurationFromSettings(const ThingId &dynamicElectricPricingThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("DynamicElectricPricingConfigurations");
+    settings.beginGroup(dynamicElectricPricingThingId.toString());
+    settings.remove("");
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::loadWashingMachineConfiguration(const ThingId &washingMachineThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("WashingMachineConfigurations");
+    if (settings.childGroups().contains(washingMachineThingId.toString())) {
+        settings.beginGroup(washingMachineThingId.toString());
+
+        WashingMachineConfiguration configuration;
+        configuration.setWashingMachineThingId(washingMachineThingId);
+        configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        configuration.setMaxElectricalPower(settings.value("maxElectricalPower").toDouble());
+        settings.endGroup(); // ThingId
+
+        m_washingMachineConfigurations.insert(washingMachineThingId, configuration);
+        emit washingMachineConfigurationAdded(configuration);
+
+        qCDebug(dcConsolinnoEnergy()) << "Loaded" << configuration;
+    } else {
+        // WashingMachine usecase is available and this heat pump has no configuration yet, lets add one
+        WashingMachineConfiguration configuration;
+        configuration.setWashingMachineThingId(washingMachineThingId);
+        m_washingMachineConfigurations.insert(washingMachineThingId, configuration);
+        emit washingMachineConfigurationAdded(configuration);
+        qCDebug(dcConsolinnoEnergy()) << "Added new" << configuration;
+        saveWashingMachineConfigurationToSettings(configuration);
+    }
+    settings.endGroup(); // WashingMachineConfigurations
+}
+
+void EnergyEngine::saveWashingMachineConfigurationToSettings(const WashingMachineConfiguration &washingMachineConfiguration)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("WashingMachineConfigurations");
+    settings.beginGroup(washingMachineConfiguration.washingMachineThingId().toString());
+    settings.setValue("optimizationEnabled", washingMachineConfiguration.optimizationEnabled());
+    settings.setValue("maxElectricalPower", washingMachineConfiguration.maxElectricalPower());
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void EnergyEngine::removeWashingMachineConfigurationFromSettings(const ThingId &washingMachineThingId)
+{
+    QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
+    settings.beginGroup("WashingMachineConfigurations");
+    settings.beginGroup(washingMachineThingId.toString());
     settings.remove("");
     settings.endGroup();
     settings.endGroup();

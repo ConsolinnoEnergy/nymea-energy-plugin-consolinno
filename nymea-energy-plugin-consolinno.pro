@@ -24,6 +24,8 @@ HEADERS += \
     configurations/pvconfiguration.h \
     configurations/userconfiguration.h \
     configurations/heatingrodconfiguration.h \
+    configurations/dynamicelectricpricingconfiguration.h \
+    configurations/washingmachineconfiguration.h \
     consolinnojsonhandler.h \
     energyengine.h \
     energypluginconsolinno.h
@@ -38,6 +40,8 @@ SOURCES += \
     configurations/pvconfiguration.cpp \
     configurations/userconfiguration.cpp \
     configurations/heatingrodconfiguration.cpp \
+    configurations/dynamicelectricpricingconfiguration.cpp \
+    configurations/washingmachineconfiguration.cpp \
     consolinnojsonhandler.cpp \
     energyengine.cpp \
     energypluginconsolinno.cpp

@@ -16,6 +16,23 @@ nymea-energy-plugin-consolinno (1.7.001-2) buster focal jammy; urgency=medium
 * Working on BlackoutProtection to handle PLim
  -- Tim Fischer <t.fischer@consolinno.de> Tue, 4 Jun 2024 10:30:53 +0200
 
+nymea-energy-plugin-consolinno (1.7.06) buster bullseye focal jammy; urgency=medium
+    Added multiple intergration plugins to meta package
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Wed, 05 Jun 2024 14:04:14 +0100
+
+nymea-energy-plugin-consolinno (1.7.05-6) buster bullseye focal jammy; urgency=medium
+    * Added cigate-modbus-adapter to consolinno-hems package
+    * Split up consolinno-hems meta package
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 19 Mar 2024 14:04:14 +0100
+
+nymea-energy-plugin-consolinno (1.7.03-1) buster focal jammy; urgency=medium
+    * Added smart washing machine support 
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 23 Jan 2024 09:12:14 +0100
+
+nymea-energy-plugin-consolinno (1.7.02-1) buster focal jammy; urgency=medium
+    * Improved ConEMS state
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 28 Nov 2023 09:12:14 +0100
+
 nymea-energy-plugin-consolinno (1.7.001-1) buster focal jammy; urgency=medium
 * Adapt to new versioning schema
  -- Florian Knab <f.knab@consolinno.de> Thu, 19 Sep 2023 7:50:53 +0200
@@ -40,9 +57,13 @@ nymea-energy-plugin-consolinno (1.5.126) qa; urgency=medium
 
 nymea-energy-plugin-consolinno (1.5.125) qa; urgency=medium
   * Added features for simple pv charging mode
-  * Added Kaco legacy plugin
   * Added Azurro plugin
  -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 26 Jun 2022 10:28:48 +0100
+
+nymea-energy-plugin-consolinno (1.5.124) qa; urgency=medium
+  * Added Kaco legacy plugin to meta package
+  * Added Kaco sunspec plugin to meta package
+ -- Leonhard Heizinger <l.heizinger@consolinno.de>  Wed, 3 May 2022 10:43:41 +0100
 
 nymea-energy-plugin-consolinno (1.5.123) qa; urgency=medium
   * Limit lower bound of blackout protection and improve debug output

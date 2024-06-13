@@ -3,8 +3,8 @@
  * Proprietary and confidential
  */
 
-#ifndef HEATINGRODCONFIGURATION_H
-#define HEATINGRODCONFIGURATION_H
+#ifndef WASHINGMACHINECONFIGURATION_H
+#define WASHINGMACHINECONFIGURATION_H
 
 #include <QObject>
 #include <QDebug>
@@ -14,39 +14,39 @@
 
 
 
-class HeatingRodConfiguration
+class WashingMachineConfiguration
 {
     Q_GADGET
 
-    Q_PROPERTY(QUuid heatingRodThingId READ heatingRodThingId WRITE setHeatingRodThingId)
+    Q_PROPERTY(QUuid washingMachineThingId READ washingMachineThingId WRITE setWashingMachineThingId)
     Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
     Q_PROPERTY(double maxElectricalPower READ maxElectricalPower WRITE setMaxElectricalPower USER true)
 public:
-    HeatingRodConfiguration();
+    WashingMachineConfiguration();
 
    
-    ThingId heatingRodThingId() const;
-    void setHeatingRodThingId(const ThingId &heatingRodThingId);
+    ThingId washingMachineThingId() const;
+    void setWashingMachineThingId(const ThingId &washingMachineThingId);
 
     bool optimizationEnabled() const;
     void setOptimizationEnabled(bool optimizationEnabled);
 
-    // The maximal electric power in W the heating rod can consume
+    // The maximal electric power in W the washing machine can consume
     double maxElectricalPower() const;
     void setMaxElectricalPower(double maxElectricalPower);
 
     bool isValid() const;
 
-    bool operator==(const HeatingRodConfiguration &other) const;
-    bool operator!=(const HeatingRodConfiguration &other) const;
+    bool operator==(const WashingMachineConfiguration &other) const;
+    bool operator!=(const WashingMachineConfiguration &other) const;
 
 private:
-    ThingId m_heatingRodThingId;
+    ThingId m_washingMachineThingId;
     bool m_optimizationEnabled = false;
-    double m_maxElectricalPower = 3;
+    double m_maxElectricalPower = 9;
     ThingId m_heatMeterThingId;
 };
 
-QDebug operator<<(QDebug debug, const HeatingRodConfiguration &heatingConfig);
+QDebug operator<<(QDebug debug, const WashingMachineConfiguration &washerConfig);
 
-#endif // HEATINGRODCONFIGURATION_H
+#endif // WASHINGMACHINECONFIGURATION_H
