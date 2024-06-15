@@ -1244,9 +1244,17 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     }
 
     // Adding the logic for the heat pumps
+    /*
+    Gedanken zur Regelung der Wärmepumpe: Diese soll ausgeschaltet werden, wenn das consumptionLimitExceeded. 
+    Problem ist, dass es zu einer Oszilation kommt, denn nach dem Ausschalten ist das limit nicht mehr überschritten und die Anlage wird direkt wieder eingeschaltet. 
+    Einfache Lösung: wir gehen davon aus, dass wenn ein Limit da ist, die Anlage immer ausgeschlatet wird. 
+    Problem: Wenn wir vor dem ausschlaten bereits unter dem Limit sind wird die Anlage auch ausgeschlatet.
+    Gehen wir davon aus, das die Anlage 10kW zieht, dann könnten wir die Logik so anpassen und Fälle schaffen, in denen die Wärmepumpe nicht ausgeschaltet werden muss. 
+    Besser wäre es aber die Anlage zu messen.
+    */
     foreach (Thing* thing, m_heatPumps) { // TODO: only if the HP is a CLS unit
 
-        if (consumptionLimitExceeded) {
+        if ((consumptionLimitExceeded || currentPowerNAP + 10000 > m_consumptionLimit) && m_consumptionLimit > 0) { 
 
             Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
             ParamList params;
