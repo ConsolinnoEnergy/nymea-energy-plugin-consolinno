@@ -197,6 +197,8 @@ private:
     QHash<ThingId, Thing *> m_washingMachines;
     QHash<ThingId, Thing *> m_evChargers;
     QHash<ThingId, Thing *> m_batteries;
+    QHash<ThingId, Thing *> m_14aDevices;
+
 
     bool m_hybridSimulationEnabled = false;
     QMap<QString, QVariant> m_hybridSimulationMap;

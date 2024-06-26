@@ -612,6 +612,17 @@ void EnergyEngine::monitorHeatPump(Thing* thing)
 }
 
 /*!
+ * \brief EnergyEngine::monitor14aDevice
+ * \param thing
+ * \details This function is called when a 14a device is added to the system.
+ */
+void EnergyEngine::monitor14aDevice(Thing* thing)
+{
+    qCDebug(dcConsolinnoEnergy()) << "Start monitoring 14a device" << thing;
+    m_14aDevices.insert(thing->id(), thing);
+}
+
+/*!
  * \brief EnergyEngine::monitorHeatingRod
  * \param thing
  * \details This function is called when a heating rod is added to the system.
@@ -755,6 +766,10 @@ void EnergyEngine::onThingAdded(Thing* thing)
 
     if (thing->thingClass().interfaces().contains("energystorage")) {
         monitorBattery(thing);
+    }
+
+    if (thing->thingClass().interfaces().contains("gridsupport")) {
+        monitor14aDevice(thing);
     }
 }
 
@@ -1086,6 +1101,27 @@ void EnergyEngine::updateHybridSimulation(Thing* thing)
  */
 void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 {
+
+    // Ensure there is at least one 14a device being monitored
+    if (m_14aDevices.isEmpty()) {
+        qCWarning(dcConsolinnoEnergy()) << "No 14a plugin devices found!";
+        return;
+    }
+
+    // Assume using the first monitored 14a device for simplicity
+    Thing* plugin14aThing = m_14aDevices.begin().value();
+    if (!plugin14aThing) {
+        qCWarning(dcConsolinnoEnergy()) << "14a plugin Thing not found!";
+        return;
+    }
+
+    // Retrieve the states from the 14a Thing
+    bool limitingActive = plugin14aThing->stateValue("limitingActive").toBool();
+    double pLim = plugin14aThing->stateValue("pLim").toDouble();
+
+    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states: limitingActive =" << limitingActive
+                                  << ", pLim =" << pLim;
+
     /*
     Scheinleistung_3Phasen_Dreieck = 400V * Leiterstrom * Wurzel(3)
     Scheinleistung_3Phasen_Stern = 230V * Phasenstrom * 3
@@ -1245,16 +1281,26 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
     // Adding the logic for the heat pumps
     /*
-    Gedanken zur Regelung der Wärmepumpe: Diese soll ausgeschaltet werden, wenn das consumptionLimitExceeded. 
-    Problem ist, dass es zu einer Oszilation kommt, denn nach dem Ausschalten ist das limit nicht mehr überschritten und die Anlage wird direkt wieder eingeschaltet. 
-    Einfache Lösung: wir gehen davon aus, dass wenn ein Limit da ist, die Anlage immer ausgeschlatet wird. 
-    Problem: Wenn wir vor dem ausschlaten bereits unter dem Limit sind wird die Anlage auch ausgeschlatet.
-    Gehen wir davon aus, das die Anlage 10kW zieht, dann könnten wir die Logik so anpassen und Fälle schaffen, in denen die Wärmepumpe nicht ausgeschaltet werden muss. 
-    Besser wäre es aber die Anlage zu messen.
+    Gedanken zur Regelung der Wärmepumpe: Diese soll ausgeschaltet werden, wenn das
+    consumptionLimitExceeded. Problem ist, dass es zu einer Oszilation kommt, denn nach dem
+    Ausschalten ist das limit nicht mehr überschritten und die Anlage wird direkt wieder
+    eingeschaltet. Einfache Lösung: wir gehen davon aus, dass wenn ein Limit da ist, die Anlage
+    immer ausgeschlatet wird. Problem: Wenn wir vor dem ausschlaten bereits unter dem Limit sind
+    wird die Anlage auch ausgeschlatet. Gehen wir davon aus, das die Anlage 10kW zieht, dann könnten
+    wir die Logik so anpassen und Fälle schaffen, in denen die Wärmepumpe nicht ausgeschaltet werden
+    muss. Besser wäre es aber die Anlage zu messen.
     */
-    foreach (Thing* thing, m_heatPumps) { // TODO: only if the HP is a CLS unit
+    foreach (Thing* thing, m_heatPumps) {
+        /*
+        TODO: only if the HP is a CLS unit
+        Wenn wir den Status, ob es sich um eine CLS-Anlage handelt als Variable im Thing zur
+        Verfügung haben wollen, müssten wir jedes Plugin anpassen. Alternativ können wir diese
+        Variable in die Config schreiben. In diser Config ist die Thing ID mit den Varibalen
+        verbunden und könnten hier abgerufen werden.
+        */
 
-        if ((consumptionLimitExceeded || currentPowerNAP + 10000 > m_consumptionLimit) && m_consumptionLimit > 0) { 
+        if ((consumptionLimitExceeded || currentPowerNAP + 10000 > m_consumptionLimit)
+            && m_consumptionLimit > 0) {
 
             Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
             ParamList params;
