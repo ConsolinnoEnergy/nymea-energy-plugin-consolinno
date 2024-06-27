@@ -1,4 +1,8 @@
-nymea-energy-plugin-consolinno (1.7.06-3) buster focal jammy; urgency=medium
+nymea-energy-plugin-consolinno (1.7.06-4) buster focal jammy; urgency=medium
+* new method GetGridSupportThing
+ -- Tim Fischer <t.fischer@consolinno.de> Tue, 27 Jun 2024 8:20:53 +0200
+ 
+ nymea-energy-plugin-consolinno (1.7.06-3) buster focal jammy; urgency=medium
 * Controller for HP is now not alway set to low when a limit is set
  -- Tim Fischer <t.fischer@consolinno.de> Tue, 17 Jun 2024 8:20:53 +0200
 
