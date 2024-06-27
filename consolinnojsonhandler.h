@@ -29,6 +29,15 @@ public:
     Q_INVOKABLE JsonReply* GetHeatingConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetHeatingConfiguration(const QVariantMap &params);
 
+    Q_INVOKABLE JsonReply* GetHeatingRodConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetHeatingRodConfiguration(const QVariantMap &params);
+
+    Q_INVOKABLE JsonReply* GetDynamicElectricPricingConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetDynamicElectricPricingConfiguration(const QVariantMap &params);
+
+    Q_INVOKABLE JsonReply* GetWashingMachineConfigurations(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* SetWashingMachineConfiguration(const QVariantMap &params);
+
     Q_INVOKABLE JsonReply* GetUserConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetUserConfiguration(const QVariantMap &params);
 
@@ -47,7 +56,7 @@ public:
     Q_INVOKABLE JsonReply* GetBatteryConfigurations(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetBatteryConfiguration(const QVariantMap &params);
 
-    Q_INVOKABLE JsonReply* GetConEMSStates(const QVariantMap &params);
+    Q_INVOKABLE JsonReply* GetConEMSState(const QVariantMap &params);
     Q_INVOKABLE JsonReply* SetConEMSState(const QVariantMap &params);
 
 signals:
@@ -64,6 +73,18 @@ signals:
     void HeatingConfigurationAdded(const QVariantMap &params);
     void HeatingConfigurationRemoved(const QVariantMap &params);
     void HeatingConfigurationChanged(const QVariantMap &params);
+
+    void HeatingRodConfigurationAdded(const QVariantMap &params);
+    void HeatingRodConfigurationRemoved(const QVariantMap &params);
+    void HeatingRodConfigurationChanged(const QVariantMap &params);
+
+    void DynamicElectricPricingConfigurationAdded(const QVariantMap &params);
+    void DynamicElectricPricingConfigurationRemoved(const QVariantMap &params);
+    void DynamicElectricPricingConfigurationChanged(const QVariantMap &params);
+
+    void WashingMachineConfigurationAdded(const QVariantMap &params);
+    void WashingMachineConfigurationRemoved(const QVariantMap &params);
+    void WashingMachineConfigurationChanged(const QVariantMap &params);
 
     void ChargingConfigurationAdded(const QVariantMap &params);
     void ChargingConfigurationRemoved(const QVariantMap &params);

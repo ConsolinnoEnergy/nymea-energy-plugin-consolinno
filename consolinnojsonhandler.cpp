@@ -4,8 +4,11 @@
  */
 
 #include "consolinnojsonhandler.h"
+#include "configurations/conemsstate.h"
 #include "energyengine.h"
 #include "energypluginconsolinno.h"
+#include <QJsonDocument>
+#include <QJsonParseError>
 
 Q_DECLARE_LOGGING_CATEGORY(dcConsolinnoEnergy)
 
@@ -17,13 +20,15 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     // Enums
     registerEnum<EnergyEngine::HemsError>();
     registerEnum<HeatingConfiguration::HouseType>();
-    registerEnum<ConEMSState::State>();
 
     // Flags
     registerFlag<EnergyEngine::HemsUseCase, EnergyEngine::HemsUseCases>();
 
     // Types
     registerObject<HeatingConfiguration>();
+    registerObject<HeatingRodConfiguration>();
+    registerObject<DynamicElectricPricingConfiguration>();
+    registerObject<WashingMachineConfiguration>();
     registerObject<ChargingConfiguration>();
     registerObject<ChargingOptimizationConfiguration>();
     registerObject<ChargingSessionConfiguration>();
@@ -31,6 +36,7 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     registerObject<ConEMSState>();
     registerObject<UserConfiguration>();
     registerObject<BatteryConfiguration>();
+    registerObject<ConEMSState>();
 
     QVariantMap params, returns;
     QString description;
@@ -72,7 +78,6 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetUserConfiguration", description, params, returns);
 
-
     // Heating
     params.clear(); returns.clear();
     description = "Get the list of available heating configurations from the energy engine.";
@@ -85,11 +90,47 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
     registerMethod("SetHeatingConfiguration", description, params, returns);
 
+    // Heating rod
+    params.clear(); returns.clear();
+    description = "Get the list of available heating rod configurations from the energy engine.";
+    returns.insert("heatingRodConfigurations", QVariantList() << objectRef<HeatingRodConfiguration>());
+    registerMethod("GetHeatingRodConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a heating rod configuration to the given heating rod configuration. The heating rod thing ID will be used as an identifier.";
+    params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetHeatingRodConfiguration", description, params, returns);
+   
+    // Dynamic Electric Pricing
+    params.clear(); returns.clear();
+    description = "Get the list of available dynamic electric pricing configurations from the energy engine.";
+    returns.insert("dynamicElectricPricingConfigurations", QVariantList() << objectRef<DynamicElectricPricingConfiguration>());
+    registerMethod("GetDynamicElectricPricingConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a dynamic electric pricing configuration to the given dynamic electric pricing configuration. The dynamic electric pricing thing ID will be used as an identifier.";
+    params.insert("dynamicElectricPricingConfiguration", objectRef<DynamicElectricPricingConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetDynamicElectricPricingConfiguration", description, params, returns);
+
+    // Washing machine
+    params.clear(); returns.clear();
+    description = "Get the list of available washing machine configurations from the energy engine.";
+    returns.insert("washingMachineConfigurations", QVariantList() << objectRef<WashingMachineConfiguration>());
+    registerMethod("GetWashingMachineConfigurations", description, params, returns);
+
+    params.clear(); returns.clear();
+    description = "Update a washing machine configuration to the given washing machine configuration. The washing machine thing ID will be used as an identifier.";
+    params.insert("washingMachineConfiguration", objectRef<WashingMachineConfiguration>());
+    returns.insert("hemsError", enumRef<EnergyEngine::HemsError>());
+    registerMethod("SetWashingMachineConfiguration", description, params, returns);
+
     // ConEMS
     params.clear(); returns.clear();
     description = "Get the list of available ConEMSState from the energy engine.";
-    returns.insert("conEMSStates", QVariantList() << objectRef<ConEMSState>());
-    registerMethod("GetConEMSStates", description, params, returns);
+    returns.insert("conEMSState", QVariantList() << objectRef<ConEMSState>());
+    registerMethod("GetConEMSState", description, params, returns);
 
     params.clear(); returns.clear();
     description = "Update the ConEMSState";
@@ -175,17 +216,17 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
 
     // UserConfig
     params.clear();
-    description = "Emitted whenever a new heating configuration has been added to the energy engine.";
+    description = "Emitted whenever a new user configuration has been added to the energy engine.";
     params.insert("userConfiguration", objectRef<UserConfiguration>());
     registerNotification("UserConfigurationAdded", description, params);
 
     params.clear();
-    description = "Emitted whenever a heating configuration has been removed from the energy engine with the given heat pump thing ID.";
+    description = "Emitted whenever a user configuration has been removed from the energy engine with the given heat pump thing ID.";
     params.insert("userConfigID", enumValueName(Uuid));
     registerNotification("UserConfigurationRemoved", description, params);
 
     params.clear();
-    description = "Emitted whenever a heating configuration has changed in the energy engine.";
+    description = "Emitted whenever a user configuration has changed in the energy engine.";
     params.insert("userConfiguration", objectRef<UserConfiguration>());
     registerNotification("UserConfigurationChanged", description, params);
 
@@ -205,6 +246,54 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
     description = "Emitted whenever a heating configuration has changed in the energy engine.";
     params.insert("heatingConfiguration", objectRef<HeatingConfiguration>());
     registerNotification("HeatingConfigurationChanged", description, params);
+
+    // Heating rod
+    params.clear();
+    description = "Emitted whenever a new heating rod configuration has been added to the energy engine.";
+    params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
+    registerNotification("HeatingRodConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a heating rod configuration has been removed from the energy engine with the given heat pump thing ID.";
+    params.insert("heatingRodThingId", enumValueName(Uuid));
+    registerNotification("HeatingRodConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a heating rod configuration has changed in the energy engine.";
+    params.insert("heatingRodConfiguration", objectRef<HeatingRodConfiguration>());
+    registerNotification("HeatingRodConfigurationChanged", description, params);
+
+    // Dynamic Electric Pricing
+    params.clear();
+    description = "Emitted whenever a new dynamic electric pricing configuration has been added to the energy engine.";
+    params.insert("dynamicElectricPricingConfiguration", objectRef<DynamicElectricPricingConfiguration>());
+    registerNotification("DynamicElectricPricingConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a dynamic electric pricing configuration has been removed from the energy engine with the given dynamic electric pricing thing ID.";
+    params.insert("dynamicElectricPricingThingId", enumValueName(Uuid));
+    registerNotification("DynamicElectricPricingConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a dynamic electric pricing configuration has changed in the energy engine.";
+    params.insert("dynamicElectricPricingConfiguration", objectRef<DynamicElectricPricingConfiguration>());
+    registerNotification("DynamicElectricPricingConfigurationChanged", description, params);
+
+    // Washing machine
+    params.clear();
+    description = "Emitted whenever a new washing machine configuration has been added to the energy engine.";
+    params.insert("washingMachineonfiguration", objectRef<WashingMachineConfiguration>());
+    registerNotification("WashingMachineConfigurationAdded", description, params);
+
+    params.clear();
+    description = "Emitted whenever a washing machine configuration has been removed from the energy engine with the given washing machine thing ID.";
+    params.insert("washingMachineThingId", enumValueName(Uuid));
+    registerNotification("WashingMachineConfigurationRemoved", description, params);
+
+    params.clear();
+    description = "Emitted whenever a washing machine configuration has changed in the energy engine.";
+    params.insert("washingMachineConfiguration", objectRef<WashingMachineConfiguration>());
+    registerNotification("WashingMachineConfigurationChanged", description, params);
 
     // ConEMS
     params.clear();
@@ -372,20 +461,78 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(EnergyEngine *energyEngine, HEMSVer
         emit HeatingConfigurationChanged(params);
     });
 
+
+    // Heating rod
+    connect(m_energyEngine, &EnergyEngine::heatingRodConfigurationAdded, this, [=](const HeatingRodConfiguration &heatingRodConfiguration){
+        QVariantMap params;
+        params.insert("heatingRodConfiguration", pack(heatingRodConfiguration));
+        emit HeatingRodConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::heatingRodConfigurationRemoved, this, [=](const ThingId &heatingRodThingId){
+        QVariantMap params;
+        params.insert("heatingRodThingId", heatingRodThingId);
+        emit HeatingRodConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::heatingRodConfigurationChanged, this, [=](const HeatingRodConfiguration &heatingRodConfiguration){
+        QVariantMap params;
+        params.insert("heatingRodConfiguration", pack(heatingRodConfiguration));
+        emit HeatingRodConfigurationChanged(params);
+    });
+
+    // Dynamic Electric Pricing
+    connect(m_energyEngine, &EnergyEngine::dynamicElectricPricingConfigurationAdded, this, [=](const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration){
+        QVariantMap params;
+        params.insert("dynamicElectricPricingConfiguration", pack(dynamicElectricPricingConfiguration));
+        emit DynamicElectricPricingConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::dynamicElectricPricingConfigurationRemoved, this, [=](const ThingId &dynamicElectricPricingThingId){
+        QVariantMap params;
+        params.insert("dynamicElectricPricingThingId", dynamicElectricPricingThingId);
+        emit DynamicElectricPricingConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::dynamicElectricPricingConfigurationChanged, this, [=](const DynamicElectricPricingConfiguration &dynamicElectricPricingConfiguration){
+        QVariantMap params;
+        params.insert("dynamicElectricPricingConfiguration", pack(dynamicElectricPricingConfiguration));
+        emit DynamicElectricPricingConfigurationChanged(params);
+    });
+
+    // Washing machine
+    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationAdded, this, [=](const WashingMachineConfiguration &washingMachineConfiguration){
+        QVariantMap params;
+        params.insert("washingMachineConfiguration", pack(washingMachineConfiguration));
+        emit WashingMachineConfigurationAdded(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationRemoved, this, [=](const ThingId &washingMachineThingId){
+        QVariantMap params;
+        params.insert("washingMachineThingId", washingMachineThingId);
+        emit WashingMachineConfigurationRemoved(params);
+    });
+
+    connect(m_energyEngine, &EnergyEngine::washingMachineConfigurationChanged, this, [=](const WashingMachineConfiguration &washingMachineConfiguration){
+        QVariantMap params;
+        params.insert("washingMachineConfiguration", pack(washingMachineConfiguration));
+        emit WashingMachineConfigurationChanged(params);
+    });
+
     //ConEMS
-    connect(m_energyEngine, &EnergyEngine::conEMSStatesAdded, this, [=](const ConEMSState &conEMSState){
+    connect(m_energyEngine, &EnergyEngine::conEMSStateAdded, this, [=](const ConEMSState &conEMSState){
         QVariantMap params;
         params.insert("conEMSState", pack(conEMSState));
         emit ConEMSStateAdded(params);
     });
 
-    connect(m_energyEngine, &EnergyEngine::conEMSStatesRemoved, this, [=](const QUuid &conEMSStateID){
+    connect(m_energyEngine, &EnergyEngine::conEMSStateRemoved, this, [=](const QUuid &conEMSStateID){
         QVariantMap params;
         params.insert("conEMSStateID", conEMSStateID);
         emit ConEMSStateRemoved(params);
     });
 
-    connect(m_energyEngine, &EnergyEngine::conEMSStatesChanged, this, [=](const ConEMSState &conEMSState){
+    connect(m_energyEngine, &EnergyEngine::conEMSStateChanged, this, [=](const ConEMSState &conEMSState){
         QVariantMap params;
         params.insert("conEMSState", pack(conEMSState));
         emit ConEMSStateChanged(params);
@@ -602,25 +749,100 @@ JsonReply *ConsolinnoJsonHandler::SetHeatingConfiguration(const QVariantMap &par
     return createReply(returns);
 }
 
-//ConEMS
-JsonReply *ConsolinnoJsonHandler::GetConEMSStates(const QVariantMap &params)
+
+// Heating rod
+JsonReply *ConsolinnoJsonHandler::GetHeatingRodConfigurations(const QVariantMap &params)
 {
-    qCDebug(dcConsolinnoEnergy()) << "Reached GetConEMSStates" << params;
+    Q_UNUSED(params)
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const HeatingRodConfiguration &heatingRodConfig, m_energyEngine->heatingRodConfigurations()) {
+        configurations << pack(heatingRodConfig);
+    }
+    returns.insert("heatingRodConfigurations", configurations);
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetHeatingRodConfiguration(const QVariantMap &params)
+{
+    EnergyEngine::HemsError error = m_energyEngine->setHeatingRodConfiguration(unpack<HeatingRodConfiguration>(params.value("heatingRodConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
+// Dynamic Electric Pricing
+JsonReply *ConsolinnoJsonHandler::GetDynamicElectricPricingConfigurations(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const DynamicElectricPricingConfiguration &dynamicElectricPricingConfig, m_energyEngine->dynamicElectricPricingConfigurations()) {
+        configurations << pack(dynamicElectricPricingConfig);
+    }
+    returns.insert("dynamicElectricPricingConfigurations", configurations);
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetDynamicElectricPricingConfiguration(const QVariantMap &params)
+{
+    EnergyEngine::HemsError error = m_energyEngine->setDynamicElectricPricingConfiguration(unpack<DynamicElectricPricingConfiguration>(params.value("dynamicElectricPricingConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
+// Washing machine
+JsonReply *ConsolinnoJsonHandler::GetWashingMachineConfigurations(const QVariantMap &params)
+{
+    Q_UNUSED(params)
+    QVariantMap returns;
+    QVariantList configurations;
+    foreach (const WashingMachineConfiguration &washingMachineConfig, m_energyEngine->washingMachineConfigurations()) {
+        configurations << pack(washingMachineConfig);
+    }
+    returns.insert("washingMachineConfigurations", configurations);
+    return createReply(returns);
+}
+
+JsonReply *ConsolinnoJsonHandler::SetWashingMachineConfiguration(const QVariantMap &params)
+{
+    EnergyEngine::HemsError error = m_energyEngine->setWashingMachineConfiguration(unpack<WashingMachineConfiguration>(params.value("washingMachineConfiguration").toMap()));
+    QVariantMap returns;
+    returns.insert("hemsError", enumValueName(error));
+    return createReply(returns);
+}
+
+//ConEMS
+JsonReply *ConsolinnoJsonHandler::GetConEMSState(const QVariantMap &params)
+{
     Q_UNUSED(params)
     QVariantMap returns;
     QVariantList Cstates;
 
     Cstates << pack(m_energyEngine->ConemsState());
 
-    returns.insert("conEMSStates", Cstates);
+    returns.insert("conEMSState", Cstates);
     return createReply(returns);
 }
 
 JsonReply *ConsolinnoJsonHandler::SetConEMSState(const QVariantMap &params)
 {
-    EnergyEngine::HemsError error = m_energyEngine->setConEMSState(unpack<ConEMSState>(params.value("conEMSState").toMap()));
+    // unpacking json payload to a JSON object seems not work using the unpack macro
+    // and results in an empty object...
+    // Let's do it manually
+    QJsonParseError err;
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(params.value("conEMSState").toMap().value("currentState").toString().toUtf8(), &err);
     QVariantMap returns;
-    returns.insert("hemsError", enumValueName(error));
+    if (err.error != QJsonParseError::NoError) {
+        qCWarning(dcConsolinnoEnergy()) << "Error parsing json: " << err.errorString();
+        returns.insert("hemsError", EnergyEngine::HemsError::HemsErrorInvalidParameter);
+        return createReply(returns);
+    }    
+    ConEMSState conemsstate = unpack<ConEMSState>(params.value("conEMSState").toMap());
+    conemsstate.setCurrentState(jsonResponse.object());
+    EnergyEngine::HemsError error = m_energyEngine->setConEMSState(conemsstate);
+    returns.insert("hemsError", error);
     return createReply(returns);
 }
 
