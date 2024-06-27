@@ -124,6 +124,8 @@ public:
     ConEMSState ConemsState() const;
     EnergyEngine::HemsError setConEMSState(const ConEMSState& conEMSState);
 
+    Thing* gridSupportDevice() const;
+
 signals:
     void availableUseCasesChanged(EnergyEngine::HemsUseCases availableUseCases);
     void housholdPhaseLimitChanged(uint housholdPhaseLimit);
@@ -212,7 +214,7 @@ private:
     QHash<ThingId, Thing*> m_washingMachines;
     QHash<ThingId, Thing*> m_evChargers;
     QHash<ThingId, Thing*> m_batteries;
-    QHash<ThingId, Thing*> m_14aDevices;
+    Thing* m_gridsupportDevice = nullptr;
 
     bool m_hybridSimulationEnabled = false;
     QMap<QString, QVariant> m_hybridSimulationMap;
@@ -227,7 +229,7 @@ private:
     void monitorEvCharger(Thing* thing);
     void monitorChargingSession(Thing* thing);
     void monitorUserConfig();
-    void monitor14aDevice(Thing* thing);
+    void monitorGridSupportDevice(Thing* thing);
 
     void pluggedInEventHandling(Thing* thing);
 

@@ -36,6 +36,14 @@ EnergyEngine::EnergyEngine(
     connect(thingManager, &ThingManager::thingAdded, this, &EnergyEngine::onThingAdded);
     connect(thingManager, &ThingManager::thingRemoved, this, &EnergyEngine::onThingRemoved);
 
+    // Initialize m_14aDevice if already configured
+    foreach (Thing* thing, m_thingManager->configuredThings()) {
+        if (thing->thingClass().interfaces().contains("gridsupport")) {
+            monitorGridSupportDevice(thing);
+            break; // Assuming only one 14a device, exit loop after finding it
+        }
+    }
+
     // Load configurations
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
 
@@ -177,6 +185,8 @@ EnergyEngine::EnergyEngine(
         qCDebug(dcConsolinnoEnergy()) << "======> Hybrid simulation disabled";
     }
 }
+
+Thing* EnergyEngine::gridSupportDevice() const { return m_gridsupportDevice; }
 
 EnergyEngine::HemsUseCases EnergyEngine::availableUseCases() const { return m_availableUseCases; }
 
@@ -612,14 +622,14 @@ void EnergyEngine::monitorHeatPump(Thing* thing)
 }
 
 /*!
- * \brief EnergyEngine::monitor14aDevice
+ * \brief EnergyEngine::monitorGridSupportDevice
  * \param thing
  * \details This function is called when a 14a device is added to the system.
  */
-void EnergyEngine::monitor14aDevice(Thing* thing)
+void EnergyEngine::monitorGridSupportDevice(Thing* thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "Start monitoring 14a device" << thing;
-    m_14aDevices.insert(thing->id(), thing);
+    m_gridsupportDevice = thing;
 }
 
 /*!
@@ -768,9 +778,9 @@ void EnergyEngine::onThingAdded(Thing* thing)
         monitorBattery(thing);
     }
 
-    if (thing->thingClass().interfaces().contains("gridsupport")) {
-        monitor14aDevice(thing);
-    }
+    // if (thing->thingClass().interfaces().contains("gridsupport")) {
+    //     monitor14aDevice(thing);
+    // }
 }
 
 void EnergyEngine::onThingRemoved(const ThingId& thingId)
@@ -1103,24 +1113,23 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 {
 
     // Ensure there is at least one 14a device being monitored
-    if (m_14aDevices.isEmpty()) {
+    if (!m_gridsupportDevice) {
         qCWarning(dcConsolinnoEnergy()) << "No 14a plugin devices found!";
         return;
     }
 
-    // Assume using the first monitored 14a device for simplicity
-    Thing* plugin14aThing = m_14aDevices.begin().value();
-    if (!plugin14aThing) {
-        qCWarning(dcConsolinnoEnergy()) << "14a plugin Thing not found!";
-        return;
-    }
-
     // Retrieve the states from the 14a Thing
-    bool limitingActive = plugin14aThing->stateValue("limitingActive").toBool();
-    double pLim = plugin14aThing->stateValue("pLim").toDouble();
+    bool limitingActive = m_gridsupportDevice->stateValue("limitingActive").toBool();
+    double pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
 
     qCDebug(dcConsolinnoEnergy()) << "14a Plugin states: limitingActive =" << limitingActive
                                   << ", pLim =" << pLim;
+
+    // Example: Write new states to the 14a Thing
+    m_gridsupportDevice->setStateValue("limitingActive", true); // Setting limitingActive to true
+    m_gridsupportDevice->setStateValue("pLim", 100.0); // Setting pLim to 100.0
+
+    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states set: limitingActive = true, pLim = 100.0";
 
     /*
     Scheinleistung_3Phasen_Dreieck = 400V * Leiterstrom * Wurzel(3)
