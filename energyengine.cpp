@@ -1118,25 +1118,6 @@ void EnergyEngine::updateHybridSimulation(Thing* thing)
 void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 {
 
-    // Ensure there is at least one 14a device being monitored
-    if (!m_gridsupportDevice) {
-        qCWarning(dcConsolinnoEnergy()) << "No 14a plugin devices found!";
-        return;
-    }
-
-    // Retrieve the states from the 14a Thing
-    bool limitingActive = m_gridsupportDevice->stateValue("limitingActive").toBool();
-    double pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
-
-    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states: limitingActive =" << limitingActive
-                                  << ", pLim =" << pLim;
-
-    // Example: Write new states to the 14a Thing
-    m_gridsupportDevice->setStateValue("limitingActive", true); // Setting limitingActive to true
-    m_gridsupportDevice->setStateValue("pLim", 100.0); // Setting pLim to 100.0
-
-    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states set: limitingActive = true, pLim = 100.0";
-
     /*
     Scheinleistung_3Phasen_Dreieck = 400V * Leiterstrom * Wurzel(3)
     Scheinleistung_3Phasen_Stern = 230V * Phasenstrom * 3
@@ -1151,6 +1132,30 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
     qCDebug(dcConsolinnoEnergy()) << "============> Evaluate system:"
                                   << QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+
+    // Ensure there is at least one 14a device being monitored
+    if (!m_gridsupportDevice) {
+        qCWarning(dcConsolinnoEnergy()) << "No 14a plugin devices found!";
+        return;
+    }
+
+    // Retrieve the states from the 14a Thing
+    bool limitingActive = m_gridsupportDevice->stateValue("limitingActive").toBool();
+    double pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
+
+    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 1: limitingActive =" << limitingActive
+                                  << ", pLim =" << pLim;
+
+    // Example: Write new states to the 14a Thing
+    m_gridsupportDevice->setStateValue("limitingActive", true); // Setting limitingActive to true
+    m_gridsupportDevice->setStateValue("pLim", 100.0); // Setting pLim to 100.0
+
+    limitingActive = m_gridsupportDevice->stateValue("limitingActive").toBool();
+    pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
+
+    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 2: limitingActive =" << limitingActive
+                                  << ", pLim =" << pLim;
+
     double currentPowerNAP = m_energyManager->rootMeter()->stateValue("currentPower").toDouble();
     qCDebug(dcConsolinnoEnergy()) << "Current Power at NAP: " << currentPowerNAP << "W";
 

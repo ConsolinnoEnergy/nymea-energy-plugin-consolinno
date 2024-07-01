@@ -1,3 +1,7 @@
+nymea-energy-plugin-consolinno (1.7.06-5) buster focal jammy; urgency=medium
+* use of new interface for grid support
+ -- Tim Fischer <t.fischer@consolinno.de> Tue, 27 Jun 2024 8:20:53 +0200
+
 nymea-energy-plugin-consolinno (1.7.06-4) buster focal jammy; urgency=medium
 * new method GetGridSupportThing
  -- Tim Fischer <t.fischer@consolinno.de> Tue, 27 Jun 2024 8:20:53 +0200
