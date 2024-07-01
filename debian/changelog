@@ -1,3 +1,7 @@
+nymea-energy-plugin-consolinno (1.7.07) buster bullseye focal jammy; urgency=medium
+    Added CLS boolean to relevant configurations
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Mon, 01 Jul 2024 14:04:14 +0100
+
 nymea-energy-plugin-consolinno (1.7.06) buster bullseye focal jammy; urgency=medium
     Added multiple intergration plugins to meta package
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Wed, 05 Jun 2024 14:04:14 +0100
