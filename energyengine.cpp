@@ -37,11 +37,18 @@ EnergyEngine::EnergyEngine(
     connect(thingManager, &ThingManager::thingRemoved, this, &EnergyEngine::onThingRemoved);
 
     // Initialize m_14aDevice if already configured
+    bool gridSupportFound = false;
     foreach (Thing* thing, m_thingManager->configuredThings()) {
         if (thing->thingClass().interfaces().contains("gridsupport")) {
             monitorGridSupportDevice(thing);
+            qCDebug(dcConsolinnoEnergy())
+                << "Grid support plugin found and added for thing:" << thing->name();
+            gridSupportFound = true;
             break; // Assuming only one 14a device, exit loop after finding it
         }
+    }
+    if (!gridSupportFound) {
+        qCDebug(dcConsolinnoEnergy()) << "No grid support plugin found among configured things.";
     }
 
     // Load configurations
@@ -91,8 +98,7 @@ EnergyEngine::EnergyEngine(
         qCWarning(dcConsolinnoEnergy()) << "Error getting consumption limit from dbus";
     }
 
-    qCDebug(dcConsolinnoEnergy())
-        << "********************** Signal Handler implementation *****************************";
+    qCDebug(dcConsolinnoEnergy()) << "DBUS Signal Handler implementation";
 
     // Add signal handler for consumption limit with same name as property on iface
     qCDebug(dcConsolinnoEnergy()) << "Signal subscribe: " << "sDbusService" << sDbusService.c_str()
