@@ -85,6 +85,16 @@ bool HeatingConfiguration::isValid() const
     return !m_heatPumpThingId.isNull() && m_maxElectricalPower != 0 && m_maxThermalEnergy != 0 && m_floorHeatingArea != 0;
 }
 
+bool HeatingConfiguration::controllableLocalSystem() const
+{
+    return m_controllableLocalSystem;
+}
+
+void HeatingConfiguration::setControllableLocalSystem(bool controllableLocalSystem)
+{
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 bool HeatingConfiguration::operator==(const HeatingConfiguration &other) const
 {
     return m_heatMeterThingId == other.heatPumpThingId() &&

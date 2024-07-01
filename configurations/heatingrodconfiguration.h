@@ -21,6 +21,7 @@ class HeatingRodConfiguration
     Q_PROPERTY(QUuid heatingRodThingId READ heatingRodThingId WRITE setHeatingRodThingId)
     Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
     Q_PROPERTY(double maxElectricalPower READ maxElectricalPower WRITE setMaxElectricalPower USER true)
+    Q_PROPERTY(bool controllableLocalSystem READ controllableLocalSystem WRITE setControllableLocalSystem USER true)
 public:
     HeatingRodConfiguration();
 
@@ -37,6 +38,9 @@ public:
 
     bool isValid() const;
 
+    bool controllableLocalSystem() const;
+    void setControllableLocalSystem(bool controllableLocalSystem);
+
     bool operator==(const HeatingRodConfiguration &other) const;
     bool operator!=(const HeatingRodConfiguration &other) const;
 
@@ -45,6 +49,7 @@ private:
     bool m_optimizationEnabled = false;
     double m_maxElectricalPower = 3;
     ThingId m_heatMeterThingId;
+    bool m_controllableLocalSystem = false;
 };
 
 QDebug operator<<(QDebug debug, const HeatingRodConfiguration &heatingConfig);
