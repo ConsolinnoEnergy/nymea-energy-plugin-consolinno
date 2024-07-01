@@ -120,6 +120,19 @@ Depends: ${shlibs:Depends},
          nymea-system-plugin-systemd,
 Description: Consolinno Home Energy Management System
  plugins
+
+
+
+ Package: consolinno-hems-grid-support
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
+         nymea-plugin-grid-support,
+Description: Consolinno Home Energy Management System
+ packages to enabling grid support features
  
 Package: consolinno-hems-plugins-cigate
 Section: libs
