@@ -121,9 +121,7 @@ Depends: ${shlibs:Depends},
 Description: Consolinno Home Energy Management System
  plugins
 
-
-
- Package: consolinno-hems-grid-support
+Package: consolinno-hems-grid-support
 Section: libs
 Architecture: any
 Multi-Arch: same
