@@ -22,6 +22,7 @@ class ChargingConfiguration
     Q_PROPERTY(uint targetPercentage READ targetPercentage WRITE setTargetPercentage USER true)
     Q_PROPERTY(int optimizationMode READ optimizationMode WRITE setOptimizationMode USER true)
     Q_PROPERTY(QUuid uniqueIdentifier READ uniqueIdentifier WRITE setUniqueIdentifier USER true)
+    Q_PROPERTY(bool controllableLocalSystem READ controllableLocalSystem WRITE setControllableLocalSystem USER true)
 public:
 
     enum OptimizationMode {
@@ -57,6 +58,9 @@ public:
 
     bool isValid() const;
 
+    bool controllableLocalSystem() const;
+    void setControllableLocalSystem(bool controllableLocalSystem);
+
     bool operator==(const ChargingConfiguration &other) const;
     bool operator!=(const ChargingConfiguration &other) const;
 
@@ -68,6 +72,7 @@ private:
     uint m_targetPercentage = 100;
     int m_optimizationMode = 0;
     QUuid m_uniqueIdentifier = "2e2d25c5-57c7-419a-b294-881f11ed01c4";
+    bool m_controllableLocalSystem = false;
 };
 
 QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig);

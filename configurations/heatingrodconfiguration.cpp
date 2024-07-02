@@ -45,6 +45,16 @@ bool HeatingRodConfiguration::isValid() const
     return !m_heatingRodThingId.isNull() && m_maxElectricalPower != 0;
 }
 
+bool HeatingRodConfiguration::controllableLocalSystem() const
+{
+    return m_controllableLocalSystem;
+}
+
+void HeatingRodConfiguration::setControllableLocalSystem(bool controllableLocalSystem)
+{
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 bool HeatingRodConfiguration::operator==(const HeatingRodConfiguration &other) const
 {
     return m_heatMeterThingId == other.heatingRodThingId() &&
@@ -62,6 +72,7 @@ QDebug operator<<(QDebug debug, const HeatingRodConfiguration &heatingRodConfig)
     debug.nospace() << "HeatingRodConfiguration(" << heatingRodConfig.heatingRodThingId().toString();
     debug.nospace() << ", " << (heatingRodConfig.optimizationEnabled() ? "enabled" : "disabled");
     debug.nospace() << ", " << "max power: " << heatingRodConfig.maxElectricalPower() << "W";
+    debug.nospace() << ", CLS: " << (heatingRodConfig.controllableLocalSystem() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }

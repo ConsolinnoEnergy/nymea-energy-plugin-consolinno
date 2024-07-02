@@ -30,6 +30,16 @@ void BatteryConfiguration::setOptimizationEnabled( bool optimizationEnabled)
     m_optimizationEnabled = optimizationEnabled;
 }
 
+bool BatteryConfiguration::controllableLocalSystem() const
+{
+    return m_controllableLocalSystem;
+}
+
+void BatteryConfiguration::setControllableLocalSystem(bool controllableLocalSystem)
+{
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 bool BatteryConfiguration::operator==(const BatteryConfiguration &other) const
 {
     return m_batteryThingId == other.batteryThingId() &&
@@ -44,7 +54,8 @@ bool BatteryConfiguration::operator!=(const BatteryConfiguration &other) const
 QDebug operator<<(QDebug debug, const BatteryConfiguration &batteryConfig)
 {
     debug.nospace() << "BatteryConfiguration(" << batteryConfig.batteryThingId().toString();
-    debug.nospace() << "optimization: " << (batteryConfig.optimizationEnabled() ? "enabled" : "disabled");
+    debug.nospace() << ", optimization: " << (batteryConfig.optimizationEnabled() ? "enabled" : "disabled");
+    debug.nospace() << ", CLS: " << (batteryConfig.controllableLocalSystem() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }

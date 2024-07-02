@@ -80,6 +80,14 @@ bool ChargingConfiguration::isValid() const {
   return !m_evChargerThingId.isNull() && !m_carThingId.isNull();
 }
 
+bool ChargingConfiguration::controllableLocalSystem() const {
+    return m_controllableLocalSystem;
+}
+
+void ChargingConfiguration::setControllableLocalSystem(bool controllableLocalSystem) {
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 bool ChargingConfiguration::operator==(
     const ChargingConfiguration &other) const {
   return m_evChargerThingId == other.evChargerThingId() &&
@@ -114,6 +122,7 @@ QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig) {
   debug.nospace() << ", target percentage: "
                   << chargingConfig.targetPercentage() << "%";
   debug.nospace() << ", target time: " << chargingConfig.endTime();
+  debug.nospace() << ", CLS: " << (chargingConfig.controllableLocalSystem() ? "enabled" : "disabled");
   debug.nospace() << ")";
   return debug.maybeSpace();
 }
