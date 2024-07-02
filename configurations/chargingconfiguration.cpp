@@ -95,7 +95,8 @@ bool ChargingConfiguration::operator==(
          m_optimizationMode == other.optimizationMode() &&
          m_carThingId == other.carThingId() && m_endTime == other.endTime() &&
          m_uniqueIdentifier == other.uniqueIdentifier() &&
-         m_targetPercentage == other.targetPercentage();
+         m_targetPercentage == other.targetPercentage() &&
+         m_controllableLocalSystem == other.optimizationEnabled();
 }
 
 bool ChargingConfiguration::operator!=(

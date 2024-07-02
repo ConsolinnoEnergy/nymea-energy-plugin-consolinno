@@ -59,7 +59,8 @@ bool HeatingRodConfiguration::operator==(const HeatingRodConfiguration &other) c
 {
     return m_heatMeterThingId == other.heatingRodThingId() &&
             m_optimizationEnabled == other.optimizationEnabled() &&
-            m_maxElectricalPower == other.maxElectricalPower();
+            m_maxElectricalPower == other.maxElectricalPower() &&
+            m_controllableLocalSystem == other.optimizationEnabled();
 }
 
 bool HeatingRodConfiguration::operator!=(const HeatingRodConfiguration &other) const
