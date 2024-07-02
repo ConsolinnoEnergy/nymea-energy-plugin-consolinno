@@ -42,8 +42,9 @@ void BatteryConfiguration::setControllableLocalSystem(bool controllableLocalSyst
 
 bool BatteryConfiguration::operator==(const BatteryConfiguration &other) const
 {
-    return m_batteryThingId == other.batteryThingId() &&
-            m_optimizationEnabled == other.optimizationEnabled();
+    return m_batteryThingId == other.batteryThingId() 
+    && m_optimizationEnabled == other.optimizationEnabled()
+    && m_controllableLocalSystem == other.optimizationEnabled();
 }
 
 bool BatteryConfiguration::operator!=(const BatteryConfiguration &other) const
