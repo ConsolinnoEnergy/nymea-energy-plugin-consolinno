@@ -72,6 +72,7 @@ QDebug operator<<(QDebug debug, const HeatingRodConfiguration &heatingRodConfig)
     debug.nospace() << "HeatingRodConfiguration(" << heatingRodConfig.heatingRodThingId().toString();
     debug.nospace() << ", " << (heatingRodConfig.optimizationEnabled() ? "enabled" : "disabled");
     debug.nospace() << ", " << "max power: " << heatingRodConfig.maxElectricalPower() << "W";
+    debug.nospace() << "CLS" << (chargingConfig.controllableLocalSystem() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }

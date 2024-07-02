@@ -55,6 +55,7 @@ QDebug operator<<(QDebug debug, const BatteryConfiguration &batteryConfig)
 {
     debug.nospace() << "BatteryConfiguration(" << batteryConfig.batteryThingId().toString();
     debug.nospace() << "optimization: " << (batteryConfig.optimizationEnabled() ? "enabled" : "disabled");
+    debug.nospace() << "CLS" << (batteryConfig.controllableLocalSystem() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }

@@ -115,13 +115,14 @@ QDebug operator<<(QDebug debug, const HeatingConfiguration &heatingConfig)
 {
     debug.nospace() << "HeatingConfiguration(" << heatingConfig.heatPumpThingId().toString();
     debug.nospace() << ", " << (heatingConfig.optimizationEnabled() ? "enabled" : "disabled");
-    debug.nospace() << ", " << "max power: " << heatingConfig.maxElectricalPower() << "W";
+    debug.nospace() << ", " << "max power: " << heatingConfig.maxElectricalPower() << "kW";
     debug.nospace() << ", " << "max thermal energy: " << heatingConfig.maxThermalEnergy() << "kWh";
     debug.nospace() << ", " << heatingConfig.houseType();
     debug.nospace() << ", area: " << heatingConfig.floorHeatingArea() << "m^2";
     if (!heatingConfig.heatMeterThingId().isNull()) {
         debug.nospace() << ", heat meter: " << heatingConfig.heatMeterThingId().toString();
     }
+    debug.nospace() << "CLS" << (heatingConfig.controllableLocalSystem() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }
