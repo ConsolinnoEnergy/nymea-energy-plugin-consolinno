@@ -122,7 +122,7 @@ QDebug operator<<(QDebug debug, const HeatingConfiguration &heatingConfig)
     if (!heatingConfig.heatMeterThingId().isNull()) {
         debug.nospace() << ", heat meter: " << heatingConfig.heatMeterThingId().toString();
     }
-    debug.nospace() << "CLS" << (heatingConfig.controllableLocalSystem() ? "enabled" : "disabled");
+    debug.nospace() << ", CLS: " << (heatingConfig.controllableLocalSystem() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }
