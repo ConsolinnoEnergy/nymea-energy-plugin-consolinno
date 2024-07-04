@@ -28,6 +28,13 @@ EnergyEngine::EnergyEngine(
         m_energyManager, &EnergyManager::rootMeterChanged, this, &EnergyEngine::onRootMeterChanged);
     onRootMeterChanged();
 
+    // Ensure grid support thing is added
+    // Ensure grid support thing is added
+    if (!m_gridSupportThingAdded) {
+        addGridSupportThing();
+        m_gridSupportThingAdded = true;
+    }
+
     // Thing manager
     foreach (Thing* thing, m_thingManager->configuredThings()) {
         onThingAdded(thing);
@@ -190,6 +197,18 @@ EnergyEngine::EnergyEngine(
     } else {
         qCDebug(dcConsolinnoEnergy()) << "======> Hybrid simulation disabled";
     }
+}
+
+void EnergyEngine::addGridSupportThing()
+{
+    qCDebug(dcConsolinnoEnergy()) << "Adding grid support thing";
+    ThingClassId thingClassId(
+        "d6821b26-ddb2-4115-84dd-92db0e961bc3"); // Use the ID from your plugin configuration
+    QString thingName = "Grid Support";
+    ParamList thingParams = ParamList();
+    ThingSetupInfo* info;
+    info = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
+    // Any additional setup for grid support thing can be added here
 }
 
 Thing* EnergyEngine::gridSupportDevice() const { return m_gridsupportDevice; }
@@ -1110,28 +1129,273 @@ void EnergyEngine::updateHybridSimulation(Thing* thing)
     linkedSimulatedThing->setStateValue("power", thing->stateValue("power"));
 }
 
-/*!
- * \brief EnergyEngine::evaluateAndSetMaxChargingCurrent
- * \details This function evaluates the current power consumption and sets the maxChargingCurrent
- * for each ev charger. This is currently a bang-bang control.
- */
-void EnergyEngine::evaluateAndSetMaxChargingCurrent()
+void EnergyEngine::controlWallboxComplex(
+    bool consumptionLimitCLSExceeded, double maxPhaseOvershotPower)
 {
+    // if the limit is exceeded or below max, we adjust the charging current for each EV charger
+    foreach (Thing* thing, m_evChargers) {
+        qCDebug(dcConsolinnoEnergy())
+            << "Blackout protection: Checking EV charger thing with name: " << thing->name();
 
+        maxChargingCurrentMaxValue = thing->thingClass()
+                                         .stateTypes()
+                                         .findByName("maxChargingCurrent")
+                                         .maxValue()
+                                         .toFloat();
+        maxChargingCurrentMinValue = thing->thingClass()
+                                         .stateTypes()
+                                         .findByName("maxChargingCurrent")
+                                         .minValue()
+                                         .toFloat();
+        actualMaxChargingCurrent = thing->state("maxChargingCurrent").value().toFloat();
+
+        qCDebug(dcConsolinnoEnergy())
+            << "Blackout protection: Absolute limits: min=" << maxChargingCurrentMinValue
+            << "A, max=" << maxChargingCurrentMaxValue
+            << "A, actual max value :" << actualMaxChargingCurrent << "A";
+
+        if (consumptionLimitCLSExceeded) { // TODO: only if the WB is a CLS unit
+            // If the limit is exceeded, we go down sat least maxPhaseOvershotCurrent
+            double maxPhaseOvershotCurrent = qRound(maxPhaseOvershotPower / 230);
+            qCInfo(dcConsolinnoEnergy())
+                << "Blackout protection: Using at least" << maxPhaseOvershotPower
+                << "W per Phase to much. In total using: "
+                << maxPhaseOvershotPower * m_housholdPhaseCount
+                << "[W] to much! -> Adjusting the evChargers...";
+
+            float newMaxChargingCurrentLimit = std::max(
+                maxChargingCurrentMinValue, actualMaxChargingCurrent - maxPhaseOvershotCurrent - 1);
+
+            // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
+            //     newMaxChargingCurrentLimit); // hier wird nur der max Value gesetzt, nicht der
+            //                                  // maxChargingCurrent
+
+            Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
+            ParamList params;
+            params.append(Param(
+                ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), newMaxChargingCurrentLimit));
+            action.setParams(params);
+            if (heatPumpState == "Off" || heatPumpState == "Low") {
+                m_thingManager->executeAction(action);
+
+                qCInfo(dcConsolinnoEnergy())
+                    << "Blackout protection: consumptionLimitCLSExceeded -> Ajdusted limit of "
+                       "charging current "
+                       "per "
+                       "Phase down to"
+                    << thing->state("maxChargingCurrent").value().toInt() << "A";
+            }
+
+        } else {
+            // Otherwise we can go up again step by step, only if Margin Power larger than 250W
+            if (actualMaxChargingCurrent < maxChargingCurrentMaxValue
+                && minPhaseMarginPower > 250) {
+                qCDebug(dcConsolinnoEnergy()) << "Blackout protection: lets go up again!";
+                // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
+                //     std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent +
+                //     1));
+
+                float newMaxChargingCurrentLimit = 0;
+
+                if (m_consumptionLimit > 0) {
+                    newMaxChargingCurrentLimit
+                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 1);
+                } else {
+                    newMaxChargingCurrentLimit
+                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 2);
+                }
+
+                Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
+                ParamList params;
+                params.append(Param(ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"),
+                    newMaxChargingCurrentLimit));
+                action.setParams(params);
+                m_thingManager->executeAction(action);
+
+                qCInfo(dcConsolinnoEnergy())
+                    << "Blackout protection: no consumptionLimitCLSExceeded -> Ajdusted limit of "
+                       "charging "
+                       "current up to"
+                    << thing->state("maxChargingCurrent").maxValue().toInt() << "A";
+            } else {
+                qCDebug(dcConsolinnoEnergy())
+                    << "Blackout protection: maxChargingCurrent not changed because: " << "actual: "
+                    << actualMaxChargingCurrent << " max: " << maxChargingCurrentMaxValue
+                    << " minPhaseMarginPower: " << minPhaseMarginPower;
+            }
+        }
+    }
+}
+
+void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded)
+{
+    // if the limit is exceeded or below max, we adjust the charging current for each EV charger
+    foreach (Thing* thing, m_evChargers) {
+        qCDebug(dcConsolinnoEnergy())
+            << "Blackout protection: Checking EV charger thing with name: " << thing->name();
+
+        maxChargingCurrentMaxValue = thing->thingClass()
+                                         .stateTypes()
+                                         .findByName("maxChargingCurrent")
+                                         .maxValue()
+                                         .toFloat();
+        maxChargingCurrentMinValue = thing->thingClass()
+                                         .stateTypes()
+                                         .findByName("maxChargingCurrent")
+                                         .minValue()
+                                         .toFloat();
+        actualMaxChargingCurrent = thing->state("maxChargingCurrent").value().toFloat();
+
+        qCDebug(dcConsolinnoEnergy())
+            << "Blackout protection: Absolute limits: min=" << maxChargingCurrentMinValue
+            << "A, max=" << maxChargingCurrentMaxValue
+            << "A, actual max value :" << actualMaxChargingCurrent << "A";
+
+        if (consumptionLimitCLSExceeded) { // TODO: only if the WB is a CLS unit
+
+            float newMaxChargingCurrentLimit = maxChargingCurrentMinValue;
+
+            Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
+            ParamList params;
+            params.append(Param(
+                ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), newMaxChargingCurrentLimit));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy())
+                << "Blackout protection: consumptionLimitCLSExceeded -> Ajdusted limit of "
+                   "charging current "
+                   "per "
+                   "Phase down to"
+                << thing->state("maxChargingCurrent").value().toInt() << "A";
+
+        } else {
+            if (actualMaxChargingCurrent < maxChargingCurrentMaxValue) {
+                qCDebug(dcConsolinnoEnergy()) << "Blackout protection: lets go up again!";
+
+                float newMaxChargingCurrentLimit = 0;
+
+                if (m_consumptionLimit > 0) {
+                    newMaxChargingCurrentLimit
+                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 1);
+                } else {
+                    newMaxChargingCurrentLimit
+                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 2);
+                }
+
+                Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
+                ParamList params;
+                params.append(Param(ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"),
+                    newMaxChargingCurrentLimit));
+                action.setParams(params);
+                m_thingManager->executeAction(action);
+
+                qCInfo(dcConsolinnoEnergy())
+                    << "Blackout protection: no consumptionLimitCLSExceeded -> Ajdusted limit of "
+                       "charging "
+                       "current up to"
+                    << thing->state("maxChargingCurrent").maxValue().toInt() << "A";
+            } else {
+                qCDebug(dcConsolinnoEnergy())
+                    << "Blackout protection: maxChargingCurrent not changed because: " << "actual: "
+                    << actualMaxChargingCurrent << " max: " << maxChargingCurrentMaxValue
+                    << " minPhaseMarginPower: " << minPhaseMarginPower;
+            }
+        }
+    }
+}
+
+void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded)
+{
+    // Adding the logic for the heat pumps
     /*
-    Scheinleistung_3Phasen_Dreieck = 400V * Leiterstrom * Wurzel(3)
-    Scheinleistung_3Phasen_Stern = 230V * Phasenstrom * 3
-    Scheinleistung_1Phasen = 230V * Stromstärke
+    Gedanken zur Regelung der Wärmepumpe: Diese soll ausgeschaltet werden, wenn das
+    consumptionLimitCLSExceeded. Problem ist, dass es zu einer Oszilation kommt, denn nach dem
+    Ausschalten ist das limit nicht mehr überschritten und die Anlage wird direkt wieder
+    eingeschaltet. Einfache Lösung: wir gehen davon aus, dass wenn ein Limit da ist, die Anlage
+    immer ausgeschlatet wird. Problem: Wenn wir vor dem ausschlaten bereits unter dem Limit sind
+    wird die Anlage auch ausgeschlatet. Gehen wir davon aus, das die Anlage 10kW zieht, dann könnten
+    wir die Logik so anpassen und Fälle schaffen, in denen die Wärmepumpe nicht ausgeschaltet werden
+    muss. Besser wäre es aber die Anlage zu messen.
     */
+    foreach (Thing* thing, m_heatPumps) {
+        /*
+        TODO: only if the HP is a CLS unit
+        Wenn wir den Status, ob es sich um eine CLS-Anlage handelt als Variable im Thing zur
+        Verfügung haben wollen, müssten wir jedes Plugin anpassen. Alternativ können wir diese
+        Variable in die Config schreiben. In diser Config ist die Thing ID mit den Varibalen
+        verbunden und könnten hier abgerufen werden.
+        */
 
-    // dcEnergySimulation
+        if (consumptionLimitCLSExceeded) {
 
-    // We need a root meter, otherwise no optimization or blackout protection can be done.
-    if (!m_energyManager->rootMeter())
-        return;
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Off"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
 
-    qCDebug(dcConsolinnoEnergy()) << "============> Evaluate system:"
-                                  << QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Off.";
+
+        } else {
+
+            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
+            ParamList params;
+            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Standard"));
+            action.setParams(params);
+            m_thingManager->executeAction(action);
+
+            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Standard.";
+        }
+
+        QString sgReadyMode = thing->state("sgReadyMode").value().toString();
+        qCDebug(dcConsolinnoEnergy())
+            << "Smart grid mode for Heat Pump with name: " << thing->name()
+            << " is: " << sgReadyMode;
+
+        if (sgReadyMode == "Off") {
+            heatPumpState = "Off";
+        } else if (sgReadyMode == "Low") {
+            heatPumpState = "Low";
+        } else if (sgReadyMode == "Standard") {
+            heatPumpState = "Standard";
+        } else if (sgReadyMode == "High") {
+            heatPumpState = "High";
+        } else {
+            qCWarning(dcConsolinnoEnergy())
+                << "Unknown smart grid mode for Heat Pump with name: " << thing->name();
+            heatPumpState = "Unknown"; // Handle unknown state
+        }
+    }
+}
+
+bool EnergyEngine::getPlimStatus()
+{
+    double currentPowerNAP = m_energyManager->rootMeter()->stateValue("currentPower").toDouble();
+    qCDebug(dcConsolinnoEnergy()) << "Current Power at NAP: " << currentPowerNAP << "W";
+
+    bool consumptionLimitCLSExceeded = false;
+
+    // Check if the power consumption limit is exceeded in regards to consumption limit
+    qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
+    if (m_consumptionLimit > 0) {
+        qCDebug(dcConsolinnoEnergy())
+            << "Consumption limit for group of controllable devices is set to" << m_consumptionLimit
+            << "W";
+        double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
+        consumptionLimitCLSExceeded = (currentPowerNAP > m_consumptionLimit);
+        if (consumptionLimitCLSExceeded) {
+            qCInfo(dcConsolinnoEnergy())
+                << "Consumption limit exceeded. Current consumption at NAP is" << currentPowerNAP
+                << "W. Limit is" << m_consumptionLimit << "W. That is a difference of"
+                << currentPowerNAP - m_consumptionLimit << "W";
+        }
+
+    } else {
+        qCDebug(dcConsolinnoEnergy())
+            << "Consumption limit is not set because m_consumptionLimit is: " << m_consumptionLimit;
+        consumptionLimitCLSExceeded = false;
+    }
 
     // Ensure there is at least one 14a device being monitored
     if (!m_gridsupportDevice) {
@@ -1140,21 +1404,36 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     }
 
     // Retrieve the states from the 14a Thing
-    bool limitingActive = m_gridsupportDevice->stateValue("limitingActive").toBool();
+    bool plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
     double pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
 
-    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 1: limitingActive =" << limitingActive
+    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 1: plimActive =" << plimActive
                                   << ", pLim =" << pLim;
 
     // Example: Write new states to the 14a Thing
-    m_gridsupportDevice->setStateValue("limitingActive", true); // Setting limitingActive to true
+    m_gridsupportDevice->setStateValue("plimActive", true); // Setting plimActive to true
     m_gridsupportDevice->setStateValue("pLim", 100.0); // Setting pLim to 100.0
 
-    limitingActive = m_gridsupportDevice->stateValue("limitingActive").toBool();
+    plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
     pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
 
-    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 2: limitingActive =" << limitingActive
+    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 2: plimActive =" << plimActive
                                   << ", pLim =" << pLim;
+}
+
+/*!
+ * \brief EnergyEngine::evaluateAndSetMaxChargingCurrent
+ * \details This function evaluates the current power consumption and sets the maxChargingCurrent
+ * for each ev charger. This is currently a bang-bang control.
+ */
+void EnergyEngine::evaluateAndSetMaxChargingCurrent()
+{
+    // We need a root meter, otherwise no optimization or blackout protection can be done.
+    if (!m_energyManager->rootMeter())
+        return;
+
+    qCDebug(dcConsolinnoEnergy()) << "============> Evaluate system:"
+                                  << QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss");
 
     double currentPowerNAP = m_energyManager->rootMeter()->stateValue("currentPower").toDouble();
     qCDebug(dcConsolinnoEnergy()) << "Current Power at NAP: " << currentPowerNAP << "W";
@@ -1177,7 +1456,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 
     QString heatPumpState;
     bool householdLimitExceeded = false;
-    bool limitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit; // m_housholdPhaseLimit sind zB 63A
     double maxPhaseOvershotPower = 0;
     double minPhaseMarginPower
@@ -1186,7 +1464,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     double maxChargingCurrentMaxValue = 0;
     double maxChargingCurrentMinValue = 0;
     double actualMaxChargingCurrent = 0;
-    bool consumptionLimitExceeded = false;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
@@ -1210,7 +1487,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         }
     }
     if (householdLimitExceeded) {
-        limitExceeded = true;
         qCDebug(dcConsolinnoEnergy())
             << "Maximum phase overshot power:" << maxPhaseOvershotPower << "W";
     } else {
@@ -1246,212 +1522,40 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                      "exceeding the physical phase limit is:"
                                   << minPhaseMarginPower << "W";
 
-    // Check if the power consumption limit is exceeded in regards to consumption limit
-    qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
-    if (m_consumptionLimit > 0) {
-        qCDebug(dcConsolinnoEnergy())
-            << "Consumption limit for group of controllable devices is set to" << m_consumptionLimit
-            << "W";
-        double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
-        consumptionLimitExceeded = (currentPowerNAP > m_consumptionLimit);
-        if (consumptionLimitExceeded) {
-            limitExceeded = true;
-            qCInfo(dcConsolinnoEnergy())
-                << "Consumption limit exceeded. Current consumption at NAP is" << currentPowerNAP
-                << "W. Limit is" << m_consumptionLimit << "W. That is a difference of"
-                << currentPowerNAP - m_consumptionLimit << "W";
-        }
+    bool consumptionLimitCLSExceeded = getPlimStatus();
 
-        foreach (const QString& phase, allPhasesCurrentPower.keys()) {
-            if (consumptionLimitExceeded) {
-                // OvershotPower for given phase
-                double phaseConsumptionOvershotPower
-                    = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
-                // Use larger overshot value (but only if it is overshot)
-                if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
-                    && phaseConsumptionOvershotPower > 0) {
-                    maxPhaseOvershotPower = phaseConsumptionOvershotPower;
-                    // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced
-                    // "
-                    //                                  "without exceeding the consumption limit
-                    //                                  is:"
-                    //                               << maxPhaseOvershotPower << "W";
-                }
-            } else if (!limitExceeded) {
-                qCDebug(dcConsolinnoEnergy())
-                    << "No consumption limit exceeded. currentPower: " << currentPowerNAP
-                    << "W. Limit is" << m_consumptionLimit << "W";
-                double phaseConsumptionMarginPower
-                    = phaseConsumptionLimit - allPhasesCurrentPower.value(phase);
-                // Use smaller margin value (but only if it is not overshot, i.e. negative)
-                if (phaseConsumptionMarginPower < minPhaseMarginPower
-                    && phaseConsumptionMarginPower > 0) {
-                    minPhaseMarginPower = phaseConsumptionMarginPower;
-                }
-            } else {
-                // this case is not relevant, as the limit is already exceeded through a different
-                // scenario, e.g. phasePowerLimit
+    foreach (const QString& phase, allPhasesCurrentPower.keys()) {
+        if (consumptionLimitCLSExceeded) {
+            // OvershotPower for given phase
+            double phaseConsumptionOvershotPower
+                = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
+            // Use larger overshot value (but only if it is overshot)
+            if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
+                && phaseConsumptionOvershotPower > 0) {
+                maxPhaseOvershotPower = phaseConsumptionOvershotPower;
+                // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced
+                // "
+                //                                  "without exceeding the consumption limit
+                //                                  is:"
+                //                               << maxPhaseOvershotPower << "W";
             }
-        }
-    } else {
-        qCDebug(dcConsolinnoEnergy())
-            << "Consumption limit is not set because m_consumptionLimit is: " << m_consumptionLimit;
-        consumptionLimitExceeded = false;
-    }
-
-    // Adding the logic for the heat pumps
-    /*
-    Gedanken zur Regelung der Wärmepumpe: Diese soll ausgeschaltet werden, wenn das
-    consumptionLimitExceeded. Problem ist, dass es zu einer Oszilation kommt, denn nach dem
-    Ausschalten ist das limit nicht mehr überschritten und die Anlage wird direkt wieder
-    eingeschaltet. Einfache Lösung: wir gehen davon aus, dass wenn ein Limit da ist, die Anlage
-    immer ausgeschlatet wird. Problem: Wenn wir vor dem ausschlaten bereits unter dem Limit sind
-    wird die Anlage auch ausgeschlatet. Gehen wir davon aus, das die Anlage 10kW zieht, dann könnten
-    wir die Logik so anpassen und Fälle schaffen, in denen die Wärmepumpe nicht ausgeschaltet werden
-    muss. Besser wäre es aber die Anlage zu messen.
-    */
-    foreach (Thing* thing, m_heatPumps) {
-        /*
-        TODO: only if the HP is a CLS unit
-        Wenn wir den Status, ob es sich um eine CLS-Anlage handelt als Variable im Thing zur
-        Verfügung haben wollen, müssten wir jedes Plugin anpassen. Alternativ können wir diese
-        Variable in die Config schreiben. In diser Config ist die Thing ID mit den Varibalen
-        verbunden und könnten hier abgerufen werden.
-        */
-
-        if ((consumptionLimitExceeded || currentPowerNAP + 10000 > m_consumptionLimit)
-            && m_consumptionLimit > 0) {
-
-            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
-            ParamList params;
-            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Low"));
-            action.setParams(params);
-            m_thingManager->executeAction(action);
-
-            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Low.";
-
+        } else if (!consumptionLimitCLSExceeded) {
+            double phaseConsumptionMarginPower
+                = phaseConsumptionLimit - allPhasesCurrentPower.value(phase);
+            // Use smaller margin value (but only if it is not overshot, i.e. negative)
+            if (phaseConsumptionMarginPower < minPhaseMarginPower
+                && phaseConsumptionMarginPower > 0) {
+                minPhaseMarginPower = phaseConsumptionMarginPower;
+            }
         } else {
-
-            Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
-            ParamList params;
-            params.append(Param(ParamTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), "Standard"));
-            action.setParams(params);
-            m_thingManager->executeAction(action);
-
-            qCInfo(dcConsolinnoEnergy()) << "PLim: Heat pump set to Standard.";
-        }
-
-        QString sgReadyMode = thing->state("sgReadyMode").value().toString();
-        qCDebug(dcConsolinnoEnergy())
-            << "Smart grid mode for Heat Pump with name: " << thing->name()
-            << " is: " << sgReadyMode;
-
-        if (sgReadyMode == "Off") {
-            heatPumpState = "Off";
-        } else if (sgReadyMode == "Low") {
-            heatPumpState = "Low";
-        } else if (sgReadyMode == "Standard") {
-            heatPumpState = "Standard";
-        } else if (sgReadyMode == "High") {
-            heatPumpState = "High";
-        } else {
-            qCWarning(dcConsolinnoEnergy())
-                << "Unknown smart grid mode for Heat Pump with name: " << thing->name();
-            heatPumpState = "Unknown"; // Handle unknown state
+            // this case is not relevant, as the limit is already exceeded through a different
+            // scenario, e.g. phasePowerLimit
         }
     }
 
-    // if the limit is exceeded or below max, we adjust the charging current for each EV charger
-    foreach (Thing* thing, m_evChargers) {
-        qCDebug(dcConsolinnoEnergy())
-            << "Blackout protection: Checking EV charger thing with name: " << thing->name();
-
-        maxChargingCurrentMaxValue = thing->thingClass()
-                                         .stateTypes()
-                                         .findByName("maxChargingCurrent")
-                                         .maxValue()
-                                         .toFloat();
-        maxChargingCurrentMinValue = thing->thingClass()
-                                         .stateTypes()
-                                         .findByName("maxChargingCurrent")
-                                         .minValue()
-                                         .toFloat();
-        actualMaxChargingCurrent = thing->state("maxChargingCurrent").value().toFloat();
-
-        qCDebug(dcConsolinnoEnergy())
-            << "Blackout protection: Absolute limits: min=" << maxChargingCurrentMinValue
-            << "A, max=" << maxChargingCurrentMaxValue
-            << "A, actual max value :" << actualMaxChargingCurrent << "A";
-
-        if (limitExceeded) { // TODO: only if the WB is a CLS unit
-            // If the limit is exceeded, we go down sat least maxPhaseOvershotCurrent
-            double maxPhaseOvershotCurrent = qRound(maxPhaseOvershotPower / 230);
-            qCInfo(dcConsolinnoEnergy())
-                << "Blackout protection: Using at least" << maxPhaseOvershotPower
-                << "W per Phase to much. In total using: "
-                << maxPhaseOvershotPower * m_housholdPhaseCount
-                << "[W] to much! -> Adjusting the evChargers...";
-
-            float newMaxChargingCurrentLimit = std::max(
-                maxChargingCurrentMinValue, actualMaxChargingCurrent - maxPhaseOvershotCurrent - 1);
-
-            // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
-            //     newMaxChargingCurrentLimit); // hier wird nur der max Value gesetzt, nicht der
-            //                                  // maxChargingCurrent
-
-            Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
-            ParamList params;
-            params.append(Param(
-                ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), newMaxChargingCurrentLimit));
-            action.setParams(params);
-            if (heatPumpState == "Off" || heatPumpState == "Low") {
-                m_thingManager->executeAction(action);
-
-                qCInfo(dcConsolinnoEnergy())
-                    << "Blackout protection: limitExceeded -> Ajdusted limit of charging current "
-                       "per "
-                       "Phase down to"
-                    << thing->state("maxChargingCurrent").value().toInt() << "A";
-            }
-
-        } else {
-            // Otherwise we can go up again step by step, only if Margin Power larger than 250W
-            if (actualMaxChargingCurrent < maxChargingCurrentMaxValue
-                && minPhaseMarginPower > 250) {
-                qCDebug(dcConsolinnoEnergy()) << "Blackout protection: lets go up again!";
-                // thing->setStateMaxValue(thing->state("maxChargingCurrent").stateTypeId(),
-                //     std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent +
-                //     1));
-
-                float newMaxChargingCurrentLimit = 0;
-
-                if (m_consumptionLimit > 0) {
-                    newMaxChargingCurrentLimit
-                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 1);
-                } else {
-                    newMaxChargingCurrentLimit
-                        = std::min(maxChargingCurrentMaxValue, actualMaxChargingCurrent + 2);
-                }
-
-                Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
-                ParamList params;
-                params.append(Param(ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"),
-                    newMaxChargingCurrentLimit));
-                action.setParams(params);
-                m_thingManager->executeAction(action);
-
-                qCInfo(dcConsolinnoEnergy())
-                    << "Blackout protection: no limitExceeded -> Ajdusted limit of charging "
-                       "current up to"
-                    << thing->state("maxChargingCurrent").maxValue().toInt() << "A";
-            } else {
-                qCDebug(dcConsolinnoEnergy())
-                    << "Blackout protection: maxChargingCurrent not changed because: " << "actual: "
-                    << actualMaxChargingCurrent << " max: " << maxChargingCurrentMaxValue
-                    << " minPhaseMarginPower: " << minPhaseMarginPower;
-            }
-        }
-    }
+    controlHeatPumps(consumptionLimitCLSExceeded);
+    controlWallboxSimple(consumptionLimitCLSExceeded);
+    // controlWallboxComplex(consumptionLimitCLSExceeded, maxPhaseOvershotPower);
 }
 
 // check whether e.g charging is possible, by checking if the necessary things are available
