@@ -29,33 +29,7 @@ EnergyEngine::EnergyEngine(
     onRootMeterChanged();
 
     // Ensure grid support thing is added
-    bool gridSupportThingFound = false;
-    foreach (Thing* thing, m_thingManager->configuredThings()) {
-        if (thing->name() == "gridsupport") {
-            qCDebug(dcConsolinnoEnergy()) << "Thing already exists:" << thing->name();
-            gridSupportThingFound = true;
-            break;
-        }
-    }
-    if (!gridSupportThingFound) {
-        qCDebug(dcConsolinnoEnergy()) << "No Thing called gridsupport found. Adding it now.";
-        addGridSupportThing();
-    }
-
-    // Initialize m_14aDevice if already configured
-    bool gridSupportPluginFound = false;
-    foreach (Thing* thing, m_thingManager->configuredThings()) {
-        if (thing->thingClass().interfaces().contains("gridsupport")) {
-            monitorGridSupportDevice(thing);
-            qCDebug(dcConsolinnoEnergy())
-                << "Grid support plugin found and added for thing:" << thing->name();
-            gridSupportPluginFound = true;
-            break; // Assuming only one 14a device, exit loop after finding it
-        }
-    }
-    if (!gridSupportPluginFound) {
-        qCDebug(dcConsolinnoEnergy()) << "No grid support plugin found among configured things.";
-    }
+    addGridSupportThingIfNotExists();
 
     // Thing manager
     foreach (Thing* thing, m_thingManager->configuredThings()) {
@@ -206,15 +180,31 @@ EnergyEngine::EnergyEngine(
     }
 }
 
-void EnergyEngine::addGridSupportThing()
+void EnergyEngine::addGridSupportThingIfNotExists()
 {
-    qCDebug(dcConsolinnoEnergy()) << "Adding grid support thing";
-    ThingClassId thingClassId(
-        "d6821b26-ddb2-4115-84dd-92db0e961bc3"); 
-    QString thingName = "gridsupport";
-    ParamList thingParams = ParamList();
-    ThingSetupInfo* info;
-    info = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
+    bool gridSupportFound = false;
+    foreach (Thing* thing, m_thingManager->configuredThings()) {
+        if (thing->thingClass().interfaces().contains("gridsupport")) {
+            monitorGridSupportDevice(thing);
+            qCDebug(dcConsolinnoEnergy())
+                << "Grid support plugin found and added for thing:" << thing->name();
+            gridSupportFound = true;
+            break; // Assuming only one grid support device, exit loop after finding it
+        }
+    }
+
+    if (!gridSupportFound) {
+        qCDebug(dcConsolinnoEnergy())
+            << "No grid support plugin found among configured things. Adding a new one.";
+        ThingClassId thingClassId("d6821b26-ddb2-4115-84dd-92db0e961bc3");
+        QString thingName = "gridsupport";
+        ParamList thingParams = ParamList();
+        ThingSetupInfo* info
+            = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
+        qCDebug(dcConsolinnoEnergy())
+            << "Added new grid support thing with ID:" << info->thing()->id().toString();
+        monitorGridSupportDevice(info->thing());
+    }
 }
 
 Thing* EnergyEngine::gridSupportDevice() const { return m_gridsupportDevice; }

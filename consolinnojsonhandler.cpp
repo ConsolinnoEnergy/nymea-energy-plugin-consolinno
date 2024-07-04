@@ -965,14 +965,18 @@ JsonReply* ConsolinnoJsonHandler::GetGridSupportThing(const QVariantMap& params)
     }
 
     Thing* gridSupportThing = m_energyEngine->gridSupportDevice();
-    bool limitingActive = gridSupportThing->stateValue("limitingActive").toBool();
-    double pLim = gridSupportThing->stateValue("pLim").toDouble();
+    QString thingId = gridSupportThing->id().toString(); // Get the ID of the thing
 
-    QVariantMap states;
-    states.insert("limitingActive", limitingActive);
-    states.insert("pLim", pLim);
+    // bool limitingActive = gridSupportThing->stateValue("limitingActive").toBool();
+    // double pLim = gridSupportThing->stateValue("pLim").toDouble();
 
-    returns.insert("gridSupportStates", states);
+    // QVariantMap states;
+    // states.insert("limitingActive", limitingActive);
+    // states.insert("pLim", pLim);
+
+    // returns.insert("gridSupportStates", states);
+
+    returns.insert("thingId", thingId); // Insert the ID into the returns map
     return createReply(returns);
 }
 
