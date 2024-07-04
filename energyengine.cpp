@@ -1551,7 +1551,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     }
 
     m_gridsupportDevice->setStateValue("plimActive", consumptionLimitCLSExceeded);
-    m_gridsupportDevice->setStateValue("pLim", m_consumptionLimit);
+    m_gridsupportDevice->setStateValue("plim", m_consumptionLimit);
 
     controlHeatPumps(consumptionLimitCLSExceeded);
     controlWallboxSimple(consumptionLimitCLSExceeded);
