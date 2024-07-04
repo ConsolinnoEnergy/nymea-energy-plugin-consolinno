@@ -238,7 +238,7 @@ private:
     void controlHeatPumps(bool consumptionLimitCLSExceeded);
 
     bool m_gridSupportThingAdded = false;
-    void addGridSupportThing();
+    void addGridSupportThingIfNotExists();
 
 public slots:
     void onConsumptionLimitChanged(qlonglong consumptionLimit);
