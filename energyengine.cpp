@@ -1132,6 +1132,13 @@ void EnergyEngine::updateHybridSimulation(Thing* thing)
 void EnergyEngine::controlWallboxComplex(
     bool consumptionLimitCLSExceeded, double maxPhaseOvershotPower)
 {
+    double maxChargingCurrentMaxValue = 0;
+    double maxChargingCurrentMinValue = 0;
+    double actualMaxChargingCurrent = 0;
+    double minPhaseMarginPower
+        = 230 * m_housholdPhaseLimit; // the minPhaseMarginPower is the minimum available power per
+                                      // phase for which it can be increased
+
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
     foreach (Thing* thing, m_evChargers) {
         qCDebug(dcConsolinnoEnergy())
@@ -1175,16 +1182,14 @@ void EnergyEngine::controlWallboxComplex(
             params.append(Param(
                 ParamTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), newMaxChargingCurrentLimit));
             action.setParams(params);
-            if (heatPumpState == "Off" || heatPumpState == "Low") {
-                m_thingManager->executeAction(action);
+            m_thingManager->executeAction(action);
 
-                qCInfo(dcConsolinnoEnergy())
-                    << "Blackout protection: consumptionLimitCLSExceeded -> Ajdusted limit of "
-                       "charging current "
-                       "per "
-                       "Phase down to"
-                    << thing->state("maxChargingCurrent").value().toInt() << "A";
-            }
+            qCInfo(dcConsolinnoEnergy())
+                << "Blackout protection: consumptionLimitCLSExceeded -> Ajdusted limit of "
+                   "charging current "
+                   "per "
+                   "Phase down to"
+                << thing->state("maxChargingCurrent").value().toInt() << "A";
 
         } else {
             // Otherwise we can go up again step by step, only if Margin Power larger than 250W
@@ -1229,6 +1234,10 @@ void EnergyEngine::controlWallboxComplex(
 
 void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded)
 {
+    double maxChargingCurrentMaxValue = 0;
+    double maxChargingCurrentMinValue = 0;
+    double actualMaxChargingCurrent = 0;
+
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
     foreach (Thing* thing, m_evChargers) {
         qCDebug(dcConsolinnoEnergy())
@@ -1298,8 +1307,7 @@ void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded)
             } else {
                 qCDebug(dcConsolinnoEnergy())
                     << "Blackout protection: maxChargingCurrent not changed because: " << "actual: "
-                    << actualMaxChargingCurrent << " max: " << maxChargingCurrentMaxValue
-                    << " minPhaseMarginPower: " << minPhaseMarginPower;
+                    << actualMaxChargingCurrent << " max: " << maxChargingCurrentMaxValue;
             }
         }
     }
@@ -1307,6 +1315,8 @@ void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded)
 
 void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded)
 {
+    QString heatPumpState;
+
     // Adding the logic for the heat pumps
     /*
     Gedanken zur Regelung der Wärmepumpe: Diese soll ausgeschaltet werden, wenn das
@@ -1391,6 +1401,35 @@ bool EnergyEngine::getPlimStatus()
                 << currentPowerNAP - m_consumptionLimit << "W";
         }
 
+        foreach (const QString& phase, allPhasesCurrentPower.keys()) {
+            if (consumptionLimitCLSExceeded) {
+                // OvershotPower for given phase
+                double phaseConsumptionOvershotPower
+                    = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
+                // Use larger overshot value (but only if it is overshot)
+                if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
+                    && phaseConsumptionOvershotPower > 0) {
+                    maxPhaseOvershotPower = phaseConsumptionOvershotPower;
+                    // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced
+                    // "
+                    //                                  "without exceeding the consumption limit
+                    //                                  is:"
+                    //                               << maxPhaseOvershotPower << "W";
+                }
+            } else if (!consumptionLimitCLSExceeded) {
+                double phaseConsumptionMarginPower
+                    = phaseConsumptionLimit - allPhasesCurrentPower.value(phase);
+                // Use smaller margin value (but only if it is not overshot, i.e. negative)
+                if (phaseConsumptionMarginPower < minPhaseMarginPower
+                    && phaseConsumptionMarginPower > 0) {
+                    minPhaseMarginPower = phaseConsumptionMarginPower;
+                }
+            } else {
+                // this case is not relevant, as the limit is already exceeded through a different
+                // scenario, e.g. phasePowerLimit
+            }
+        }
+
     } else {
         qCDebug(dcConsolinnoEnergy())
             << "Consumption limit is not set because m_consumptionLimit is: " << m_consumptionLimit;
@@ -1454,16 +1493,12 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     qCDebug(dcConsolinnoEnergy()) << "Phase C current power:" << allPhasesCurrentPower.value("C")
                                   << "W";
 
-    QString heatPumpState;
     bool householdLimitExceeded = false;
     double phasePowerLimit = 230 * m_housholdPhaseLimit; // m_housholdPhaseLimit sind zB 63A
     double maxPhaseOvershotPower = 0;
     double minPhaseMarginPower
         = 230 * m_housholdPhaseLimit; // the minPhaseMarginPower is the minimum available power per
                                       // phase for which it can be increased
-    double maxChargingCurrentMaxValue = 0;
-    double maxChargingCurrentMinValue = 0;
-    double actualMaxChargingCurrent = 0;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
@@ -1523,35 +1558,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                   << minPhaseMarginPower << "W";
 
     bool consumptionLimitCLSExceeded = getPlimStatus();
-
-    foreach (const QString& phase, allPhasesCurrentPower.keys()) {
-        if (consumptionLimitCLSExceeded) {
-            // OvershotPower for given phase
-            double phaseConsumptionOvershotPower
-                = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
-            // Use larger overshot value (but only if it is overshot)
-            if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
-                && phaseConsumptionOvershotPower > 0) {
-                maxPhaseOvershotPower = phaseConsumptionOvershotPower;
-                // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced
-                // "
-                //                                  "without exceeding the consumption limit
-                //                                  is:"
-                //                               << maxPhaseOvershotPower << "W";
-            }
-        } else if (!consumptionLimitCLSExceeded) {
-            double phaseConsumptionMarginPower
-                = phaseConsumptionLimit - allPhasesCurrentPower.value(phase);
-            // Use smaller margin value (but only if it is not overshot, i.e. negative)
-            if (phaseConsumptionMarginPower < minPhaseMarginPower
-                && phaseConsumptionMarginPower > 0) {
-                minPhaseMarginPower = phaseConsumptionMarginPower;
-            }
-        } else {
-            // this case is not relevant, as the limit is already exceeded through a different
-            // scenario, e.g. phasePowerLimit
-        }
-    }
 
     controlHeatPumps(consumptionLimitCLSExceeded);
     controlWallboxSimple(consumptionLimitCLSExceeded);
