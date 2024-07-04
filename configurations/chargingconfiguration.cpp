@@ -68,6 +68,14 @@ void ChargingConfiguration::setTargetPercentage(uint targetPercentage) {
   m_targetPercentage = targetPercentage;
 }
 
+float ChargingConfiguration::priceThreshold() const {
+    return m_priceThreshold;
+}
+
+void ChargingConfiguration::setPriceThreshold(float priceThreshold) {
+    m_priceThreshold = priceThreshold;
+}
+
 QUuid ChargingConfiguration::uniqueIdentifier() const {
   return m_uniqueIdentifier;
 }
@@ -96,6 +104,7 @@ bool ChargingConfiguration::operator==(
          m_carThingId == other.carThingId() && m_endTime == other.endTime() &&
          m_uniqueIdentifier == other.uniqueIdentifier() &&
          m_targetPercentage == other.targetPercentage() &&
+         m_priceThreshold == other.priceThreshold() &&
          m_controllableLocalSystem == other.optimizationEnabled();
 }
 
@@ -122,6 +131,8 @@ QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig) {
                   << chargingConfig.optimizationMode();
   debug.nospace() << ", target percentage: "
                   << chargingConfig.targetPercentage() << "%";
+  debug.nospace() << ", price threshold: "
+                  << chargingConfig.priceThreshold() << "%";
   debug.nospace() << ", target time: " << chargingConfig.endTime();
   debug.nospace() << ", CLS: " << (chargingConfig.controllableLocalSystem() ? "enabled" : "disabled");
   debug.nospace() << ")";
