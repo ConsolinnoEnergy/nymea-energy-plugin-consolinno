@@ -132,7 +132,7 @@ QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig) {
   debug.nospace() << ", target percentage: "
                   << chargingConfig.targetPercentage() << "%";
   debug.nospace() << ", price threshold: "
-                  << chargingConfig.priceThreshold() << "%";
+                  << chargingConfig.priceThreshold();
   debug.nospace() << ", target time: " << chargingConfig.endTime();
   debug.nospace() << ", CLS: " << (chargingConfig.controllableLocalSystem() ? "enabled" : "disabled");
   debug.nospace() << ")";

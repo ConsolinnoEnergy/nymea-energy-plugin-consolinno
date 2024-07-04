@@ -62,6 +62,9 @@ public:
     bool controllableLocalSystem() const;
     void setControllableLocalSystem(bool controllableLocalSystem);
 
+    float priceThreshold() const;
+    void setPriceThreshold(float priceThreshold);
+
     bool operator==(const ChargingConfiguration &other) const;
     bool operator!=(const ChargingConfiguration &other) const;
 
