@@ -204,7 +204,7 @@ void EnergyEngine::addGridSupportThing()
     qCDebug(dcConsolinnoEnergy()) << "Adding grid support thing";
     ThingClassId thingClassId(
         "d6821b26-ddb2-4115-84dd-92db0e961bc3"); // Use the ID from your plugin configuration
-    QString thingName = "Grid Support";
+    QString thingName = "gridsupport";
     ParamList thingParams = ParamList();
     ThingSetupInfo* info;
     info = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
