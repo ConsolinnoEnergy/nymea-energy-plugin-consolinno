@@ -1379,37 +1379,6 @@ void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded)
     }
 }
 
-bool EnergyEngine::getPlimStatus()
-{
-    double currentPowerNAP = m_energyManager->rootMeter()->stateValue("currentPower").toDouble();
-    qCDebug(dcConsolinnoEnergy()) << "Current Power at NAP: " << currentPowerNAP << "W";
-
-    bool consumptionLimitCLSExceeded = false;
-
-    // Ensure there is at least one 14a device being monitored
-    if (!m_gridsupportDevice) {
-        qCWarning(dcConsolinnoEnergy()) << "No 14a plugin devices found!";
-        return;
-    }
-
-    // Retrieve the states from the 14a Thing
-    bool plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
-    double pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
-
-    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 1: plimActive =" << plimActive
-                                  << ", pLim =" << pLim;
-
-    // Example: Write new states to the 14a Thing
-    m_gridsupportDevice->setStateValue("plimActive", true); // Setting plimActive to true
-    m_gridsupportDevice->setStateValue("pLim", 100.0); // Setting pLim to 100.0
-
-    plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
-    pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
-
-    qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 2: plimActive =" << plimActive
-                                  << ", pLim =" << pLim;
-}
-
 /*!
  * \brief EnergyEngine::evaluateAndSetMaxChargingCurrent
  * \details This function evaluates the current power consumption and sets the maxChargingCurrent
@@ -1417,6 +1386,29 @@ bool EnergyEngine::getPlimStatus()
  */
 void EnergyEngine::evaluateAndSetMaxChargingCurrent()
 {
+
+    if (!m_gridsupportDevice) {
+        qCWarning(dcConsolinnoEnergy()) << "No 14a plugin devices found!";
+        return;
+    }
+
+    // // Retrieve the states from the 14a Thing
+    // bool plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
+    // double pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
+
+    // qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 1: plimActive =" << plimActive
+    //                               << ", pLim =" << pLim;
+
+    // // Example: Write new states to the 14a Thing
+    // m_gridsupportDevice->setStateValue("plimActive", true); // Setting plimActive to true
+    // m_gridsupportDevice->setStateValue("pLim", 100.0); // Setting pLim to 100.0
+
+    // plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
+    // pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
+
+    // qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 2: plimActive =" << plimActive
+    //                               << ", pLim =" << pLim;
+
     // We need a root meter, otherwise no optimization or blackout protection can be done.
     if (!m_energyManager->rootMeter())
         return;
@@ -1449,6 +1441,7 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     double minPhaseMarginPower
         = 230 * m_housholdPhaseLimit; // the minPhaseMarginPower is the minimum available power per
                                       // phase for which it can be increased
+    bool consumptionLimitCLSExceeded = false;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
@@ -1557,7 +1550,8 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         consumptionLimitCLSExceeded = false;
     }
 
-    bool consumptionLimitCLSExceeded = getPlimStatus();
+    m_gridsupportDevice->setStateValue("plimActive", consumptionLimitCLSExceeded);
+    m_gridsupportDevice->setStateValue("pLim", m_consumptionLimit);
 
     controlHeatPumps(consumptionLimitCLSExceeded);
     controlWallboxSimple(consumptionLimitCLSExceeded);

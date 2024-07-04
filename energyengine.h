@@ -236,7 +236,6 @@ private:
     void controlWallboxComplex(bool consumptionLimitCLSExceeded, double maxPhaseOvershotPower);
     void controlWallboxSimple(bool consumptionLimitCLSExceeded);
     void controlHeatPumps(bool consumptionLimitCLSExceeded);
-    bool getPlimStatus();
 
     bool m_gridSupportThingAdded = false;
     void addGridSupportThing();
