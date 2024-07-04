@@ -37,6 +37,9 @@ int ChargingConfiguration::optimizationModeBase() {
   if (optimizationMode() >= 3000 && optimizationMode() < 4000) {
     return 3;
   }
+  if (optimizationMode() >= 4000 && optimizationMode() < 5000) {
+    return 4;
+  }
   return -1;
 }
 
