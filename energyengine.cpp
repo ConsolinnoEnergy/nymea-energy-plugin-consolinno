@@ -29,10 +29,32 @@ EnergyEngine::EnergyEngine(
     onRootMeterChanged();
 
     // Ensure grid support thing is added
-    // Ensure grid support thing is added
-    if (!m_gridSupportThingAdded) {
+    bool gridSupportThingFound = false;
+    foreach (Thing* thing, m_thingManager->configuredThings()) {
+        if (thing->name() == "gridsupport") {
+            qCDebug(dcConsolinnoEnergy()) << "Thing already exists:" << thing->name();
+            gridSupportThingFound = true;
+            break;
+        }
+    }
+    if (!gridSupportThingFound) {
+        qCDebug(dcConsolinnoEnergy()) << "No Thing called gridsupport found. Adding it now.";
         addGridSupportThing();
-        m_gridSupportThingAdded = true;
+    }
+
+    // Initialize m_14aDevice if already configured
+    bool gridSupportPluginFound = false;
+    foreach (Thing* thing, m_thingManager->configuredThings()) {
+        if (thing->thingClass().interfaces().contains("gridsupport")) {
+            monitorGridSupportDevice(thing);
+            qCDebug(dcConsolinnoEnergy())
+                << "Grid support plugin found and added for thing:" << thing->name();
+            gridSupportPluginFound = true;
+            break; // Assuming only one 14a device, exit loop after finding it
+        }
+    }
+    if (!gridSupportPluginFound) {
+        qCDebug(dcConsolinnoEnergy()) << "No grid support plugin found among configured things.";
     }
 
     // Thing manager
@@ -42,21 +64,6 @@ EnergyEngine::EnergyEngine(
 
     connect(thingManager, &ThingManager::thingAdded, this, &EnergyEngine::onThingAdded);
     connect(thingManager, &ThingManager::thingRemoved, this, &EnergyEngine::onThingRemoved);
-
-    // Initialize m_14aDevice if already configured
-    bool gridSupportFound = false;
-    foreach (Thing* thing, m_thingManager->configuredThings()) {
-        if (thing->thingClass().interfaces().contains("gridsupport")) {
-            monitorGridSupportDevice(thing);
-            qCDebug(dcConsolinnoEnergy())
-                << "Grid support plugin found and added for thing:" << thing->name();
-            gridSupportFound = true;
-            break; // Assuming only one 14a device, exit loop after finding it
-        }
-    }
-    if (!gridSupportFound) {
-        qCDebug(dcConsolinnoEnergy()) << "No grid support plugin found among configured things.";
-    }
 
     // Load configurations
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
@@ -203,12 +210,11 @@ void EnergyEngine::addGridSupportThing()
 {
     qCDebug(dcConsolinnoEnergy()) << "Adding grid support thing";
     ThingClassId thingClassId(
-        "d6821b26-ddb2-4115-84dd-92db0e961bc3"); // Use the ID from your plugin configuration
+        "d6821b26-ddb2-4115-84dd-92db0e961bc3"); 
     QString thingName = "gridsupport";
     ParamList thingParams = ParamList();
     ThingSetupInfo* info;
     info = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
-    // Any additional setup for grid support thing can be added here
 }
 
 Thing* EnergyEngine::gridSupportDevice() const { return m_gridsupportDevice; }
