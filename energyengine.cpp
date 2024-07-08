@@ -1437,7 +1437,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
     double minPhaseMarginPower
         = 230 * m_housholdPhaseLimit; // the minPhaseMarginPower is the minimum available power per
                                       // phase for which it can be increased
-    bool consumptionLimitCLSExceeded = false;
 
     // Check if the power consumption limit is exceeded in regards to phasePowerLimit
     qCDebug(dcConsolinnoEnergy()) << "Houshold physical phase limit:" << m_housholdPhaseLimit
@@ -1496,58 +1495,70 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                      "exceeding the physical phase limit is:"
                                   << minPhaseMarginPower << "W";
 
-    // Check if the power consumption limit is exceeded in regards to consumption limit
-    qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
-    if (m_consumptionLimit > 0) {
-        qCDebug(dcConsolinnoEnergy())
-            << "Consumption limit for group of controllable devices is set to" << m_consumptionLimit
-            << "W";
-        double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
-        consumptionLimitCLSExceeded = (currentPowerNAP > m_consumptionLimit);
-        if (consumptionLimitCLSExceeded) {
-            qCInfo(dcConsolinnoEnergy())
-                << "Consumption limit exceeded. Current consumption at NAP is" << currentPowerNAP
-                << "W. Limit is" << m_consumptionLimit << "W. That is a difference of"
-                << currentPowerNAP - m_consumptionLimit << "W";
-        }
+    bool consumptionLimitCLSExceeded = false;
 
-        foreach (const QString& phase, allPhasesCurrentPower.keys()) {
-            if (consumptionLimitCLSExceeded) {
-                // OvershotPower for given phase
-                double phaseConsumptionOvershotPower
-                    = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
-                // Use larger overshot value (but only if it is overshot)
-                if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
-                    && phaseConsumptionOvershotPower > 0) {
-                    maxPhaseOvershotPower = phaseConsumptionOvershotPower;
-                    // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be reduced
-                    // "
-                    //                                  "without exceeding the consumption limit
-                    //                                  is:"
-                    //                               << maxPhaseOvershotPower << "W";
-                }
-            } else if (!consumptionLimitCLSExceeded) {
-                double phaseConsumptionMarginPower
-                    = phaseConsumptionLimit - allPhasesCurrentPower.value(phase);
-                // Use smaller margin value (but only if it is not overshot, i.e. negative)
-                if (phaseConsumptionMarginPower < minPhaseMarginPower
-                    && phaseConsumptionMarginPower > 0) {
-                    minPhaseMarginPower = phaseConsumptionMarginPower;
-                }
-            } else {
-                // this case is not relevant, as the limit is already exceeded through a different
-                // scenario, e.g. phasePowerLimit
-            }
-        }
+    // // Check if the power consumption limit is exceeded in regards to consumption limit
+    // qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
+    // if (m_consumptionLimit > 0) {
+    //     qCDebug(dcConsolinnoEnergy())
+    //         << "Consumption limit for group of controllable devices is set to" <<
+    //         m_consumptionLimit
+    //         << "W";
+    //     double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
+    //     consumptionLimitCLSExceeded = (currentPowerNAP > m_consumptionLimit);
+    //     if (consumptionLimitCLSExceeded) {
+    //         qCInfo(dcConsolinnoEnergy())
+    //             << "Consumption limit exceeded. Current consumption at NAP is" << currentPowerNAP
+    //             << "W. Limit is" << m_consumptionLimit << "W. That is a difference of"
+    //             << currentPowerNAP - m_consumptionLimit << "W";
+    //     }
 
+    //     foreach (const QString& phase, allPhasesCurrentPower.keys()) {
+    //         if (consumptionLimitCLSExceeded) {
+    //             // OvershotPower for given phase
+    //             double phaseConsumptionOvershotPower
+    //                 = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
+    //             // Use larger overshot value (but only if it is overshot)
+    //             if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
+    //                 && phaseConsumptionOvershotPower > 0) {
+    //                 maxPhaseOvershotPower = phaseConsumptionOvershotPower;
+    //                 // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be
+    //                 reduced
+    //                 // "
+    //                 //                                  "without exceeding the consumption limit
+    //                 //                                  is:"
+    //                 //                               << maxPhaseOvershotPower << "W";
+    //             }
+    //         } else if (!consumptionLimitCLSExceeded) {
+    //             double phaseConsumptionMarginPower
+    //                 = phaseConsumptionLimit - allPhasesCurrentPower.value(phase);
+    //             // Use smaller margin value (but only if it is not overshot, i.e. negative)
+    //             if (phaseConsumptionMarginPower < minPhaseMarginPower
+    //                 && phaseConsumptionMarginPower > 0) {
+    //                 minPhaseMarginPower = phaseConsumptionMarginPower;
+    //             }
+    //         } else {
+    //             // this case is not relevant, as the limit is already exceeded through a
+    //             different
+    //             // scenario, e.g. phasePowerLimit
+    //         }
+    //     }
+
+    // } else {
+    //     qCDebug(dcConsolinnoEnergy())
+    //         << "Consumption limit is not set because m_consumptionLimit is: " <<
+    //         m_consumptionLimit;
+    //     consumptionLimitCLSExceeded = false;
+    // }
+
+    if (m_consumptionLimit >= 0) {
+        consumptionLimitCLSExceeded = true;
     } else {
-        qCDebug(dcConsolinnoEnergy())
-            << "Consumption limit is not set because m_consumptionLimit is: " << m_consumptionLimit;
         consumptionLimitCLSExceeded = false;
     }
 
-    m_gridsupportDevice->setStateValue("plimActive", consumptionLimitCLSExceeded);
     m_gridsupportDevice->setStateValue("plim", m_consumptionLimit);
+    m_gridsupportDevice->setStateValue("plimActive", consumptionLimitCLSExceeded);
 
     controlHeatPumps(consumptionLimitCLSExceeded);
     controlWallboxSimple(consumptionLimitCLSExceeded);
