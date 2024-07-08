@@ -1,5 +1,10 @@
 nymea-energy-plugin-consolinno (1.7.08) buster bullseye focal jammy UNRELEASED; urgency=medium
     * Added grid support feature
+    * Added support for dyn pricing charging mode 
+    * Added support for price threshold in charging configuration
+    * Added CLS boolean to relevant compare operations
+    * Added CLS boolean to relevant configurations
+    * Added fnnstb-plim-server to meta package
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Mon, 01 Jul 2024 14:04:14 +0100
 
 nymea-energy-plugin-consolinno (1.7.06) buster bullseye focal jammy; urgency=medium

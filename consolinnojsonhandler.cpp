@@ -653,13 +653,6 @@ ConsolinnoJsonHandler::ConsolinnoJsonHandler(
             emit PvConfigurationChanged(params);
         });
 
-    connect(m_energyEngine, &EnergyEngine::chargingSessionConfigurationAdded, this,
-        [=](const ChargingSessionConfiguration& chargingSessionConfiguration) {
-            QVariantMap params;
-            params.insert("chargingSessionConfiguration", pack(chargingSessionConfiguration));
-            emit ChargingSessionConfigurationAdded(params);
-        });
-
     connect(m_energyEngine, &EnergyEngine::chargingSessionConfigurationRemoved, this,
         [=](const ThingId& evChargerThingId) {
             QVariantMap params;

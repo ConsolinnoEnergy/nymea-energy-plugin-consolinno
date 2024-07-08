@@ -1566,10 +1566,10 @@ void EnergyEngine::pluggedInEventHandling(Thing* thing)
 {
     qCDebug(dcConsolinnoEnergy()) << "pluggedIn Changed from true to false";
     ChargingConfiguration configuration = m_chargingConfigurations.value(thing->id());
-    // Disable optimization when car is unplugged for all modes except NO_OPTIMIZATION and
-    // SIMPLE_PV_EXCESS
-    if (!(configuration.optimizationModeBase() == NO_OPTIMIZATION
-            || configuration.optimizationModeBase() == SIMPLE_PV_EXCESS)) {
+    // Disable optimization when car is unplugged for all modes except NO_OPTIMIZATION and SIMPLE_PV_EXCESS this is necessary to 
+    // continoue charging when the car is plugged in again (simple charging)
+    if (!(configuration.optimizationModeBase() == NO_OPTIMIZATION || configuration.optimizationModeBase() == SIMPLE_PV_EXCESS) 
+            || configuration.optimizationModeBase() == DYN_PRICING) {
         configuration.setOptimizationEnabled(false);
         qCDebug(dcConsolinnoEnergy()) << "Setting OptimizationEnabled to false";
     }
@@ -1593,6 +1593,7 @@ void EnergyEngine::loadHeatingConfiguration(const ThingId& heatPumpThingId)
         configuration.setFloorHeatingArea(settings.value("floorHeatingArea").toDouble());
         configuration.setMaxElectricalPower(settings.value("maxElectricalPower").toDouble());
         configuration.setMaxThermalEnergy(settings.value("maxThermalEnergy").toDouble());
+        configuration.setControllableLocalSystem(settings.value("controllableLocalSystem").toBool());
         configuration.setHeatMeterThingId(ThingId(settings.value("heatMeterThingId").toUuid()));
         settings.endGroup(); // ThingId
 
@@ -1625,6 +1626,7 @@ void EnergyEngine::saveHeatingConfigurationToSettings(
     settings.setValue("maxElectricalPower", heatingConfiguration.maxElectricalPower());
     settings.setValue("maxThermalEnergy", heatingConfiguration.maxThermalEnergy());
     settings.setValue("heatMeterThingId", heatingConfiguration.heatMeterThingId());
+    settings.setValue("controllableLocalSystem", heatingConfiguration.controllableLocalSystem());
     settings.endGroup();
     settings.endGroup();
 }
@@ -1650,6 +1652,7 @@ void EnergyEngine::loadHeatingRodConfiguration(const ThingId& heatingRodThingId)
         configuration.setHeatingRodThingId(heatingRodThingId);
         configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
         configuration.setMaxElectricalPower(settings.value("maxElectricalPower").toDouble());
+        configuration.setControllableLocalSystem(settings.value("controllableLocalSystem").toBool());
         settings.endGroup(); // ThingId
 
         m_heatingRodConfigurations.insert(heatingRodThingId, configuration);
@@ -1677,6 +1680,7 @@ void EnergyEngine::saveHeatingRodConfigurationToSettings(
     settings.beginGroup(heatingRodConfiguration.heatingRodThingId().toString());
     settings.setValue("optimizationEnabled", heatingRodConfiguration.optimizationEnabled());
     settings.setValue("maxElectricalPower", heatingRodConfiguration.maxElectricalPower());
+    settings.setValue("controllableLocalSystem", heatingRodConfiguration.controllableLocalSystem());
     settings.endGroup();
     settings.endGroup();
 }
@@ -1873,6 +1877,7 @@ void EnergyEngine::loadBatteryConfiguration(const ThingId& batteryThingId)
         BatteryConfiguration configuration;
         configuration.setBatteryThingId(batteryThingId);
         configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
+        configuration.setControllableLocalSystem(settings.value("controllableLocalSystem").toBool());
         settings.endGroup();
 
         m_batteryConfigurations.insert(batteryThingId, configuration);
@@ -1899,6 +1904,7 @@ void EnergyEngine::saveBatteryConfigurationToSettings(
     settings.beginGroup("BatteryConfigurations");
     settings.beginGroup(batteryConfiguration.batteryThingId().toString());
     settings.setValue("optimizationEnabled", batteryConfiguration.optimizationEnabled());
+    settings.setValue("controllableLocalSystem", batteryConfiguration.controllableLocalSystem());
     settings.endGroup();
     settings.endGroup();
 }
@@ -1927,6 +1933,7 @@ void EnergyEngine::loadChargingConfiguration(const ThingId& evChargerThingId)
         configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
         configuration.setCarThingId(ThingId(settings.value("carThingId").toUuid()));
         configuration.setEndTime(settings.value("endTime").toString());
+        configuration.setControllableLocalSystem(settings.value("controllableLocalSystem").toBool());
         configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
         configuration.setUniqueIdentifier(settings.value("uniqueIdentifier").toUuid());
         settings.endGroup();
@@ -1961,6 +1968,7 @@ void EnergyEngine::saveChargingConfigurationToSettings(
     settings.setValue("endTime", chargingConfiguration.endTime());
     settings.setValue("targetPercentage", chargingConfiguration.targetPercentage());
     settings.setValue("uniqueIdentifier", chargingConfiguration.uniqueIdentifier());
+    settings.setValue("controllableLocalSystem", chargingConfiguration.controllableLocalSystem());
     settings.endGroup();
     settings.endGroup();
 }

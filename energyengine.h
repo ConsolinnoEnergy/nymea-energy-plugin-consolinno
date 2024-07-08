@@ -57,7 +57,8 @@ public:
         NO_OPTIMIZATION = 0,
         PV_OPTIMIZED = 1,
         PV_EXCESS = 2,
-        SIMPLE_PV_EXCESS = 3
+        SIMPLE_PV_EXCESS = 3,
+        DYN_PRICING = 4
     };
     Q_ENUM(ChargingMode)
 
