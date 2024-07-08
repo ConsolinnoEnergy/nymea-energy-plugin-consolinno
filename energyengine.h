@@ -240,6 +240,8 @@ private:
     bool m_gridSupportThingAdded = false;
     void addGridSupportThingIfNotExists();
 
+    void initDBUS();
+
 public slots:
     void onConsumptionLimitChanged(qlonglong consumptionLimit);
     void onConsumptionLimitChangedOPC(qlonglong consumptionLimit);

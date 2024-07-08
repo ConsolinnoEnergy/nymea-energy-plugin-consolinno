@@ -60,6 +60,22 @@ EnergyEngine::EnergyEngine(
                                   << m_housholdPhaseCount << "phases: max power"
                                   << m_housholdPowerLimit << "[W]";
 
+    initDBUS();
+
+    qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized"
+                                  << m_availableUseCases;
+
+    if (m_hybridSimulationEnabled) {
+        qCInfo(dcConsolinnoEnergy()) << "======> Hybrid simulation enabled";
+        qCDebug(dcConsolinnoEnergy())
+            << "======> Hybrid simulation mappings" << m_hybridSimulationMap;
+    } else {
+        qCDebug(dcConsolinnoEnergy()) << "======> Hybrid simulation disabled";
+    }
+}
+
+void EnergyEngine::initDBUS()
+{
     std::string sDbusService = "de.consolinno.fnnstb.iec61850";
     std::string sDbusPath1 = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/1";
     std::string sDbusPath2 = "/de/consolinno/fnnstb/iec61850/cls/actpow_ggio001/2";
@@ -166,17 +182,6 @@ EnergyEngine::EnergyEngine(
     } else {
         qCDebug(dcConsolinnoEnergy())
             << "Subscribed to consumption limit signal from opc-ua client";
-    }
-
-    qCDebug(dcConsolinnoEnergy()) << "======> Consolinno energy engine initialized"
-                                  << m_availableUseCases;
-
-    if (m_hybridSimulationEnabled) {
-        qCInfo(dcConsolinnoEnergy()) << "======> Hybrid simulation enabled";
-        qCDebug(dcConsolinnoEnergy())
-            << "======> Hybrid simulation mappings" << m_hybridSimulationMap;
-    } else {
-        qCDebug(dcConsolinnoEnergy()) << "======> Hybrid simulation disabled";
     }
 }
 
@@ -969,7 +974,7 @@ void EnergyEngine::onThingRemoved(const ThingId& thingId)
         }
     }
 
-    evaluateAvailableUseCases();
+    // evaluateAvailableUseCases();
 }
 
 void EnergyEngine::onRootMeterChanged()
@@ -991,7 +996,7 @@ void EnergyEngine::onRootMeterChanged()
                "meter has been declared in the energy experience.";
     }
 
-    evaluateAvailableUseCases();
+    // evaluateAvailableUseCases();
 }
 
 // void InternalInterfaceJSONRPC::sendLimitOverJSONRPC(int CLS_index, int64_t PLim)
