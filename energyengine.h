@@ -234,8 +234,8 @@ private:
     void pluggedInEventHandling(Thing* thing);
 
     void controlWallboxComplex(bool consumptionLimitCLSExceeded, double maxPhaseOvershotPower);
-    void controlWallboxSimple(bool consumptionLimitCLSExceeded);
-    void controlHeatPumps(bool consumptionLimitCLSExceeded);
+    void controlWallboxSimple(bool consumptionLimitCLSExceeded, bool allCLSOff);
+    void controlHeatPumps(bool consumptionLimitCLSExceeded, bool allCLSOff);
 
     bool m_gridSupportThingAdded = false;
     void addGridSupportThingIfNotExists();

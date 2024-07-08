@@ -1228,7 +1228,7 @@ void EnergyEngine::controlWallboxComplex(
     }
 }
 
-void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded)
+void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded, bool allCLSOff)
 {
     double maxChargingCurrentMaxValue = 0;
     double maxChargingCurrentMinValue = 0;
@@ -1259,6 +1259,10 @@ void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded)
         if (consumptionLimitCLSExceeded) { // TODO: only if the WB is a CLS unit
 
             float newMaxChargingCurrentLimit = maxChargingCurrentMinValue;
+
+            if (allCLSOff) {
+                newMaxChargingCurrentLimit = 0;
+            }
 
             Action action(ActionTypeId("383854a9-90d8-45aa-bb81-6557400f1a5e"), thing->id());
             ParamList params;
@@ -1309,7 +1313,7 @@ void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded)
     }
 }
 
-void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded)
+void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded, bool allCLSOff)
 {
     QString heatPumpState;
 
@@ -1325,6 +1329,14 @@ void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded)
     muss. Besser wäre es aber die Anlage zu messen.
     */
     foreach (Thing* thing, m_heatPumps) {
+
+        // foreach (config, m_heatingConfigurations) {
+
+        // oder feste Liste mit CLS devices, und bei jeder Änderung der Konfiguration das Event
+        // abfragen
+
+        // m_heatingConfigurations
+
         /*
         TODO: only if the HP is a CLS unit
         Wenn wir den Status, ob es sich um eine CLS-Anlage handelt als Variable im Thing zur
@@ -1333,7 +1345,7 @@ void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded)
         verbunden und könnten hier abgerufen werden.
         */
 
-        if (consumptionLimitCLSExceeded) {
+        if (consumptionLimitCLSExceeded || allCLSOff) {
 
             Action action(ActionTypeId("82b38d32-a277-41bb-a09a-44d6d503fc7a"), thing->id());
             ParamList params;
@@ -1557,11 +1569,18 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         consumptionLimitCLSExceeded = false;
     }
 
+    bool allCLSOff = false;
+    if (m_consumptionLimit == 0) {
+        allCLSOff = true;
+    } else {
+        allCLSOff = false;
+    }
+
     m_gridsupportDevice->setStateValue("plim", m_consumptionLimit);
     m_gridsupportDevice->setStateValue("plimActive", consumptionLimitCLSExceeded);
 
-    controlHeatPumps(consumptionLimitCLSExceeded);
-    controlWallboxSimple(consumptionLimitCLSExceeded);
+    controlHeatPumps(consumptionLimitCLSExceeded, allCLSOff);
+    controlWallboxSimple(consumptionLimitCLSExceeded, allCLSOff);
     // controlWallboxComplex(consumptionLimitCLSExceeded, maxPhaseOvershotPower);
 }
 
