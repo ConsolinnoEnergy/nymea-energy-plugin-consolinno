@@ -999,36 +999,6 @@ void EnergyEngine::onRootMeterChanged()
     // evaluateAvailableUseCases();
 }
 
-// void InternalInterfaceJSONRPC::sendLimitOverJSONRPC(int CLS_index, int64_t PLim)
-// {
-//     // TODO: use CLS_index
-//     // TODO: send real duration
-
-//     clientConnector = std::make_unique<CppHttpLibClientConnector>("localhost", 20000);
-//     client = std::make_unique<JsonRpcClient>(*clientConnector, version::v2);
-
-//     int duration_in_seconds = 3600; // Placeholder, set this as required
-
-//     try {
-//         Json::Value params;
-//         params["Identifier"]
-//             = "d:_n:EEBUS_App/2/"; // + std::to_string(CLS_index); // Adding CLS_index if needed
-//         params["power"] = PLim;
-//         params["duration_in_seconds"] = duration_in_seconds;
-
-//         bool success = client->CallMethod<bool>("emobility/setPowerLimit", params);
-//         if (success) {
-//             std::cout << "InternalInterfaceJSONRPC -> Successfully sent values to server."
-//                       << std::endl;
-//         } else {
-//             std::cerr << "InternalInterfaceJSONRPC -> Failed to send values to server."
-//                       << std::endl;
-//         }
-//     } catch (const JsonRpcException& e) {
-//         std::cerr << "InternalInterfaceJSONRPC -> Error sending values: " << e.what() << "\n";
-//     }
-// }
-
 void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit)
 {
     // Echo to debug log, function "onConsumptionLimitChanged" is called
@@ -1405,24 +1375,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
         return;
     }
 
-    // // Retrieve the states from the 14a Thing
-    // bool plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
-    // double pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
-
-    // qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 1: plimActive =" << plimActive
-    //                               << ", pLim =" << pLim;
-
-    // // Example: Write new states to the 14a Thing
-    // m_gridsupportDevice->setStateValue("plimActive", true); // Setting plimActive to true
-    // m_gridsupportDevice->setStateValue("pLim", 100.0); // Setting pLim to 100.0
-
-    // plimActive = m_gridsupportDevice->stateValue("plimActive").toBool();
-    // pLim = m_gridsupportDevice->stateValue("pLim").toDouble();
-
-    // qCDebug(dcConsolinnoEnergy()) << "14a Plugin states 2: plimActive =" << plimActive
-    //                               << ", pLim =" << pLim;
-
-    // We need a root meter, otherwise no optimization or blackout protection can be done.
     if (!m_energyManager->rootMeter())
         return;
 
@@ -1513,60 +1465,6 @@ void EnergyEngine::evaluateAndSetMaxChargingCurrent()
                                   << minPhaseMarginPower << "W";
 
     bool consumptionLimitCLSExceeded = false;
-
-    // // Check if the power consumption limit is exceeded in regards to consumption limit
-    // qCDebug(dcConsolinnoEnergy()) << "--> Evaluating consumption limit";
-    // if (m_consumptionLimit > 0) {
-    //     qCDebug(dcConsolinnoEnergy())
-    //         << "Consumption limit for group of controllable devices is set to" <<
-    //         m_consumptionLimit
-    //         << "W";
-    //     double phaseConsumptionLimit = m_consumptionLimit / m_housholdPhaseCount;
-    //     consumptionLimitCLSExceeded = (currentPowerNAP > m_consumptionLimit);
-    //     if (consumptionLimitCLSExceeded) {
-    //         qCInfo(dcConsolinnoEnergy())
-    //             << "Consumption limit exceeded. Current consumption at NAP is" << currentPowerNAP
-    //             << "W. Limit is" << m_consumptionLimit << "W. That is a difference of"
-    //             << currentPowerNAP - m_consumptionLimit << "W";
-    //     }
-
-    //     foreach (const QString& phase, allPhasesCurrentPower.keys()) {
-    //         if (consumptionLimitCLSExceeded) {
-    //             // OvershotPower for given phase
-    //             double phaseConsumptionOvershotPower
-    //                 = allPhasesCurrentPower.value(phase) - phaseConsumptionLimit;
-    //             // Use larger overshot value (but only if it is overshot)
-    //             if (phaseConsumptionOvershotPower > maxPhaseOvershotPower
-    //                 && phaseConsumptionOvershotPower > 0) {
-    //                 maxPhaseOvershotPower = phaseConsumptionOvershotPower;
-    //                 // qCDebug(dcConsolinnoEnergy()) << "The maximum phase power that can be
-    //                 reduced
-    //                 // "
-    //                 //                                  "without exceeding the consumption limit
-    //                 //                                  is:"
-    //                 //                               << maxPhaseOvershotPower << "W";
-    //             }
-    //         } else if (!consumptionLimitCLSExceeded) {
-    //             double phaseConsumptionMarginPower
-    //                 = phaseConsumptionLimit - allPhasesCurrentPower.value(phase);
-    //             // Use smaller margin value (but only if it is not overshot, i.e. negative)
-    //             if (phaseConsumptionMarginPower < minPhaseMarginPower
-    //                 && phaseConsumptionMarginPower > 0) {
-    //                 minPhaseMarginPower = phaseConsumptionMarginPower;
-    //             }
-    //         } else {
-    //             // this case is not relevant, as the limit is already exceeded through a
-    //             different
-    //             // scenario, e.g. phasePowerLimit
-    //         }
-    //     }
-
-    // } else {
-    //     qCDebug(dcConsolinnoEnergy())
-    //         << "Consumption limit is not set because m_consumptionLimit is: " <<
-    //         m_consumptionLimit;
-    //     consumptionLimitCLSExceeded = false;
-    // }
 
     if (m_consumptionLimit >= 0) {
         consumptionLimitCLSExceeded = true;
