@@ -1,4 +1,5 @@
 nymea-energy-plugin-consolinno (1.7.08) buster bullseye focal jammy UNRELEASED; urgency=medium
+    * Added grid support feature
     * Added support for dyn pricing charging mode 
     * Added support for price threshold in charging configuration
     * Added CLS boolean to relevant compare operations
@@ -23,8 +24,26 @@ nymea-energy-plugin-consolinno (1.7.02-1) buster focal jammy; urgency=medium
     * Improved ConEMS state
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 28 Nov 2023 09:12:14 +0100
 
+nymea-energy-plugin-consolinno (1.7.002) buster focal jammy; urgency=medium
+* New Version for supporting §14a in a EMS 
+* HeatPumps are getting deactivated if PLim is bigger than 0
+* Wallboxes are limited to PLim but still using PV energy on top
+ -- Tim Fischer <t.fischer@consolinno.de> Tue, 12 Jun 2024 08:50:53 +0200
+
+nymea-energy-plugin-consolinno (1.7.001-4) buster focal jammy; urgency=medium
+* Turning HeatPumps are getting deactivated if PLim is bigger than 0
+ -- Tim Fischer <t.fischer@consolinno.de> Tue, 11 Jun 2024 14:04:53 +0200
+
+nymea-energy-plugin-consolinno (1.7.001-3) buster focal jammy; urgency=medium
+* BlackoutProtection uses execute action now
+ -- Tim Fischer <t.fischer@consolinno.de> Tue, 4 Jun 2024 15:04:53 +0200
+
+nymea-energy-plugin-consolinno (1.7.001-2) buster focal jammy; urgency=medium
+* Working on BlackoutProtection to handle PLim
+ -- Tim Fischer <t.fischer@consolinno.de> Tue, 4 Jun 2024 10:30:53 +0200
+
 nymea-energy-plugin-consolinno (1.7.001-1) buster focal jammy; urgency=medium
-    * Adapt to new versioning schema
+* Adapt to new versioning schema
  -- Florian Knab <f.knab@consolinno.de> Thu, 19 Sep 2023 7:50:53 +0200
 
 nymea-energy-plugin-consolinno (1.7.001) dev; urgency=medium
