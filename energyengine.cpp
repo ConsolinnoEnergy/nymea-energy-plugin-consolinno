@@ -1220,12 +1220,12 @@ void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded, bool a
     //foreach (Thing* thing, m_evChargers) {
 
     for (auto i = m_evChargers.cbegin(), end = m_evChargers.cend(); i != end; ++i) {
-        ThingID thingID = i.key();
+        ThingId thingID = i.key();
         Thing* thing = i.value();
 
         /* Find config in qhash. */
         QHash<ThingId, ChargingConfiguration>::const_iterator it = m_chargingConfigurations.find(thingID);
-        if(it == hash.end()) {  
+        if(it == m_chargingConfigurations.end()) {  
             // TODO print warning
             continue;
         }
@@ -1331,12 +1331,12 @@ void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded, bool allCL
     */
 
     for (auto i = m_heatPumps.cbegin(), end = m_heatPumps.cend(); i != end; ++i) {
-        ThingID thingID = i.key();
+        ThingId thingID = i.key();
         Thing* thing = i.value();
 
         /* Find heating config in qhash. */
         QHash<ThingId, HeatingConfiguration>::const_iterator it = m_heatingConfigurations.find(thingID);
-        if(it == hash.end()) {  
+        if(it == m_heatingConfigurations.end()) {  
             // TODO print warning
             continue;
         }
