@@ -1210,7 +1210,26 @@ void EnergyEngine::controlWallboxSimple(bool consumptionLimitCLSExceeded, bool a
     double actualMaxChargingCurrent = 0;
 
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
-    foreach (Thing* thing, m_evChargers) {
+    //foreach (Thing* thing, m_evChargers) {
+
+    for (auto i = m_evChargers.cbegin(), end = m_evChargers.cend(); i != end; ++i) {
+        ThingID thingID = i.key();
+        Thing* thing = i.value();
+
+        /* Find config in qhash. */
+        QHash<ThingId, ChargingConfiguration>::const_iterator it = m_chargingConfigurations.find(thingID);
+        if(it == hash.end()) {  
+            // TODO print warning
+            continue;
+        }
+
+        /* Check if heatpump is CLS. */
+        ChargingConfiguration config = it.value();
+        if (!config.controllableLocalSystem())
+        {
+            continue;
+        }
+
         qCDebug(dcConsolinnoEnergy())
             << "Blackout protection: Checking EV charger thing with name: " << thing->name();
 
@@ -1303,7 +1322,24 @@ void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded, bool allCL
     wir die Logik so anpassen und Fälle schaffen, in denen die Wärmepumpe nicht ausgeschaltet werden
     muss. Besser wäre es aber die Anlage zu messen.
     */
-    foreach (Thing* thing, m_heatPumps) {
+
+    for (auto i = m_heatPumps.cbegin(), end = m_heatPumps.cend(); i != end; ++i) {
+        ThingID thingID = i.key();
+        Thing* thing = i.value();
+
+        /* Find heating config in qhash. */
+        QHash<ThingId, HeatingConfiguration>::const_iterator it = m_heatingConfigurations.find(thingID);
+        if(it == hash.end()) {  
+            // TODO print warning
+            continue;
+        }
+
+        /* Check if heatpump is CLS. */
+        HeatingConfiguration config = it.value();
+        if (!config.controllableLocalSystem())
+        {
+            continue;
+        }
 
         // foreach (config, m_heatingConfigurations) {
 
@@ -1311,6 +1347,7 @@ void EnergyEngine::controlHeatPumps(bool consumptionLimitCLSExceeded, bool allCL
         // abfragen
 
         // m_heatingConfigurations
+
 
         /*
         TODO: only if the HP is a CLS unit
