@@ -814,6 +814,9 @@ void EnergyEngine::onThingRemoved(const ThingId& thingId)
         m_gridsupportDevice = nullptr;
         qCDebug(dcConsolinnoEnergy())
             << "Removed grid support device from energy manager" << thingId.toString();
+
+        // Ensure grid support thing is added
+        addGridSupportThingIfNotExists();
     }
 
     // Battery
