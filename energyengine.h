@@ -216,6 +216,7 @@ private:
     QHash<ThingId, Thing*> m_evChargers;
     QHash<ThingId, Thing*> m_batteries;
     Thing* m_gridsupportDevice = nullptr;
+    ThingId m_gridsupportThingId;
 
     bool m_hybridSimulationEnabled = false;
     QMap<QString, QVariant> m_hybridSimulationMap;

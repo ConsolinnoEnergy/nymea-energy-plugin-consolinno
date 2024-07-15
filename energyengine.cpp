@@ -187,29 +187,27 @@ void EnergyEngine::initDBUS()
 
 void EnergyEngine::addGridSupportThingIfNotExists()
 {
-    bool gridSupportFound = false;
     foreach (Thing* thing, m_thingManager->configuredThings()) {
         if (thing->thingClass().interfaces().contains("gridsupport")) {
             monitorGridSupportDevice(thing);
             qCDebug(dcConsolinnoEnergy())
                 << "Grid support plugin found and added for thing:" << thing->name();
-            gridSupportFound = true;
-            break; // Assuming only one grid support device, exit loop after finding it
+            return;
         }
     }
 
-    if (!gridSupportFound) {
-        qCDebug(dcConsolinnoEnergy())
-            << "No grid support plugin found among configured things. Adding a new one.";
-        ThingClassId thingClassId("d6821b26-ddb2-4115-84dd-92db0e961bc3");
-        QString thingName = "gridsupport";
-        ParamList thingParams = ParamList();
-        ThingSetupInfo* info
-            = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
-        qCDebug(dcConsolinnoEnergy())
-            << "Added new grid support thing with ID:" << info->thing()->id().toString();
-        monitorGridSupportDevice(info->thing());
-    }
+    /* We only reach this point if no grid-support thing exists. */
+    qCDebug(dcConsolinnoEnergy())
+        << "No grid support plugin found among configured things. Adding a new one.";
+    ThingClassId thingClassId("d6821b26-ddb2-4115-84dd-92db0e961bc3");
+    QString thingName = "gridsupport";
+    ParamList thingParams = ParamList();
+    ThingSetupInfo* info
+        = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
+    m_gridsupportThingId = info->thing()->id();
+    qCDebug(dcConsolinnoEnergy())
+        << "Added new grid support thing with ID:" << m_gridsupportThingId.toString();
+    monitorGridSupportDevice(info->thing());
 }
 
 Thing* EnergyEngine::gridSupportDevice() const { return m_gridsupportDevice; }
@@ -811,6 +809,15 @@ void EnergyEngine::onThingAdded(Thing* thing)
 
 void EnergyEngine::onThingRemoved(const ThingId& thingId)
 {
+    // Grid Support
+    if (thingId == m_gridsupportThingId) {
+        m_gridsupportDevice = nullptr;
+        qCDebug(dcConsolinnoEnergy())
+            << "Removed grid support device from energy manager" << thingId.toString();
+
+        // Ensure grid support thing is added
+        addGridSupportThingIfNotExists();
+    }
 
     // Battery
     if (m_batteries.contains(thingId)) {
@@ -1109,7 +1116,26 @@ void EnergyEngine::deactivateOrMinWallbox(bool allCLSOff)
     double actualMaxChargingCurrent = 0;
 
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
-    foreach (Thing* thing, m_evChargers) {
+    //foreach (Thing* thing, m_evChargers) {
+
+    for (auto i = m_evChargers.cbegin(), end = m_evChargers.cend(); i != end; ++i) {
+        ThingId thingID = i.key();
+        Thing* thing = i.value();
+
+        /* Find config in qhash. */
+        QHash<ThingId, ChargingConfiguration>::const_iterator it = m_chargingConfigurations.find(thingID);
+        if(it == m_chargingConfigurations.end()) {  
+            // TODO print warning
+            continue;
+        }
+
+        /* Check if heatpump is CLS. */
+        ChargingConfiguration config = it.value();
+        if (!config.controllableLocalSystem())
+        {
+            continue;
+        }
+
         qCDebug(dcConsolinnoEnergy())
             << "Blackout protection: Checking EV charger thing with name: " << thing->name();
 
@@ -1174,7 +1200,24 @@ void EnergyEngine::deactivateHeatPump()
     wir die Logik so anpassen und Fälle schaffen, in denen die Wärmepumpe nicht ausgeschaltet werden
     muss. Besser wäre es aber die Anlage zu messen.
     */
-    foreach (Thing* thing, m_heatPumps) {
+
+    for (auto i = m_heatPumps.cbegin(), end = m_heatPumps.cend(); i != end; ++i) {
+        ThingId thingID = i.key();
+        Thing* thing = i.value();
+
+        /* Find heating config in qhash. */
+        QHash<ThingId, HeatingConfiguration>::const_iterator it = m_heatingConfigurations.find(thingID);
+        if(it == m_heatingConfigurations.end()) {  
+            // TODO print warning
+            continue;
+        }
+
+        /* Check if heatpump is CLS. */
+        HeatingConfiguration config = it.value();
+        if (!config.controllableLocalSystem())
+        {
+            continue;
+        }
 
         // foreach (config, m_heatingConfigurations) {
 
@@ -1182,6 +1225,7 @@ void EnergyEngine::deactivateHeatPump()
         // abfragen
 
         // m_heatingConfigurations
+
 
         /*
         TODO: only if the HP is a CLS unit

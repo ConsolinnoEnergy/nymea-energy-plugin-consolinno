@@ -1,4 +1,6 @@
 nymea-energy-plugin-consolinno (1.7.08) buster bullseye focal jammy UNRELEASED; urgency=medium
+    * Added handling for grid support thing removed
+    * Skip non-CLS devices in PLim control
     * Added grid support feature
     * Added support for dyn pricing charging mode 
     * Added support for price threshold in charging configuration
