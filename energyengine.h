@@ -192,8 +192,8 @@ private:
     HemsUseCases m_availableUseCases;
     uint m_housholdPhaseLimit = 25;
     uint m_housholdPhaseCount = 3;
-    float m_consumptionLimit = 0;
-    float m_consumptionLimitOPC = 0;
+    float m_consumptionLimit = -1;
+    float m_consumptionLimitOPC = -1;
     double m_housholdPowerLimit = m_housholdPhaseCount * m_housholdPhaseLimit;
 
     QHash<ThingId, HeatingConfiguration> m_heatingConfigurations;
@@ -234,9 +234,9 @@ private:
 
     void pluggedInEventHandling(Thing* thing);
 
-    void controlWallboxComplex(bool consumptionLimitCLSExceeded, double maxPhaseOvershotPower);
-    void controlWallboxSimple(bool consumptionLimitCLSExceeded, bool allCLSOff);
-    void controlHeatPumps(bool consumptionLimitCLSExceeded, bool allCLSOff);
+    void deactivateHeatPump();
+    void deactivateOrMinWallbox(bool allCLSOff);
+    void check14a();
 
     bool m_gridSupportThingAdded = false;
     void addGridSupportThingIfNotExists();
