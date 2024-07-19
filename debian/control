@@ -129,6 +129,7 @@ Depends: ${shlibs:Depends},
          ${misc:Depends},
          consolinno-hems-base,
          nymea-plugin-grid-support,
+         libiec61850,
          fnnstb-plim-server,
 Description: Consolinno Home Energy Management System
  packages to enabling grid support features
