@@ -1275,7 +1275,7 @@ void EnergyEngine::check14a()
 
     bool consumptionLimitCLSExceeded = false;
 
-    if (m_consumptionLimit > 0) {
+    if (m_consumptionLimit >= 0) {
         consumptionLimitCLSExceeded = true;
         qCDebug(dcConsolinnoEnergy()) << "Consumption limit exceeded";
         m_gridsupportDevice->setStateValue("plimStatus", "limited");
