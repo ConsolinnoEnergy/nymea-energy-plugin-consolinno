@@ -202,11 +202,10 @@ void EnergyEngine::addGridSupportThingIfNotExists()
     ThingClassId thingClassId("d6821b26-ddb2-4115-84dd-92db0e961bc3");
     QString thingName = "gridsupport";
     ParamList thingParams = ParamList();
-    ThingSetupInfo* info
-        = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
+    ThingSetupInfo* info = m_thingManager->addConfiguredThing(thingClassId, thingParams, thingName);
     m_gridsupportThingId = info->thing()->id();
-    qCDebug(dcConsolinnoEnergy())
-        << "Added new grid support thing with ID:" << m_gridsupportThingId.toString();
+    qCDebug(dcConsolinnoEnergy()) << "Added new grid support thing with ID:"
+                                  << m_gridsupportThingId.toString();
     monitorGridSupportDevice(info->thing());
 }
 
@@ -1107,32 +1106,32 @@ void EnergyEngine::updateHybridSimulation(Thing* thing)
     linkedSimulatedThing->setStateValue("power", thing->stateValue("power"));
 }
 
-void EnergyEngine::deactivateOrMinWallbox(bool allCLSOff)
+void EnergyEngine::dimmWallbox()
 {
-    qCDebug(dcConsolinnoEnergy()) << "deactivateOrMinWallbox";
+    qCDebug(dcConsolinnoEnergy()) << "dimmWallbox";
 
     double maxChargingCurrentMaxValue = 0;
     double maxChargingCurrentMinValue = 0;
     double actualMaxChargingCurrent = 0;
 
     // if the limit is exceeded or below max, we adjust the charging current for each EV charger
-    //foreach (Thing* thing, m_evChargers) {
+    // foreach (Thing* thing, m_evChargers) {
 
     for (auto i = m_evChargers.cbegin(), end = m_evChargers.cend(); i != end; ++i) {
         ThingId thingID = i.key();
         Thing* thing = i.value();
 
         /* Find config in qhash. */
-        QHash<ThingId, ChargingConfiguration>::const_iterator it = m_chargingConfigurations.find(thingID);
-        if(it == m_chargingConfigurations.end()) {  
+        QHash<ThingId, ChargingConfiguration>::const_iterator it
+            = m_chargingConfigurations.find(thingID);
+        if (it == m_chargingConfigurations.end()) {
             // TODO print warning
             continue;
         }
 
         /* Check if heatpump is CLS. */
         ChargingConfiguration config = it.value();
-        if (!config.controllableLocalSystem())
-        {
+        if (!config.controllableLocalSystem()) {
             continue;
         }
 
@@ -1206,16 +1205,16 @@ void EnergyEngine::deactivateHeatPump()
         Thing* thing = i.value();
 
         /* Find heating config in qhash. */
-        QHash<ThingId, HeatingConfiguration>::const_iterator it = m_heatingConfigurations.find(thingID);
-        if(it == m_heatingConfigurations.end()) {  
+        QHash<ThingId, HeatingConfiguration>::const_iterator it
+            = m_heatingConfigurations.find(thingID);
+        if (it == m_heatingConfigurations.end()) {
             // TODO print warning
             continue;
         }
 
         /* Check if heatpump is CLS. */
         HeatingConfiguration config = it.value();
-        if (!config.controllableLocalSystem())
-        {
+        if (!config.controllableLocalSystem()) {
             continue;
         }
 
@@ -1225,7 +1224,6 @@ void EnergyEngine::deactivateHeatPump()
         // abfragen
 
         // m_heatingConfigurations
-
 
         /*
         TODO: only if the HP is a CLS unit
@@ -1263,24 +1261,26 @@ void EnergyEngine::check14a()
         return;
     }
 
-    bool allCLSOff = false;
-    // if (m_consumptionLimit == 0) {
-    //     qCDebug(dcConsolinnoEnergy()) << "All CLS devices are off";
-    //     m_gridsupportDevice->setStateValue("plimStatus", "shutoff");
-
-    //     allCLSOff = true;
-    // } else {
-    //     allCLSOff = false;
-    // }
-
     bool consumptionLimitCLSExceeded = false;
 
-    if (m_consumptionLimit >= 0) {
+    /*              "unrestricted",
+                    "shutoff",
+                    "limited"
+    */
+
+    if (m_consumptionLimit > 0) {
         consumptionLimitCLSExceeded = true;
-        qCDebug(dcConsolinnoEnergy()) << "Consumption limit exceeded";
+        qCDebug(dcConsolinnoEnergy()) << "Consumption limit exceeded: limited";
         m_gridsupportDevice->setStateValue("plimStatus", "limited");
         deactivateHeatPump();
-        deactivateOrMinWallbox(allCLSOff);
+        dimmWallbox();
+    }
+    if (m_consumptionLimit == 0) {
+        consumptionLimitCLSExceeded = true;
+        qCDebug(dcConsolinnoEnergy()) << "Consumption limit exceeded: shutoff";
+        m_gridsupportDevice->setStateValue("plimStatus", "shutoff");
+        deactivateHeatPump();
+        dimmWallbox();
     } else {
         consumptionLimitCLSExceeded = false;
         qCDebug(dcConsolinnoEnergy()) << "Consumption limit not exceeded";

@@ -236,7 +236,7 @@ private:
     void pluggedInEventHandling(Thing* thing);
 
     void deactivateHeatPump();
-    void deactivateOrMinWallbox(bool allCLSOff);
+    void dimmWallbox();
     void check14a();
 
     bool m_gridSupportThingAdded = false;
