@@ -93,6 +93,7 @@ Depends: ${shlibs:Depends},
          nymea-plugin-foxaioh3,
          nymea-plugin-foxh3,
          nymea-plugin-foxh3pro,
+         nymea-plugin-foxesswb,
          nymea-plugin-fronius,
          nymea-plugin-generic-car,
          nymea-plugin-generic-consolinno,
@@ -125,6 +126,7 @@ Depends: ${shlibs:Depends},
          nymea-plugin-technivolt,
          nymea-plugin-phoenixconnect,
          nymea-plugin-webasto,
+         nymea-plugin-ocpp-wallbox-info,
          nymea-zeroconf-plugin-avahi,
          nymea-system-plugin-systemd,
 Description: Consolinno Home Energy Management System
@@ -154,6 +156,16 @@ Depends: ${shlibs:Depends},
 Description: Consolinno Home Energy Management System
  CI gate plugins
 
+Package: consolinno-hems-ocpp
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
+         ocpp-centralsystem,
+Description: Consolinno Home Energy Management System
+  OCPP backend
 
 Package: consolinno-hems-devtools
 Section: libs
