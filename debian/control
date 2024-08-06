@@ -156,7 +156,19 @@ Depends: ${shlibs:Depends},
          cigate-adapter-modbus,
          ocpp-centralsystem,
 Description: Consolinno Home Energy Management System
- CI gate backend and OCPP backend
+ CI gate backend
+
+
+Package: consolinno-hems-plugins-ocpp
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
+         ocpp-centralsystem,
+Description: Consolinno Home Energy Management System
+ CI OCPP plugins
 
 Package: consolinno-hems-devtools
 Section: libs
