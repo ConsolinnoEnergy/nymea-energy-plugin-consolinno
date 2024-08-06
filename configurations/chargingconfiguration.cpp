@@ -108,7 +108,7 @@ bool ChargingConfiguration::operator==(
          m_uniqueIdentifier == other.uniqueIdentifier() &&
          m_targetPercentage == other.targetPercentage() &&
          m_priceThreshold == other.priceThreshold() &&
-         m_controllableLocalSystem == other.optimizationEnabled();
+         m_controllableLocalSystem == other.controllableLocalSystem();
 }
 
 bool ChargingConfiguration::operator!=(
