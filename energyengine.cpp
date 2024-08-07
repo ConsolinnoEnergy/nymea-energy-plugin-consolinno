@@ -495,6 +495,7 @@ EnergyEngine::HemsError EnergyEngine::setChargingOptimizationConfiguration(
     return HemsErrorNoError;
 }
 
+
 QList<BatteryConfiguration> EnergyEngine::batteryConfigurations() const
 {
     return m_batteryConfigurations.values();
@@ -1909,6 +1910,7 @@ void EnergyEngine::loadChargingOptimizationConfiguration(const ThingId& evCharge
         configuration.setI_value(settings.value("i_value").toFloat());
         configuration.setD_value(settings.value("d_value").toFloat());
         configuration.setSetpoint(settings.value("setpoint").toFloat());
+        configuration.setControllableLocalSystem(settings.value("controllableLocalSystem").toBool());
 
         settings.endGroup();
 
@@ -1942,6 +1944,7 @@ void EnergyEngine::saveChargingOptimizationConfigurationToSettings(
     settings.setValue("i_value", chargingOptimizationConfiguration.i_value());
     settings.setValue("d_value", chargingOptimizationConfiguration.d_value());
     settings.setValue("setpoint", chargingOptimizationConfiguration.setpoint());
+    settings.setValue("controllableLocalSystem", chargingOptimizationConfiguration.controllableLocalSystem());
 
     settings.endGroup();
     settings.endGroup();
