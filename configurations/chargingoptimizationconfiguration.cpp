@@ -70,6 +70,16 @@ void ChargingOptimizationConfiguration::setSetpoint(float setpoint)
     m_setpoint = setpoint;
 }
 
+bool ChargingOptimizationConfiguration::controllableLocalSystem() const
+{
+    return m_controllableLocalSystem;
+}
+
+void ChargingOptimizationConfiguration::setControllableLocalSystem(bool controllableLocalSystem)
+{
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 
 bool ChargingOptimizationConfiguration::operator==(const ChargingOptimizationConfiguration &other) const
 {
@@ -78,6 +88,7 @@ bool ChargingOptimizationConfiguration::operator==(const ChargingOptimizationCon
             m_i_value == other.i_value() &&
             m_d_value == other.d_value() &&
             m_setpoint == other.setpoint() &&
+            m_controllableLocalSystem == other.controllableLocalSystem() &&
             m_reenableChargepoint == other.reenableChargepoint();
 
 }
@@ -95,6 +106,7 @@ QDebug operator<<(QDebug debug, const ChargingOptimizationConfiguration &chargin
     debug.nospace() << "I value: " << (chargingOptimizationConfig.i_value());
     debug.nospace() << "D value: " << (chargingOptimizationConfig.d_value());
     debug.nospace() << "setpoint : " << (chargingOptimizationConfig.setpoint());
+    debug.nospace() << "CLS: " << (chargingOptimizationConfig.controllableLocalSystem() ? "enabled" : "disabled");
     debug.nospace() << ")";
     return debug.maybeSpace();
 }
