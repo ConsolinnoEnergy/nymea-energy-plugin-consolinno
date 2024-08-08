@@ -495,7 +495,6 @@ EnergyEngine::HemsError EnergyEngine::setChargingOptimizationConfiguration(
     return HemsErrorNoError;
 }
 
-
 QList<BatteryConfiguration> EnergyEngine::batteryConfigurations() const
 {
     return m_batteryConfigurations.values();
@@ -1123,16 +1122,17 @@ void EnergyEngine::dimmWallbox()
         Thing* thing = i.value();
 
         /* Find config in qhash. */
-        QHash<ThingId, ChargingConfiguration>::const_iterator it
-            = m_chargingConfigurations.find(thingID);
-        if (it == m_chargingConfigurations.end()) {
-            // TODO print warning
+        QHash<ThingId, ChargingOptimizationConfiguration>::const_iterator it
+            = m_chargingOptimizationConfigurations.find(thingID);
+        if (it == m_chargingOptimizationConfigurations.end()) {
+            qCDebug(dcConsolinnoEnergy())
+                << "No charging optimization configuration found for " << thing->name();
             continue;
         }
 
-        /* Check if heatpump is CLS. */
-        ChargingConfiguration config = it.value();
+        ChargingOptimizationConfiguration config = it.value();
         if (!config.controllableLocalSystem()) {
+            qCDebug(dcConsolinnoEnergy()) << "Unit is not a CLS";
             continue;
         }
 
@@ -1255,7 +1255,7 @@ void EnergyEngine::deactivateHeatPump()
 
 void EnergyEngine::check14a()
 {
-    qCDebug(dcConsolinnoEnergy()) << "check14a";
+    qCDebug(dcConsolinnoEnergy()) << "check 14a";
 
     if (!m_gridsupportDevice) {
         qCWarning(dcConsolinnoEnergy()) << "No 14a plugin devices found!";
@@ -1275,8 +1275,7 @@ void EnergyEngine::check14a()
         m_gridsupportDevice->setStateValue("plimStatus", "limited");
         deactivateHeatPump();
         dimmWallbox();
-    }
-    if (m_consumptionLimit == 0) {
+    } else if (m_consumptionLimit == 0) {
         consumptionLimitCLSExceeded = true;
         qCDebug(dcConsolinnoEnergy()) << "Consumption limit exceeded: shutoff";
         m_gridsupportDevice->setStateValue("plimStatus", "shutoff");
@@ -1290,7 +1289,7 @@ void EnergyEngine::check14a()
 
     m_gridsupportDevice->setStateValue("plim", m_consumptionLimit);
 
-    qCDebug(dcConsolinnoEnergy()) << "done with check14a";
+    qCDebug(dcConsolinnoEnergy()) << "done with check 14a";
 }
 
 /*!
@@ -1910,7 +1909,8 @@ void EnergyEngine::loadChargingOptimizationConfiguration(const ThingId& evCharge
         configuration.setI_value(settings.value("i_value").toFloat());
         configuration.setD_value(settings.value("d_value").toFloat());
         configuration.setSetpoint(settings.value("setpoint").toFloat());
-        configuration.setControllableLocalSystem(settings.value("controllableLocalSystem").toBool());
+        configuration.setControllableLocalSystem(
+            settings.value("controllableLocalSystem").toBool());
 
         settings.endGroup();
 
@@ -1944,7 +1944,8 @@ void EnergyEngine::saveChargingOptimizationConfigurationToSettings(
     settings.setValue("i_value", chargingOptimizationConfiguration.i_value());
     settings.setValue("d_value", chargingOptimizationConfiguration.d_value());
     settings.setValue("setpoint", chargingOptimizationConfiguration.setpoint());
-    settings.setValue("controllableLocalSystem", chargingOptimizationConfiguration.controllableLocalSystem());
+    settings.setValue(
+        "controllableLocalSystem", chargingOptimizationConfiguration.controllableLocalSystem());
 
     settings.endGroup();
     settings.endGroup();
