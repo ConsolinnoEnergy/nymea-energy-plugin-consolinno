@@ -1122,16 +1122,17 @@ void EnergyEngine::dimmWallbox()
         Thing* thing = i.value();
 
         /* Find config in qhash. */
-        QHash<ThingId, ChargingConfiguration>::const_iterator it
-            = m_chargingConfigurations.find(thingID);
-        if (it == m_chargingConfigurations.end()) {
-            // TODO print warning
+        QHash<ThingId, ChargingOptimizationConfiguration>::const_iterator it
+            = m_chargingOptimizationConfigurations.find(thingID);
+        if (it == m_chargingOptimizationConfigurations.end()) {
+            qCDebug(dcConsolinnoEnergy())
+                << "No charging optimization configuration found for " << thing->name();
             continue;
         }
 
-        /* Check if heatpump is CLS. */
-        ChargingConfiguration config = it.value();
+        ChargingOptimizationConfiguration config = it.value();
         if (!config.controllableLocalSystem()) {
+            qCDebug(dcConsolinnoEnergy()) << "Unit is not a CLS";
             continue;
         }
 
