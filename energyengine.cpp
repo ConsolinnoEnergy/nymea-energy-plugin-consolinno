@@ -981,7 +981,7 @@ void EnergyEngine::onThingRemoved(const ThingId& thingId)
         }
     }
 
-    // evaluateAvailableUseCases();
+    evaluateAvailableUseCases();
 }
 
 void EnergyEngine::onRootMeterChanged()
@@ -1003,7 +1003,7 @@ void EnergyEngine::onRootMeterChanged()
                "meter has been declared in the energy experience.";
     }
 
-    // evaluateAvailableUseCases();
+    evaluateAvailableUseCases();
 }
 
 void EnergyEngine::onConsumptionLimitChanged(qlonglong consumptionLimit)
