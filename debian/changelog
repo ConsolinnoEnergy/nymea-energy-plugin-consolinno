@@ -12,6 +12,7 @@ nymea-energy-plugin-consolinno (1.7.08) buster bullseye focal jammy UNRELEASED; 
     * Added package containing the ocpp backend
     * Set CLS flag for evcharger in charging optimization configuration
     * Fix falsly commented code
+    * Remove falsly committed stuff
     
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Mon, 01 Jul 2024 14:04:14 +0100
 
