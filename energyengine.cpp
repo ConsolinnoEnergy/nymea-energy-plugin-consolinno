@@ -1873,13 +1873,16 @@ void EnergyEngine::saveChargingConfigurationToSettings(
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingConfigurations");
     settings.beginGroup(chargingConfiguration.evChargerThingId().toString());
-    settings.setValue("optimizationMode", chargingConfiguration.optimizationMode());
+
     settings.setValue("optimizationEnabled", chargingConfiguration.optimizationEnabled());
     settings.setValue("carThingId", chargingConfiguration.carThingId());
     settings.setValue("endTime", chargingConfiguration.endTime());
     settings.setValue("targetPercentage", chargingConfiguration.targetPercentage());
+    settings.setValue("optimizationMode", chargingConfiguration.optimizationMode());
     settings.setValue("uniqueIdentifier", chargingConfiguration.uniqueIdentifier());
     settings.setValue("controllableLocalSystem", chargingConfiguration.controllableLocalSystem());
+    settings.setValue("priceThreshold", chargingConfiguration.priceThreshold());
+    
     settings.endGroup();
     settings.endGroup();
 }
