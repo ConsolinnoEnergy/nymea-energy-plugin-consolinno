@@ -15,7 +15,8 @@ nymea-energy-plugin-consolinno (1.7.08) buster bullseye focal jammy UNRELEASED; 
     * Fix falsly commented code
     * Remove falsly committed stuff
     * Set CLS flag for evcharger in charging optimization configuration and in dimmedWallbox
-    
+    * Add priceThreshold in load and save charging config
+
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Mon, 01 Jul 2024 14:04:14 +0100
 
 nymea-energy-plugin-consolinno (1.7.06) buster bullseye focal jammy; urgency=medium
