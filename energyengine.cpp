@@ -1831,7 +1831,6 @@ void EnergyEngine::removeBatteryConfigurationFromSettings(const ThingId& battery
 
 void EnergyEngine::loadChargingConfiguration(const ThingId& evChargerThingId)
 {
-
     QSettings settings(NymeaSettings::settingsPath() + "/consolinno.conf", QSettings::IniFormat);
     settings.beginGroup("ChargingConfigurations");
     if (settings.childGroups().contains(evChargerThingId.toString())) {
@@ -1839,14 +1838,15 @@ void EnergyEngine::loadChargingConfiguration(const ThingId& evChargerThingId)
 
         ChargingConfiguration configuration;
         configuration.setEvChargerThingId(evChargerThingId);
-        configuration.setOptimizationMode(settings.value("optimizationMode").toInt());
         configuration.setOptimizationEnabled(settings.value("optimizationEnabled").toBool());
         configuration.setCarThingId(ThingId(settings.value("carThingId").toUuid()));
         configuration.setEndTime(settings.value("endTime").toString());
+        configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
+        configuration.setOptimizationMode(settings.value("optimizationMode").toInt());
+        configuration.setUniqueIdentifier(settings.value("uniqueIdentifier").toUuid());
         configuration.setControllableLocalSystem(
             settings.value("controllableLocalSystem").toBool());
-        configuration.setTargetPercentage(settings.value("targetPercentage").toUInt());
-        configuration.setUniqueIdentifier(settings.value("uniqueIdentifier").toUuid());
+        configuration.setPriceThreshold(settings.value("priceThreshold").toFloat());
         settings.endGroup();
 
         m_chargingConfigurations.insert(evChargerThingId, configuration);
