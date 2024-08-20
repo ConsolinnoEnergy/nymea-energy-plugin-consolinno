@@ -1475,8 +1475,8 @@ void EnergyEngine::pluggedInEventHandling(Thing* thing)
     // SIMPLE_PV_EXCESS this is necessary to continoue charging when the car is plugged in again
     // (simple charging)
     if (!(configuration.optimizationModeBase() == NO_OPTIMIZATION
-            || configuration.optimizationModeBase() == SIMPLE_PV_EXCESS)
-        || configuration.optimizationModeBase() == DYN_PRICING) {
+            || configuration.optimizationModeBase() == SIMPLE_PV_EXCESS
+            || configuration.optimizationModeBase() == DYN_PRICING)) {
         configuration.setOptimizationEnabled(false);
         qCDebug(dcConsolinnoEnergy()) << "Setting OptimizationEnabled to false";
     }
