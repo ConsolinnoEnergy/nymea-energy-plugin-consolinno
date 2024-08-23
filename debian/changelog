@@ -1,20 +1,12 @@
-nymea-energy-plugin-consolinno (1.7.08) buster bullseye focal jammy UNRELEASED; urgency=medium
-    * Added handling for grid support thing removed
-    * Skip non-CLS devices in PLim control
+nymea-energy-plugin-consolinno (1.7.08) buster bullseye focal jammy RELEASED; urgency=medium
+
     * Added grid support feature
     * Added support for dyn pricing charging mode 
     * Added support for price threshold in charging configuration
-    * Added CLS boolean to relevant compare operations
-    * Added CLS boolean to relevant configurations
     * Added fnnstb-plim-server to meta package
-    * m_consumptionLimit is by default -1
     * Added new integrations: SolaxEVC, Saj H2, FoxESS H3, Kostal SM, Easee, FoxEss EVC 3. Gen, Elvi EVBox
     * Added package containing the ocpp backend
-    * Set CLS flag for evcharger in charging optimization configuration
-    * Fix falsly commented code
-    * Remove falsly committed stuff
-    * Set CLS flag for evcharger in charging optimization configuration and in dimmedWallbox
-    * Add priceThreshold in load and save charging config
+    * Misc cleanup
 
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Mon, 01 Jul 2024 14:04:14 +0100
 
