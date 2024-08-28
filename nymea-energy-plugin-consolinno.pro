@@ -1,5 +1,6 @@
 QT -= gui
 QT += network
+QT += dbus
 
 TARGET = $$qtLibraryTarget(nymea_energypluginconsolinno)
 TEMPLATE = lib

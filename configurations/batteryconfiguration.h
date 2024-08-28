@@ -15,6 +15,7 @@ class BatteryConfiguration
     Q_GADGET
     Q_PROPERTY(QUuid batteryThingId READ batteryThingId WRITE setBatteryThingId)
     Q_PROPERTY(bool optimizationEnabled READ optimizationEnabled WRITE setOptimizationEnabled USER true)
+    Q_PROPERTY(bool controllableLocalSystem READ controllableLocalSystem WRITE setControllableLocalSystem USER true)
 
 public:
     BatteryConfiguration();
@@ -23,7 +24,10 @@ public:
     void setBatteryThingId(const ThingId &batteryThingId);
 
     bool optimizationEnabled() const;
-    void setOptimizationEnabled(bool optimizationEnabled) ;
+    void setOptimizationEnabled(bool optimizationEnabled);
+
+    bool controllableLocalSystem() const;
+    void setControllableLocalSystem(bool controllableLocalSystem);
 
     bool operator==(const BatteryConfiguration &other) const;
     bool operator!=(const BatteryConfiguration &other) const;
@@ -31,7 +35,7 @@ public:
 private:
     ThingId m_batteryThingId;
     bool m_optimizationEnabled = true;
-
+    bool m_controllableLocalSystem = false;
 };
 
 QDebug operator<<(QDebug debug, const BatteryConfiguration &batteryConfig);

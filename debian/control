@@ -81,13 +81,22 @@ Depends: ${shlibs:Depends},
          nymea-plugin-alfen,
          nymea-plugin-alphainnotec,
          nymea-plugin-amperfied,
+         nymea-plugin-atronixax,
          nymea-plugin-azzurro,
          nymea-plugin-bgetech,
          nymea-plugin-bgetech-inverter,
          nymea-plugin-delta,
          nymea-plugin-dvmodbusir,
          nymea-plugin-e3dc,
+         nymea-plugin-epexconsolinno,
+         nymea-plugin-easee,
+         nymea-plugin-evbox,
          nymea-plugin-fenecon,
+         nymea-plugin-foxaioh3,
+         nymea-plugin-foxh3,
+         nymea-plugin-foxh3pro,
+         nymea-plugin-foxesswb,
+         nymea-plugin-foxesswbv3,
          nymea-plugin-fronius,
          nymea-plugin-generic-car,
          nymea-plugin-generic-consolinno,
@@ -99,9 +108,12 @@ Depends: ${shlibs:Depends},
          nymea-plugin-kaco,
          nymea-plugin-kaco-sunspec,
          nymea-plugin-kostal,
+         nymea-plugin-kostalmeter,
+         nymea-plugin-kostalmeterinverter,
          nymea-plugin-kostalpiko,
          nymea-plugin-keba,
          nymea-plugin-mennekes,
+         nymea-plugin-sajh2,
          nymea-plugin-sax,
          nymea-plugin-schneider,
          nymea-plugin-schneider-iem,
@@ -110,16 +122,31 @@ Depends: ${shlibs:Depends},
          nymea-plugin-simplesmartconsumer,
          nymea-plugin-sma,
          nymea-plugin-solax,
+         nymea-plugin-solaxevc,
          nymea-plugin-sungrow,
          nymea-plugin-sunspec,
          nymea-plugin-stiebeleltron,
          nymea-plugin-technivolt,
          nymea-plugin-phoenixconnect,
          nymea-plugin-webasto,
+         nymea-plugin-ocpp-wallbox-info,
          nymea-zeroconf-plugin-avahi,
          nymea-system-plugin-systemd,
 Description: Consolinno Home Energy Management System
  plugins
+
+Package: consolinno-hems-grid-support
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
+         nymea-plugin-grid-support,
+         libiec61850,
+         fnnstb-plim-server,
+Description: Consolinno Home Energy Management System
+ packages to enabling grid support features
  
 Package: consolinno-hems-plugins-cigate
 Section: libs
@@ -130,8 +157,19 @@ Depends: ${shlibs:Depends},
          consolinno-hems-base,
          cigate-adapter-modbus,
 Description: Consolinno Home Energy Management System
- CI gate plugins
+ CI gate backend
 
+
+Package: consolinno-hems-plugins-ocpp
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         consolinno-hems-base,
+         ocpp-centralsystem,
+Description: Consolinno Home Energy Management System
+ CI OCPP plugins
 
 Package: consolinno-hems-devtools
 Section: libs

@@ -37,6 +37,9 @@ int ChargingConfiguration::optimizationModeBase() {
   if (optimizationMode() >= 3000 && optimizationMode() < 4000) {
     return 3;
   }
+  if (optimizationMode() >= 4000 && optimizationMode() < 5000) {
+    return 4;
+  }
   return -1;
 }
 
@@ -68,6 +71,14 @@ void ChargingConfiguration::setTargetPercentage(uint targetPercentage) {
   m_targetPercentage = targetPercentage;
 }
 
+float ChargingConfiguration::priceThreshold() const {
+    return m_priceThreshold;
+}
+
+void ChargingConfiguration::setPriceThreshold(float priceThreshold) {
+    m_priceThreshold = priceThreshold;
+}
+
 QUuid ChargingConfiguration::uniqueIdentifier() const {
   return m_uniqueIdentifier;
 }
@@ -80,6 +91,14 @@ bool ChargingConfiguration::isValid() const {
   return !m_evChargerThingId.isNull() && !m_carThingId.isNull();
 }
 
+bool ChargingConfiguration::controllableLocalSystem() const {
+    return m_controllableLocalSystem;
+}
+
+void ChargingConfiguration::setControllableLocalSystem(bool controllableLocalSystem) {
+    m_controllableLocalSystem = controllableLocalSystem;
+}
+
 bool ChargingConfiguration::operator==(
     const ChargingConfiguration &other) const {
   return m_evChargerThingId == other.evChargerThingId() &&
@@ -87,7 +106,9 @@ bool ChargingConfiguration::operator==(
          m_optimizationMode == other.optimizationMode() &&
          m_carThingId == other.carThingId() && m_endTime == other.endTime() &&
          m_uniqueIdentifier == other.uniqueIdentifier() &&
-         m_targetPercentage == other.targetPercentage();
+         m_targetPercentage == other.targetPercentage() &&
+         m_priceThreshold == other.priceThreshold() &&
+         m_controllableLocalSystem == other.controllableLocalSystem();
 }
 
 bool ChargingConfiguration::operator!=(
@@ -113,7 +134,10 @@ QDebug operator<<(QDebug debug, const ChargingConfiguration &chargingConfig) {
                   << chargingConfig.optimizationMode();
   debug.nospace() << ", target percentage: "
                   << chargingConfig.targetPercentage() << "%";
+  debug.nospace() << ", price threshold: "
+                  << chargingConfig.priceThreshold();
   debug.nospace() << ", target time: " << chargingConfig.endTime();
+  debug.nospace() << ", CLS: " << (chargingConfig.controllableLocalSystem() ? "enabled" : "disabled");
   debug.nospace() << ")";
   return debug.maybeSpace();
 }
