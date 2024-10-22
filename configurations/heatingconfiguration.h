@@ -78,7 +78,7 @@ public:
 
 private:
     ThingId m_heatPumpThingId;
-    bool m_optimizationEnabled = true;
+    bool m_optimizationEnabled = false;
     double m_maxElectricalPower = 9;
     double m_maxThermalEnergy = 5;
     HouseType m_houseType = HouseTypeSince1984;
