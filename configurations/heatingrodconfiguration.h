@@ -46,7 +46,7 @@ public:
 
 private:
     ThingId m_heatingRodThingId;
-    bool m_optimizationEnabled = false;
+    bool m_optimizationEnabled = true;
     double m_maxElectricalPower = 3;
     ThingId m_heatMeterThingId;
     bool m_controllableLocalSystem = false;
