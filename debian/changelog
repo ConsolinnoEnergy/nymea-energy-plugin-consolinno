@@ -2,6 +2,7 @@ nymea-energy-plugin-consolinno (1.7.09) buster bullseye focal jammy UNRELEASED; 
 
     * Added sdm630 consumer integration
     * Fixed name of CIGate (generic-consolinno) integration
+    * Set heatingrod optimization enabled to true by default
 
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 24 Sep 2024 09:13:00 +0100
 
