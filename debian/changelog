@@ -3,9 +3,13 @@ nymea-energy-plugin-consolinno (1.7.09) buster bullseye focal jammy UNRELEASED; 
     * Added sdm630 consumer integration
     * Fixed name of CIGate (generic-consolinno) integration
     * Set heatingrod optimization enabled to true by default
-    * Added integrations: Kostalmeter as consumer; Solax Ultra
-      QCells Gen 3 and 4 incl. Wallboxes
+    * Added integration for Solax Ultra
+    * Added integration for Kostalmeter as consumer
     * Added integration for Broetje heat pump
+    * Added integrations for QCells:
+      - Gen 3 incl. WB
+      - Gen 4 incl. WB
+    * Updated DvModbusIR integration incl. Meter, Consumer, Inverter
 
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 24 Sep 2024 09:13:00 +0100
 
