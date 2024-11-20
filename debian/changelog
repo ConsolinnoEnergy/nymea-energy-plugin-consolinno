@@ -10,6 +10,7 @@ nymea-energy-plugin-consolinno (1.7.09) buster bullseye focal jammy UNRELEASED; 
       - Gen 3 incl. WB
       - Gen 4 incl. WB
     * Updated DvModbusIR integration incl. Meter, Consumer, Inverter
+    * Added askoheat heating rod
 
  -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 24 Sep 2024 09:13:00 +0100
 
