@@ -1,3 +1,9 @@
+nymea-energy-plugin-consolinno (1.7.010) buster bullseye focal jammy UNRELEASED; urgency=medium
+
+    * Restore Sungrow SG
+
+ -- Leonhard Heizinger <lheizinger@CEPF33G3RN>  Tue, 28 Nov 2024 09:13:00 +0100
+
 nymea-energy-plugin-consolinno (1.7.09) buster bullseye focal jammy UNRELEASED; urgency=medium
 
     * Added sdm630 consumer integration
